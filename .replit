@@ -15,6 +15,10 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
+localPort = 33817
+externalPort = 3001
+
+[[ports]]
 localPort = 46641
 externalPort = 3000
 
@@ -47,4 +51,3 @@ outputType = "webview"
 
 [agent]
 integrations = ["javascript_object_storage==1.0.0"]
-expertMode = true
