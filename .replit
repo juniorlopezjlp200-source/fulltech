@@ -47,3 +47,4 @@ outputType = "webview"
 
 [agent]
 integrations = ["javascript_object_storage==1.0.0"]
+expertMode = true
