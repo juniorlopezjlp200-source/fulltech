@@ -54,7 +54,7 @@ export default function AdminLogin() {
 
         {/* Login Form */}
         <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-white/20">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" data-form-type="other">
             {error && (
               <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3 text-red-200 text-sm">
                 {error}
@@ -74,6 +74,7 @@ export default function AdminLogin() {
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm"
                   placeholder="admin@fulltech.com"
                   required
+                  autoComplete="username"
                   data-testid="input-admin-email"
                 />
               </div>
@@ -92,6 +93,8 @@ export default function AdminLogin() {
                   className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-300 focus:ring-2 focus:ring-blue-400 focus:border-transparent backdrop-blur-sm"
                   placeholder="••••••••"
                   required
+                  autoComplete="new-password"
+                  data-form-type="other"
                   data-testid="input-admin-password"
                 />
               </div>

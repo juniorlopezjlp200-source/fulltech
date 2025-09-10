@@ -3,13 +3,14 @@ import { useCustomer } from "@/hooks/useCustomer";
 import { useCustomPages } from "@/hooks/useCustomPages";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 import { useConfigLoader, getConfigValue } from "@/lib/config";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 const logoDefault =
   "data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='20' fill='%234F46E5'/%3E%3Ctext x='20' y='28' text-anchor='middle' fill='white' font-family='sans-serif' font-size='16' font-weight='bold'%3EFT%3C/text%3E%3C/svg%3E";
 
 export function TopBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [location] = useLocation();
 
   // ---- PWA install (Android/desktop) ----
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -34,7 +35,15 @@ export function TopBar() {
     localStorage.setItem("ios_install_tip_dismissed", "1");
   };
 
-  const { customer, isAuthenticated, logout } = useCustomer();
+  // ✅ Detectar si estamos en páginas admin
+  const isAdminPage = location.startsWith('/admin');
+  
+  // Siempre ejecutar useCustomer (reglas de hooks) pero ignorar resultado en admin
+  const customerHookResult = useCustomer();
+  const { customer, isAuthenticated, logout } = isAdminPage ? 
+    { customer: null, isAuthenticated: false, logout: () => {} } : 
+    customerHookResult;
+  
   const { groupedPages } = useCustomPages();
   const { goHome, goToCustomPage } = useInstantNavigation();
 

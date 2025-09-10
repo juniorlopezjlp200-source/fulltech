@@ -1,5 +1,5 @@
 // Service Worker simplificado para FULLTECH
-const CACHE_NAME = 'fulltech-v1.0.0';
+const CACHE_NAME = 'fulltech-v1.0.1';
 
 // Recursos básicos para cache
 const CRITICAL_RESOURCES = [
