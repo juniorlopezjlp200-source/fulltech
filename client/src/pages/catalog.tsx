@@ -269,36 +269,7 @@ export default function Catalog() {
 
             {/* Título del slider */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
-              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
-            </div>
-            
-            {/* Botones All y Ofertas - Capa separada clickeable */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
-              <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 inline-flex gap-2 shadow-lg border border-white/20">
-                <button
-                  onClick={() => setShowOnlyOffers(false)}
-                  className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${!showOnlyOffers 
-                    ? 'bg-white text-blue-600 shadow-md scale-105' 
-                    : 'text-white/80 hover:text-white hover:bg-white/20'
-                  }`}
-                  data-testid="button-filter-all"
-                >
-                  <i className="fas fa-th-large"></i>
-                  All
-                </button>
-
-                <button
-                  onClick={() => setShowOnlyOffers(true)}
-                  className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${showOnlyOffers 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
-                    : 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
-                  }`}
-                  data-testid="button-filter-offers"
-                >
-                  <i className="fas fa-fire animate-shake"></i>
-                  Ofertas
-                </button>
-              </div>
+              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg">Tecnología de Vanguardia</h2>
             </div>
 
             <CategoryFilters
@@ -308,6 +279,39 @@ export default function Catalog() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
             />
+            
+            {/* Botones flotantes All y Ofertas - Esquina dentro del hero debajo de categorías */}
+            <div className="absolute top-4 right-4 z-30 md:top-6 md:right-6 pointer-events-auto">
+              <div className="flex gap-2 bg-black/20 backdrop-blur-sm rounded-xl p-2 border border-white/20">
+                <button
+                  onClick={() => setShowOnlyOffers(false)}
+                  className={`w-12 h-12 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center ${!showOnlyOffers 
+                    ? 'bg-white text-blue-600 scale-105' 
+                    : 'bg-white/20 text-white/70 hover:bg-white/30 hover:text-white'
+                  }`}
+                  data-testid="button-filter-all"
+                  title="Todos los productos"
+                  aria-pressed={!showOnlyOffers}
+                  aria-label="Mostrar todos los productos"
+                >
+                  <i className="fas fa-th-large text-sm"></i>
+                </button>
+
+                <button
+                  onClick={() => setShowOnlyOffers(true)}
+                  className={`w-12 h-12 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center ${showOnlyOffers 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white scale-105' 
+                    : 'bg-white/20 text-red-300 hover:bg-red-500/20 hover:text-red-200'
+                  }`}
+                  data-testid="button-filter-offers"
+                  title="Solo ofertas"
+                  aria-pressed={showOnlyOffers}
+                  aria-label="Mostrar solo ofertas"
+                >
+                  <i className="fas fa-fire text-sm animate-shake"></i>
+                </button>
+              </div>
+            </div>
           </div>
 
           <main className="w-full px-4 md:px-8 lg:px-12 xl:px-16 py-6 pb-20 md:pb-6 space-y-6">
