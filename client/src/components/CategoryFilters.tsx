@@ -20,7 +20,7 @@ export function CategoryFilters({
   onSearchChange,
 }: CategoryFiltersProps) {
   return (
-    <div className="absolute bottom-0 left-0 w-full z-40 bg-gradient-to-t from-black/50 to-transparent p-4 pt-8 md:relative md:bg-none md:bg-white/95 md:backdrop-blur-sm md:rounded-2xl md:shadow-lg md:p-8 md:mx-6 md:mb-8 lg:mx-8 lg:p-10 category-filters">
+    <div className="absolute bottom-0 left-0 w-full z-40 bg-gradient-to-t from-black/50 to-transparent p-4 pt-8 md:relative md:bg-none md:bg-white/20 md:backdrop-blur-md md:rounded-2xl md:shadow-lg md:p-8 md:mx-6 md:mb-8 lg:mx-8 lg:p-10 category-filters">
       <div className="flex flex-col gap-4 md:gap-6 max-w-7xl mx-auto">
         {/* Search Bar */}
         <div className="relative search-bar md:max-w-2xl md:mx-auto lg:max-w-3xl">

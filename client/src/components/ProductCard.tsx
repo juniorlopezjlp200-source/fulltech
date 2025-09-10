@@ -64,7 +64,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
 
   if (layout === "grid") {
     return (
-      <div className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group" onClick={handleViewProduct} data-product-id={product.id}>
+      <div className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden" onClick={handleViewProduct} data-product-id={product.id}>
         <ImageCarousel
           images={product.images}
           videos={product.videos || []}
@@ -116,29 +116,29 @@ export function ProductCard({ product, layout }: ProductCardProps) {
           <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
             <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{formatPrice(product.price)}</span>
-            <div className="flex items-center gap-2 lg:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleWhatsAppOrder();
                 }}
-                className="bg-green-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-green-700 hover:scale-105 transition-all duration-200 flex items-center gap-1 lg:gap-2 animate-pulse-ring"
+                className="bg-green-600 text-white px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-green-700 hover:scale-105 transition-all duration-200 flex items-center gap-1 animate-pulse-ring"
                 data-testid={`button-whatsapp-grid-${product.id}`}
                 title="Pedir por WhatsApp"
               >
                 <i className="fab fa-whatsapp text-xs lg:text-sm"></i>
-                <span className="hidden sm:inline lg:inline">Pedir</span>
+                <span className="hidden sm:inline">Pedir</span>
               </button>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShareProduct();
                 }}
-                className="bg-primary text-primary-foreground w-8 h-8 lg:w-10 lg:h-10 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+                className="bg-primary text-primary-foreground w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center flex-shrink-0"
                 data-testid={`button-share-grid-${product.id}`}
                 title="Compartir producto"
               >
-                <i className="fas fa-share-alt text-xs lg:text-sm"></i>
+                <i className="fas fa-share-alt text-xs"></i>
               </button>
             </div>
           </div>
