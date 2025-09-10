@@ -1,0 +1,526 @@
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(210, 40%, 98%);
+  --foreground: hsl(222, 84%, 5%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 84%, 5%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 84%, 5%);
+  --primary: hsl(221, 83%, 53%);
+  --primary-foreground: hsl(210, 40%, 98%);
+  --secondary: hsl(210, 40%, 96%);
+  --secondary-foreground: hsl(222, 47%, 11%);
+  --muted: hsl(210, 40%, 96%);
+  --muted-foreground: hsl(215, 16%, 47%);
+  --accent: hsl(210, 40%, 96%);
+  --accent-foreground: hsl(222, 47%, 11%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(214, 32%, 91%);
+  --input: hsl(214, 32%, 91%);
+  --ring: hsl(221, 83%, 53%);
+  --whatsapp: hsl(142, 71%, 45%);
+  --error: hsl(0, 84%, 60%);
+  --chart-1: hsl(221, 83%, 53%);
+  --chart-2: hsl(142, 71%, 45%);
+  --chart-3: hsl(45, 93%, 47%);
+  --chart-4: hsl(147, 78%, 42%);
+  --chart-5: hsl(341, 75%, 51%);
+  --sidebar: hsl(210, 40%, 96%);
+  --sidebar-foreground: hsl(222, 84%, 5%);
+  --sidebar-primary: hsl(221, 83%, 53%);
+  --sidebar-primary-foreground: hsl(210, 40%, 98%);
+  --sidebar-accent: hsl(210, 40%, 96%);
+  --sidebar-accent-foreground: hsl(222, 47%, 11%);
+  --sidebar-border: hsl(214, 32%, 91%);
+  --sidebar-ring: hsl(221, 83%, 53%);
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: Menlo, monospace;
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: hsl(0, 0%, 0%);
+  --foreground: hsl(200, 7%, 91%);
+  --card: hsl(228, 10%, 10%);
+  --card-foreground: hsl(0, 0%, 85%);
+  --popover: hsl(0, 0%, 0%);
+  --popover-foreground: hsl(200, 7%, 91%);
+  --primary: hsl(204, 88%, 53%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(195, 15%, 95%);
+  --secondary-foreground: hsl(210, 25%, 8%);
+  --muted: hsl(0, 0%, 9%);
+  --muted-foreground: hsl(210, 3%, 46%);
+  --accent: hsl(206, 70%, 8%);
+  --accent-foreground: hsl(204, 88%, 53%);
+  --destructive: hsl(0, 84%, 60%);
+  --destructive-foreground: hsl(0, 0%, 100%);
+  --border: hsl(210, 5%, 15%);
+  --input: hsl(208, 28%, 18%);
+  --ring: hsl(221, 83%, 53%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Soporte para safe area en dispositivos con notch */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    background: var(--background);
+    min-height: 100vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+  }
+
+  /* Desktop: Full screen layout */
+  @media (min-width: 768px) {
+    body {
+      background: var(--background);
+    }
+  }
+}
+
+/* Responsive Layout */
+.phone-frame {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--background);
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Desktop: Full screen layout */
+@media (min-width: 768px) {
+  .phone-frame {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--background);
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+    position: static;
+  }
+}
+
+.phone-notch {
+  display: none; /* Eliminar notch completamente */
+}
+
+/* Hide notch on desktop */
+@media (min-width: 768px) {
+  .phone-notch {
+    display: none;
+  }
+}
+
+.phone-screen {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--background);
+  border-radius: 0;
+  overflow: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* Desktop: Remove border radius and full width */
+@media (min-width: 768px) {
+  .phone-screen {
+    border-radius: 0;
+    width: 100%;
+    min-height: 100vh;
+  }
+}
+
+.phone-content {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--background);
+  overflow-y: auto;
+  scrollbar-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Desktop: Allow natural height and full width */
+@media (min-width: 768px) {
+  .phone-content {
+    width: 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+}
+.phone-content::-webkit-scrollbar { 
+  display: none; 
+}
+
+/* Custom Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-2px);
+  }
+  60% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-1px) rotate(-1deg); }
+  75% { transform: translateX(1px) rotate(1deg); }
+}
+
+/* Image Loading States */
+.image-container {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--muted);
+}
+
+.image-skeleton {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--muted) 25%, var(--secondary) 50%, var(--muted) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.lazy-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.lazy-image.loaded {
+  opacity: 1;
+}
+
+.lazy-image.error {
+  display: none;
+}
+
+.image-fallback {
+  display: none;
+  width: 100%;
+  height: 100%;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.image-fallback.show {
+  display: flex;
+}
+
+.loading-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+
+/* Performance indicator */
+.network-status {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.network-fast { 
+  background: hsl(142, 71%, 45%); 
+  color: white; 
+}
+
+.network-slow { 
+  background: hsl(45, 93%, 47%); 
+  color: white; 
+}
+
+.network-offline { 
+  background: hsl(0, 84%, 60%); 
+  color: white; 
+}
+
+/* Custom utility classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-pulse-ring {
+  animation: pulseRing 2s infinite;
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite;
+}
+
+.animate-shake {
+  animation: shake 0.6s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spinSlow 25s linear infinite;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optimizaciones para móvil */
+@layer utilities {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Mejoras táctiles para móvil */
+button, 
+.btn, 
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  min-height: 44px; /* Área mínima de toque recomendada */
+}
+
+/* Suavizar scroll en iOS */
+* {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Evitar zoom en inputs en iOS */
+input[type="search"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* Optimizaciones para Desktop */
+@media (min-width: 768px) {
+  /* Contenedor principal más ancho para escritorio */
+  .main-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  /* Hero slider más alto en escritorio */
+  #hero-container {
+    height: 500px !important;
+  }
+  
+  /* Cuadrícula de productos optimizada para escritorio */
+  .products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+  }
+  
+  /* Tarjetas de producto más grandes en escritorio */
+  .product-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Filtros de categoría optimizados para escritorio */
+  .category-filters {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  }
+  
+  /* Barra de búsqueda más ancha */
+  .search-bar {
+    max-width: 500px;
+    margin: 0 auto 1rem;
+  }
+  
+  /* Pills de filtros centrados */
+  .filter-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  /* Footer optimizado para escritorio */
+  footer {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.95));
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Mejorar espaciado en desktop footer */
+  footer .max-w-7xl {
+    padding: 1.5rem 4rem;
+  }
+  
+  /* Iconos más grandes en footer desktop */
+  footer .hidden.md\\:block i {
+    font-size: 1.125rem;
+  }
+  
+  /* Animaciones suaves para elementos interactivos en footer */
+  footer a, footer button {
+    transition: all 0.2s ease;
+  }
+  
+  footer a:hover, footer button:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Optimizaciones específicas para pantallas muy grandes */
+@media (min-width: 1200px) {
+  /* Cuadrícula con más columnas en pantallas grandes */
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+  
+  /* Contenedor principal aún más ancho */
+  .main-container {
+    max-width: 1600px;
+    padding: 0 3rem;
+  }
+  
+  /* Hero más impactante */
+  #hero-container {
+    height: 600px !important;
+  }
+}
+
+/* Mejorar apariencia en dispositivos móviles */
+@media (max-width: 768px) {
+  /* Asegurar que el body use todo el espacio */
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  
+  /* Mejorar rendimiento de animaciones */
+  * {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+  }
+}

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Viewport PWA + notch -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+
+    <title>Catálogo FULLTECH - PWA</title>
+    <meta name="application-name" content="FULLTECH" />
+
+    <!-- PWA Manifest & Theme (coinciden con manifest.json) -->
+    <meta name="theme-color" content="#2563EB" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FULLTECH" />
+    <!-- Usa tus iconos locales -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
+
+    <!-- SEO -->
+    <meta
+      name="description"
+      content="Catálogo FULLTECH - Descubre los últimos productos tecnológicos con la mejor calidad y precios. Smartphones, laptops, accesorios y más."
+    />
+    <meta property="og:title" content="Catálogo FULLTECH - Tecnología de Vanguardia" />
+    <meta
+      property="og:description"
+      content="Descubre los últimos productos tecnológicos con la mejor calidad y precios"
+    />
+    <!-- Puedes cambiar esta imagen por una portada tuya si quieres -->
+    <meta
+      property="og:image"
+      content="https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=1200&h=630"
+    />
+    <meta property="og:type" content="website" />
+
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//images.unsplash.com" />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+
+    <!-- Favicon básico -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-192x192.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- Service Worker: intenta /sw.js; si falla usa /sw-minimal.js -->
+    <script>
+      (function () {
+        if (!('serviceWorker' in navigator)) return;
+
+        async function registerSW() {
+          try {
+            const reg = await navigator.serviceWorker.register('/sw.js');
+            console.log('[SW] registered /sw.js', reg.scope);
+          } catch (e1) {
+            console.warn('[SW] /sw.js failed, trying /sw-minimal.js...', e1);
+            try {
+              const reg2 = await navigator.serviceWorker.register('/sw-minimal.js');
+              console.log('[SW] registered /sw-minimal.js', reg2.scope);
+            } catch (e2) {
+              console.error('[SW] registration failed:', e2);
+            }
+          }
+
+          navigator.serviceWorker.ready
+            .then((r) => console.log('[SW] ready:', r.scope))
+            .catch(() => {});
+        }
+
+        if (document.readyState === 'complete') registerSW();
+        else window.addEventListener('load', registerSW);
+      })();
+    </script>
+
+    <!-- App -->
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Replit dev banner (solo dev) -->
+    <script
+      type="text/javascript"
+      src="https://replit.com/public/js/replit-dev-banner.js"
+    ></script>
+  </body>
+</html>
