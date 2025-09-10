@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense, useRef } from "react";
 import { TopBar } from "@/components/TopBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
@@ -191,6 +191,11 @@ export default function Catalog() {
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [registrationData, setRegistrationData] = useState({ name: '', phone: '', address: '' });
+  
+  // Referencias y estado para el slider automático de categorías
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
@@ -240,6 +245,94 @@ export default function Catalog() {
     // Set loading based on actual data loading
     setIsLoading(isProductsLoading || isCategoriesLoading);
   }, [isProductsLoading, isCategoriesLoading]);
+
+  // Auto-scroll ultra suave y continuo para categorías
+  useEffect(() => {
+    let animationId: number;
+    let lastTime = 0;
+    const scrollSpeed = 30; // píxeles por segundo
+    
+    const animate = (currentTime: number) => {
+      if (!categoryScrollRef.current || !isAutoScrolling) return;
+      
+      const container = categoryScrollRef.current;
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+      
+      // Calcular el desplazamiento basado en tiempo para movimiento consistente
+      const scrollAmount = (scrollSpeed * deltaTime) / 1000;
+      
+      // Obtener el ancho de una sección de categorías (la mitad del contenido)
+      const originalWidth = container.scrollWidth / 2;
+      
+      // Mover el scroll de forma robusta con módulo para evitar overshoot
+      container.scrollLeft = (container.scrollLeft + scrollAmount) % originalWidth;
+      
+      animationId = requestAnimationFrame(animate);
+    };
+
+    if (isAutoScrolling) {
+      lastTime = performance.now();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+      // Limpiar timeout si existe
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+        wheelResumeTimeoutRef.current = null;
+      }
+    };
+  }, [isAutoScrolling]);
+
+  // Funciones mejoradas para pausar/reanudar scroll
+  const pauseAutoScroll = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      setIsAutoScrolling(false);
+      // Limpiar timer existente si hay uno
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+        wheelResumeTimeoutRef.current = null;
+      }
+    }
+  };
+  
+  const resumeAutoScroll = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      // Limpiar timer existente
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+      }
+      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 300);
+    }
+  };
+
+  // Función especial para wheel que reanuda automáticamente
+  const pauseAutoScrollOnWheel = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      setIsAutoScrolling(false);
+      // Limpiar timer existente
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+      }
+      // Reanudar después de 600ms de inactividad del wheel
+      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 600);
+    }
+  };
+
+  // Verificar preferencias de movimiento reducido al cargar
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setIsAutoScrolling(false);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -353,32 +446,47 @@ export default function Catalog() {
                 <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
                 
                 <div 
+                  ref={categoryScrollRef}
                   className="flex gap-4 overflow-x-auto pb-3 pt-1 px-4 scrollbar-hide" 
                   style={{ 
                     scrollbarWidth: 'none', 
                     msOverflowStyle: 'none',
-                    scrollSnapType: 'x mandatory',
+                    scrollSnapType: 'none', // Deshabilitado para scroll suave continuo
                     WebkitOverflowScrolling: 'touch'
                   }}
+                  onMouseEnter={pauseAutoScroll}
+                  onMouseLeave={resumeAutoScroll}
+                  onTouchStart={pauseAutoScroll}
+                  onTouchEnd={resumeAutoScroll}
+                  onWheel={pauseAutoScrollOnWheel}
+                  onPointerEnter={pauseAutoScroll}
+                  onPointerLeave={resumeAutoScroll}
                 >
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-1 flex-shrink-0 shadow-lg backdrop-blur-md border transform-gpu ${
-                        selectedCategory === category.id
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/25 border-white/20 scale-105'
-                          : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-xl hover:shadow-black/10 border-white/30'
-                      }`}
-                      style={{ 
-                        scrollSnapAlign: 'center',
-                        minWidth: 'fit-content'
-                      }}
-                      data-testid={`filter-${category.id}`}
-                    >
-                      <span className="relative z-10">{category.name}</span>
-                    </button>
-                  ))}
+                  {/* Duplicamos las categorías para loop infinito */}
+                  {[...categories, ...categories].map((category, index) => {
+                    const isDuplicate = index >= categories.length;
+                    return (
+                      <button
+                        key={`${category.id}-${index}`}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-1 flex-shrink-0 shadow-lg backdrop-blur-md border transform-gpu ${
+                          selectedCategory === category.id
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/25 border-white/20 scale-105'
+                            : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-xl hover:shadow-black/10 border-white/30'
+                        }`}
+                        style={{ 
+                          minWidth: 'fit-content'
+                        }}
+                        data-testid={`filter-${category.id}-${index}`}
+                        // Hacer elementos duplicados no focusables para accesibilidad
+                        tabIndex={isDuplicate ? -1 : 0}
+                        aria-hidden={isDuplicate}
+                        role={isDuplicate ? "presentation" : "button"}
+                      >
+                        <span className="relative z-10">{category.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
                 
                 {/* Indicador de deslizamiento */}
