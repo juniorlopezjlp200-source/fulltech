@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { getQueryFn } from "@/lib/queryClient";
 
 export interface AdminUser {
   id: string;
@@ -15,6 +16,7 @@ export function useAdmin() {
 
   const { data: admin, isLoading, error } = useQuery<AdminUser>({
     queryKey: ["/api/admin/me"],
+    queryFn: getQueryFn({ on401: "returnNull" }), // ✅ 401 → null (no error)
     retry: false,
     staleTime: 0, // ✅ Siempre revalidar para admin auth
     cacheTime: 1000 * 60, // 1 minuto de cache
