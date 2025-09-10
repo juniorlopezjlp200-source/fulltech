@@ -346,18 +346,27 @@ export default function Catalog() {
                 </div>
               )}
 
-              {/* Categorías flotantes - casi pegadas a los botones */}
+              {/* Categorías flotantes - slider horizontal paso a paso */}
               <div className="pointer-events-auto z-40 relative mt-2">
-                <div className="flex gap-2 md:gap-3 lg:gap-4 overflow-x-auto pb-1 scrollbar-hide justify-center flex-wrap">
+                <div 
+                  className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" 
+                  style={{ 
+                    scrollbarWidth: 'none', 
+                    msOverflowStyle: 'none',
+                    scrollSnapType: 'x mandatory',
+                    WebkitOverflowScrolling: 'touch'
+                  }}
+                >
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`px-3 py-1.5 md:px-4 md:py-2 rounded-full text-sm md:text-base font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 ${
+                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 flex-shrink-0 ${
                         selectedCategory === category.id
                           ? 'bg-primary text-white shadow-lg ring-2 ring-primary/20'
                           : 'bg-white/80 backdrop-blur-sm text-gray-800 hover:bg-white hover:shadow-md'
                       }`}
+                      style={{ scrollSnapAlign: 'start' }}
                       data-testid={`filter-${category.id}`}
                     >
                       {category.name}
