@@ -69,14 +69,14 @@ export function HeroSlider() {
       ))}
       
       {/* Slider Indicators */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-50">
         {heroImages.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-colors ${
-              index === currentSlide ? 'bg-white/80' : 'bg-white/50'
-            } hover:bg-white/80`}
+            className={`w-3 h-3 rounded-full transition-all duration-300 shadow-lg ${
+              index === currentSlide ? 'bg-white scale-125' : 'bg-white/60'
+            } hover:bg-white hover:scale-110`}
             data-testid={`dot-${index}`}
           />
         ))}

@@ -272,8 +272,26 @@ export default function Catalog() {
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
               <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
               
-              {/* Botones All y Ofertas - compactos y elegantes */}
+              {/* Botón de búsqueda y filtros All/Ofertas */}
               <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto z-30 relative mt-4">
+                {/* Botón de búsqueda - primero */}
+                <button
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+                    isSearchOpen 
+                      ? 'bg-primary text-white shadow-md scale-105' 
+                      : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
+                  }`}
+                  title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
+                  aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
+                  aria-expanded={isSearchOpen}
+                  data-testid="search-toggle-button"
+                >
+                  <i className={`fas text-xs transition-transform duration-200 ${
+                    isSearchOpen ? 'fa-times' : 'fa-search'
+                  }`}></i>
+                </button>
+
                 <button
                   onClick={() => setShowOnlyOffers(false)}
                   className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${!showOnlyOffers 
@@ -304,6 +322,26 @@ export default function Catalog() {
                   <span>Ofertas</span>
                 </button>
               </div>
+
+              {/* Barra de búsqueda expandible */}
+              {isSearchOpen && (
+                <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto z-30 relative mt-2 max-w-sm mx-auto">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <i className="fas fa-search text-white/60 text-sm"></i>
+                    </div>
+                    <input 
+                      type="search" 
+                      placeholder="Buscar productos..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
+                      data-testid="input-search"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <CategoryFilters
@@ -356,49 +394,6 @@ export default function Catalog() {
             </section>
             </div>
           </main>
-
-          {/* Buscador expandible flotante */}
-          <div className="fixed bottom-32 right-6 z-[60] md:bottom-36 md:right-8">
-            <div className="flex flex-col items-end gap-2">
-              {/* Barra de búsqueda expandible */}
-              {isSearchOpen && (
-                <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-xl p-3 w-80 max-w-[calc(100vw-3rem)] transform transition-all duration-300">
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                      <i className="fas fa-search text-gray-400 text-sm"></i>
-                    </div>
-                    <input 
-                      type="search" 
-                      placeholder="Buscar productos..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
-                      data-testid="input-search"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Botón de búsqueda */}
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className={`w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
-                  isSearchOpen 
-                    ? 'bg-primary text-white scale-110 shadow-primary/25' 
-                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:scale-105'
-                }`}
-                title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
-                aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
-                aria-expanded={isSearchOpen}
-                data-testid="search-toggle-button"
-              >
-                <i className={`fas transition-transform duration-200 ${
-                  isSearchOpen ? 'fa-times' : 'fa-search'
-                }`}></i>
-              </button>
-            </div>
-          </div>
 
           {/* Floating WhatsApp Button */}
           <button 
