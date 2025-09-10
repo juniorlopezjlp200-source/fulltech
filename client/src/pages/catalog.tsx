@@ -264,18 +264,38 @@ export default function Catalog() {
           <WelcomeMessage />
           <UserActivityTracker />
 
-          <div id="hero-container" className="relative h-80 sm:h-96 lg:h-[500px] xl:h-[600px] bg-gray-300 mt-0 w-full">
+          <div id="hero-container" className="relative h-96 sm:h-[450px] lg:h-[550px] xl:h-[650px] bg-gray-300 mt-0 w-full">
             <HeroSlider />
 
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10">
-              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold mb-2 drop-shadow-lg">Tecnología de Vanguardia</h2>
-              <p className="text-lg md:text-xl xl:text-2xl mb-4 drop-shadow-md max-w-md md:max-w-2xl">Descubre los últimos productos tecnológicos con la mejor calidad y precios</p>
-              <button 
-                className="hidden md:block bg-primary text-primary-foreground px-8 py-3 text-lg rounded-full font-semibold hover:bg-primary/90 transition-colors animate-pulse-ring"
-                data-testid="button-ver-catalogo"
-              >
-                Ver Catálogo
-              </button>
+            <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
+              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold mb-6 drop-shadow-lg">Tecnología de Vanguardia</h2>
+              
+              {/* Filtros All y Ofertas dentro del slider */}
+              <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 inline-flex gap-2 shadow-lg border border-white/20 pointer-events-auto">
+                <button
+                  onClick={() => setShowOnlyOffers(false)}
+                  className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${!showOnlyOffers 
+                    ? 'bg-white text-blue-600 shadow-md scale-105' 
+                    : 'text-white/80 hover:text-white hover:bg-white/20'
+                  }`}
+                  data-testid="button-filter-all"
+                >
+                  <i className="fas fa-th-large"></i>
+                  All
+                </button>
+
+                <button
+                  onClick={() => setShowOnlyOffers(true)}
+                  className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${showOnlyOffers 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
+                    : 'text-red-300 hover:text-red-200 hover:bg-red-500/20'
+                  }`}
+                  data-testid="button-filter-offers"
+                >
+                  <i className="fas fa-fire animate-shake"></i>
+                  Ofertas
+                </button>
+              </div>
             </div>
 
             <CategoryFilters
@@ -291,35 +311,6 @@ export default function Catalog() {
             <div className="max-w-[1600px] mx-auto">
               {/* All Products in Featured Style */}
               <section>
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-2 inline-flex gap-1 shadow-sm border border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => setShowOnlyOffers(false)}
-                      className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                        !showOnlyOffers 
-                          ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-md scale-105' 
-                          : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50'
-                      }`}
-                      data-testid="button-filter-all"
-                    >
-                      <i className="fas fa-th-large"></i>
-                      All
-                    </button>
-
-                    <button
-                      onClick={() => setShowOnlyOffers(true)}
-                      className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                        showOnlyOffers 
-                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
-                          : 'text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
-                      }`}
-                      data-testid="button-filter-offers"
-                    >
-                      <i className="fas fa-fire animate-shake"></i>
-                      Ofertas
-                    </button>
-                  </div>
-                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-6 lg:gap-8">
                   {allProducts.map((product) => (
                     <ProductCard 
