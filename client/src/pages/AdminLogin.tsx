@@ -12,6 +12,14 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // ✅ Prevenir validación HTML5 que interfiere
+    const form = e.currentTarget as HTMLFormElement;
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    
     setIsLoading(true);
     setError("");
     
@@ -22,13 +30,24 @@ export default function AdminLogin() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
+        credentials: "same-origin", // ✅ Asegurar cookies de sesión
       });
       
       const result = await response.json();
       
       if (result.success) {
-        // Redirect to admin dashboard
+        console.log("✅ Login successful, navigating to dashboard...", result);
+        
+        // ✅ Navegación inmediata sin delay - puede ser el problema
         setLocation("/admin/dashboard");
+        
+        // ✅ Backup: forzar navegación via window.location si wouter falla
+        setTimeout(() => {
+          if (window.location.pathname !== "/admin/dashboard") {
+            console.log("🔄 Fallback navigation to dashboard");
+            window.location.href = "/admin/dashboard";
+          }
+        }, 500);
       } else {
         setError(result.error || "Error al iniciar sesión");
       }
