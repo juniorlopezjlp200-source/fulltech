@@ -346,10 +346,14 @@ export default function Catalog() {
                 </div>
               )}
 
-              {/* Categorías flotantes - slider horizontal paso a paso */}
-              <div className="pointer-events-auto z-40 relative mt-2">
+              {/* Categorías flotantes - slider horizontal elegante */}
+              <div className="pointer-events-auto z-40 relative mt-3">
+                {/* Gradientes laterales para indicar scroll */}
+                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
+                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
+                
                 <div 
-                  className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide" 
+                  className="flex gap-4 overflow-x-auto pb-3 pt-1 px-4 scrollbar-hide" 
                   style={{ 
                     scrollbarWidth: 'none', 
                     msOverflowStyle: 'none',
@@ -361,17 +365,29 @@ export default function Catalog() {
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 hover:scale-105 flex-shrink-0 ${
+                      className={`px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-1 flex-shrink-0 shadow-lg backdrop-blur-md border transform-gpu ${
                         selectedCategory === category.id
-                          ? 'bg-primary text-white shadow-lg ring-2 ring-primary/20'
-                          : 'bg-white/80 backdrop-blur-sm text-gray-800 hover:bg-white hover:shadow-md'
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/25 border-white/20 scale-105'
+                          : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-xl hover:shadow-black/10 border-white/30'
                       }`}
-                      style={{ scrollSnapAlign: 'start' }}
+                      style={{ 
+                        scrollSnapAlign: 'center',
+                        minWidth: 'fit-content'
+                      }}
                       data-testid={`filter-${category.id}`}
                     >
-                      {category.name}
+                      <span className="relative z-10">{category.name}</span>
                     </button>
                   ))}
+                </div>
+                
+                {/* Indicador de deslizamiento */}
+                <div className="flex justify-center mt-1">
+                  <div className="flex items-center gap-1 text-white/60 text-xs">
+                    <i className="fas fa-chevron-left animate-pulse"></i>
+                    <span>Desliza para ver más</span>
+                    <i className="fas fa-chevron-right animate-pulse"></i>
+                  </div>
                 </div>
               </div>
             </div>
