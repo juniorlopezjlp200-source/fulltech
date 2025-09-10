@@ -267,9 +267,42 @@ export default function Catalog() {
           <div id="hero-container" className="relative h-96 sm:h-[450px] lg:h-[550px] xl:h-[650px] bg-gray-300 mt-0 w-full">
             <HeroSlider />
 
-            {/* Título del slider */}
+            {/* Título del slider con botones centrados debajo */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
-              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg">Tecnología de Vanguardia</h2>
+              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
+              
+              {/* Botones All y Ofertas centrados debajo del título */}
+              <div className="flex gap-3 bg-black/30 backdrop-blur-md rounded-xl p-3 border border-white/20 pointer-events-auto z-30 relative">
+                <button
+                  onClick={() => setShowOnlyOffers(false)}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${!showOnlyOffers 
+                    ? 'bg-white text-blue-600 shadow-lg scale-105' 
+                    : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white'
+                  }`}
+                  data-testid="button-filter-all"
+                  title="Todos los productos"
+                  aria-pressed={!showOnlyOffers}
+                  aria-label="Mostrar todos los productos"
+                >
+                  <i className="fas fa-th-large"></i>
+                  <span>All</span>
+                </button>
+
+                <button
+                  onClick={() => setShowOnlyOffers(true)}
+                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${showOnlyOffers 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105' 
+                    : 'bg-white/20 text-red-300 hover:bg-red-500/30 hover:text-red-200'
+                  }`}
+                  data-testid="button-filter-offers"
+                  title="Solo ofertas"
+                  aria-pressed={showOnlyOffers}
+                  aria-label="Mostrar solo ofertas"
+                >
+                  <i className="fas fa-fire animate-shake"></i>
+                  <span>Ofertas</span>
+                </button>
+              </div>
             </div>
 
             <CategoryFilters
@@ -279,39 +312,6 @@ export default function Catalog() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
             />
-            
-            {/* Botones flotantes All y Ofertas - Esquina dentro del hero debajo de categorías */}
-            <div className="absolute top-4 right-4 z-30 md:top-6 md:right-6 pointer-events-auto">
-              <div className="flex gap-2 bg-black/20 backdrop-blur-sm rounded-xl p-2 border border-white/20">
-                <button
-                  onClick={() => setShowOnlyOffers(false)}
-                  className={`w-12 h-12 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center ${!showOnlyOffers 
-                    ? 'bg-white text-blue-600 scale-105' 
-                    : 'bg-white/20 text-white/70 hover:bg-white/30 hover:text-white'
-                  }`}
-                  data-testid="button-filter-all"
-                  title="Todos los productos"
-                  aria-pressed={!showOnlyOffers}
-                  aria-label="Mostrar todos los productos"
-                >
-                  <i className="fas fa-th-large text-sm"></i>
-                </button>
-
-                <button
-                  onClick={() => setShowOnlyOffers(true)}
-                  className={`w-12 h-12 rounded-lg shadow-lg transition-all duration-300 flex items-center justify-center ${showOnlyOffers 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white scale-105' 
-                    : 'bg-white/20 text-red-300 hover:bg-red-500/20 hover:text-red-200'
-                  }`}
-                  data-testid="button-filter-offers"
-                  title="Solo ofertas"
-                  aria-pressed={showOnlyOffers}
-                  aria-label="Mostrar solo ofertas"
-                >
-                  <i className="fas fa-fire text-sm animate-shake"></i>
-                </button>
-              </div>
-            </div>
           </div>
 
           <main className="w-full px-4 md:px-8 lg:px-12 xl:px-16 py-6 pb-20 md:pb-6 space-y-6">
