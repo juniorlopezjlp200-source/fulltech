@@ -42,6 +42,9 @@ const requireAdmin = async (
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // ✅ Configure trust proxy for proper cookie handling behind proxies
+  app.set('trust proxy', 1);
+  
   // Configure session middleware
   app.use(
     session({
@@ -52,6 +55,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cookie: {
         secure: process.env.NODE_ENV === 'production', // ✅ Auto-detect: true en HTTPS production
         httpOnly: true,
+        sameSite: 'lax', // ✅ Protección CSRF y compatibilidad
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       },
     }),

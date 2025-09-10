@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminLogin() {
   const [formData, setFormData] = useState({
@@ -9,6 +10,7 @@ export default function AdminLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,18 +38,13 @@ export default function AdminLogin() {
       const result = await response.json();
       
       if (result.success) {
-        console.log("✅ Login successful, navigating to dashboard...", result);
+        console.log("✅ Login successful, invalidating admin query...", result);
         
-        // ✅ Navegación inmediata sin delay - puede ser el problema
+        // ✅ CRÍTICO: Invalidar la query de admin para que refetch con la nueva sesión
+        await queryClient.invalidateQueries({ queryKey: ["/api/admin/me"] });
+        
+        // ✅ Navegación inmediata después de invalidar
         setLocation("/admin/dashboard");
-        
-        // ✅ Backup: forzar navegación via window.location si wouter falla
-        setTimeout(() => {
-          if (window.location.pathname !== "/admin/dashboard") {
-            console.log("🔄 Fallback navigation to dashboard");
-            window.location.href = "/admin/dashboard";
-          }
-        }, 500);
       } else {
         setError(result.error || "Error al iniciar sesión");
       }

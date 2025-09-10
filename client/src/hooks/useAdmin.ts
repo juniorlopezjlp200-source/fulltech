@@ -23,6 +23,7 @@ export function useAdmin() {
     mutationFn: async () => {
       const response = await fetch("/api/admin/logout", {
         method: "POST",
+        credentials: "include", // ✅ Incluir credenciales para logout
       });
       if (!response.ok) {
         throw new Error("Failed to logout");
