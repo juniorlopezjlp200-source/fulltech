@@ -16,7 +16,8 @@ export function useAdmin() {
   const { data: admin, isLoading, error } = useQuery<AdminUser>({
     queryKey: ["/api/admin/me"],
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // ✅ Siempre revalidar para admin auth
+    cacheTime: 1000 * 60, // 1 minuto de cache
   });
 
   const logoutMutation = useMutation({

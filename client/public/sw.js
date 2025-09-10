@@ -1,8 +1,8 @@
 // Service Worker para FULLTECH - Cache Inteligente y Sincronización
-const CACHE_NAME = 'fulltech-v1.0.1';
-const STATIC_CACHE = 'fulltech-static-v1.0.1';
-const DYNAMIC_CACHE = 'fulltech-dynamic-v1.0.1';
-const IMAGE_CACHE = 'fulltech-images-v1.0.1';
+const CACHE_NAME = 'fulltech-v1.0.2';
+const STATIC_CACHE = 'fulltech-static-v1.0.2';
+const DYNAMIC_CACHE = 'fulltech-dynamic-v1.0.2';
+const IMAGE_CACHE = 'fulltech-images-v1.0.2';
 
 // Recursos críticos para precachear
 const CRITICAL_RESOURCES = [
@@ -80,9 +80,10 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // NO interceptar requests críticos del admin y auth - dejar que pasen directo
+  // ✅ EXCLUSIÓN TOTAL: admin y auth van directo al servidor sin cache
   if (url.pathname.startsWith('/api/admin/') || url.pathname.startsWith('/api/auth/')) {
-    return; // No interceptar - dejar que fetch normal maneje esto
+    event.respondWith(fetch(request));
+    return;
   }
 
   // API requests - Stale While Revalidate

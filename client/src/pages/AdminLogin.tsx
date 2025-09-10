@@ -38,12 +38,17 @@ export default function AdminLogin() {
       const result = await response.json();
       
       if (result.success) {
-        console.log("✅ Login successful, invalidating admin query...", result);
+        console.log("✅ Login successful, forcing admin query refetch...", result);
         
-        // ✅ CRÍTICO: Invalidar la query de admin para que refetch con la nueva sesión
-        await queryClient.invalidateQueries({ queryKey: ["/api/admin/me"] });
+        // ✅ CRÍTICO: Forzar refetch inmediato y remover cache viejo
+        queryClient.removeQueries({ queryKey: ["/api/admin/me"] });
+        await queryClient.refetchQueries({ 
+          queryKey: ["/api/admin/me"], 
+          type: "active",
+          exact: true 
+        });
         
-        // ✅ Navegación inmediata después de invalidar
+        // ✅ Navegación después de refetch completo
         setLocation("/admin/dashboard");
       } else {
         setError(result.error || "Error al iniciar sesión");
