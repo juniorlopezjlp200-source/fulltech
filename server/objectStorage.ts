@@ -1,4 +1,4 @@
-// objectStorage.ts — versión sólida para SeaweedFS/MinIO
+// objectStorage.ts — versión para S3 propio del usuario
 import {
   S3Client,
   PutObjectCommand,
@@ -10,6 +10,7 @@ import { Response } from "express";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 
+// Verificar que todas las variables S3 estén configuradas
 const REQUIRED = ["S3_ENDPOINT", "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_BUCKET_NAME"] as const;
 for (const key of REQUIRED) {
   if (!process.env[key]) {
@@ -19,12 +20,12 @@ for (const key of REQUIRED) {
 
 const s3Client = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
-  region: "us-east-1",            // genérico; Seaweed/MinIO no lo usan realmente
+  region: "us-east-1",            // genérico; algunos S3 compatibles no lo usan
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY || "",
     secretAccessKey: process.env.S3_SECRET_KEY || "",
   },
-  forcePathStyle: true,           // 🔑 necesario para SeaweedFS/MinIO
+  forcePathStyle: true,           // 🔑 necesario para MinIO/SeaweedFS
 });
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
@@ -43,7 +44,7 @@ function normalizeKey(key: string): string {
   return (key || "").replace(/^\/+/, "").trim();
 }
 
-/** Detección amplia de “no existe” para S3, MinIO y Seaweed */
+/** Detección amplia de "no existe" para S3, MinIO y Seaweed */
 function isNotFoundError(err: any): boolean {
   const name = err?.name || err?.Code || err?.code;
   const status = err?.$metadata?.httpStatusCode;
@@ -143,5 +144,62 @@ export class ObjectStorageService {
 
     const res = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET_NAME, Key }));
     return res.Body as Readable;
+  }
+
+  /** Buscar un objeto público desde las rutas de búsqueda */
+  async searchPublicObject(filePath: string): Promise<string | null> {
+    // Para S3 propio, buscar directamente en el bucket
+    const Key = normalizeKey(filePath);
+    const exists = await this.fileExists(Key);
+    return exists ? Key : null;
+  }
+
+  /** Normalizar path de entidad de objeto */
+  normalizeObjectEntityPath(rawPath: string): string {
+    // Si es una URL firmada de S3, extraer el path
+    if (rawPath.includes(process.env.S3_ENDPOINT || "")) {
+      try {
+        const url = new URL(rawPath);
+        // Extraer el path después del bucket
+        const pathParts = url.pathname.split('/');
+        if (pathParts.length > 2) {
+          return pathParts.slice(2).join('/'); // Remover /bucket-name/ 
+        }
+      } catch (e) {
+        console.warn('Error parsing S3 URL:', rawPath);
+      }
+    }
+    
+    // Normalizar path directo
+    return normalizeKey(rawPath);
+  }
+
+  /** Configurar ACL/metadatos para el objeto (simplificado para S3) */
+  async trySetObjectEntityAclPolicy(
+    rawPath: string,
+    aclPolicy: { owner: string; visibility: "public" | "private" }
+  ): Promise<string> {
+    const normalizedPath = this.normalizeObjectEntityPath(rawPath);
+    
+    // Para S3, podríamos configurar ACL aquí si es necesario
+    // Por ahora retornamos el path normalizado
+    console.log(`Setting ACL for ${normalizedPath}:`, aclPolicy);
+    
+    return normalizedPath;
+  }
+
+  /** Verificar acceso a objeto (simplificado) */
+  async canAccessObjectEntity({
+    userId,
+    objectFile,
+    requestedPermission,
+  }: {
+    userId?: string;
+    objectFile: any;
+    requestedPermission?: string;
+  }): Promise<boolean> {
+    // Para S3 propio, por ahora permitir acceso público a todos los archivos
+    // Puedes implementar lógica más compleja aquí si necesitas
+    return true;
   }
 }

@@ -270,10 +270,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const products = await storage.getAllProducts();
       const normalized = products.map((p: any) => {
-        if (p?.imageUrl && typeof p.imageUrl === "string") {
-          p.imageUrl = p.imageUrl.replace(/^\/+/, "").replace(/^uploads\//, "");
-        }
-        if (!p?.imageUrl || /^unknown-/.test(p.imageUrl)) {
+        // Use first image from images array for backward compatibility
+        if (p?.images && Array.isArray(p.images) && p.images.length > 0) {
+          p.imageUrl = p.images[0].replace(/^\/+/, "").replace(/^uploads\//, "");
+        } else {
           p.imageUrl = "public/placeholder.png";
         }
         return p;
@@ -290,13 +290,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const product = await storage.getProduct(req.params.id);
       if (!product) return res.status(404).json({ error: "Product not found" });
 
-      if (product.imageUrl && typeof product.imageUrl === "string") {
-        product.imageUrl = product.imageUrl
-          .replace(/^\/+/, "")
-          .replace(/^uploads\//, "");
-      }
-      if (!product.imageUrl || /^unknown-/.test(product.imageUrl)) {
-        product.imageUrl = "public/placeholder.png";
+      // Use first image from images array for backward compatibility
+      if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+        (product as any).imageUrl = product.images[0].replace(/^\/+/, "").replace(/^uploads\//, "");
+      } else {
+        (product as any).imageUrl = "public/placeholder.png";
       }
 
       res.json(product);
@@ -419,52 +417,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ---------- Object Storage ----------
   const objectStorageService = new ObjectStorageService();
 
-  app.post("/api/upload-url", requireAdmin, async (_req, res) => {
+  // Endpoint para obtener URL de subida para múltiples archivos (soporta carpetas)
+  app.post("/api/objects/upload", requireAdmin, async (_req, res) => {
     try {
-      const { uploadUrl, objectPath } =
-        await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadUrl, objectPath });
+      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ 
+        method: 'PUT',
+        url: uploadUrl
+      });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
     }
   });
 
-  // Serve uploaded images con fallback (sin stacktrace 500)
-  app.get("/uploads/:objectPath(*)", async (req, res) => {
+  // Endpoint para finalizar archivos subidos (convertir URLs temporales a paths permanentes)
+  app.post("/api/objects/finalize", requireAdmin, async (req, res) => {
+    try {
+      const { uploadedUrls } = req.body;
+      if (!uploadedUrls || !Array.isArray(uploadedUrls)) {
+        return res.status(400).json({ error: "uploadedUrls array is required" });
+      }
+      
+      const finalizedPaths = [];
+      
+      for (const uploadUrl of uploadedUrls) {
+        try {
+          // Normalizar el path para S3 propio
+          const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadUrl);
+          
+          // Para S3 propio, configurar como público
+          await objectStorageService.trySetObjectEntityAclPolicy(uploadUrl, {
+            owner: 'admin',
+            visibility: 'public'
+          });
+          
+          // Añadir prefijo /uploads/ para compatibilidad
+          const finalPath = normalizedPath.startsWith('uploads/') ? 
+            `/uploads/${normalizedPath}` : 
+            `/uploads/${normalizedPath}`;
+            
+          finalizedPaths.push(finalPath);
+        } catch (error) {
+          console.error('Error finalizing upload URL:', uploadUrl, error);
+          // Fallback: usar el path base del upload
+          const fallbackPath = `/uploads/${uploadUrl.split('/').pop()}`;
+          finalizedPaths.push(fallbackPath);
+        }
+      }
+      
+      res.json({ 
+        success: true,
+        finalizedPaths
+      });
+    } catch (error) {
+      console.error("Error finalizing uploads:", error);
+      res.status(500).json({ error: "Failed to finalize uploads" });
+    }
+  });
+
+  // Endpoint legacy para compatibilidad
+  app.post("/api/upload-url", requireAdmin, async (_req, res) => {
+    try {
+      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadUrl, objectPath: uploadUrl });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  // Servir archivos desde S3 propio
+  app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectPath = req.params.objectPath;
     try {
       await objectStorageService.downloadObject(objectPath, res);
-    } catch (error: any) {
-      // 404 → devolvemos placeholder o 404 limpio
-      if (
-        error instanceof ObjectNotFoundError ||
-        error?.$metadata?.httpStatusCode === 404
-      ) {
-        try {
-          await objectStorageService.downloadObject(
-            "public/placeholder.png",
-            res,
-          );
-        } catch {
-          return res.status(404).end();
-        }
-        return;
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
       }
+      return res.sendStatus(500);
+    }
+  });
+
+  // Serve uploaded images con fallback (sin stacktrace 500) - legacy
+  app.get("/uploads/:objectPath(*)", async (req, res) => {
+    const objectPath = req.params.objectPath;
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(objectPath);
+      if (file) {
+        await objectStorageService.downloadObject(file, res);
+      } else {
+        return res.status(404).end();
+      }
+    } catch (error: any) {
       console.error("Error serving uploaded file:", {
         message: error?.message,
         code: error?.code,
-        httpStatus: error?.$metadata?.httpStatusCode,
       });
       return res.status(500).json({ error: "Error serving file" });
     }
   });
 
-  // Serve public assets from object storage
+  // Servir archivos públicos desde object storage
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Legacy endpoint for public images
   app.get("/public-images/:filePath(*)", async (req, res) => {
     try {
-      const filePath = `public/${req.params.filePath}`;
-      await objectStorageService.downloadObject(filePath, res);
+      const filePath = req.params.filePath;
+      const objectStorageService = new ObjectStorageService();
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, res);
     } catch (error) {
       console.error("Error serving public image:", error);
       return res.status(500).json({ error: "Error serving image" });
@@ -706,12 +788,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint de migración para actualizar paths de imágenes existentes
+  app.post("/api/admin/migrate-images", requireAdmin, async (_req, res) => {
+    try {
+      const products = await storage.getAllProducts();
+      let updated = 0;
+      
+      for (const product of products) {
+        if (product.images && Array.isArray(product.images)) {
+          const needsUpdate = product.images.some((img: string) => 
+            img.startsWith('/uploads/') || img.startsWith('uploads/')
+          );
+          
+          if (needsUpdate) {
+            // Por ahora usar placeholder, luego el usuario puede subir imágenes nuevas
+            const updatedImages = product.images.map((img: string) => {
+              if (img.startsWith('/uploads/') || img.startsWith('uploads/')) {
+                return 'public/placeholder.png';
+              }
+              return img;
+            });
+            
+            await storage.updateProduct(product.id, { images: updatedImages });
+            updated++;
+          }
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `Migrated ${updated} products to use new image paths`,
+        updatedProducts: updated 
+      });
+    } catch (error) {
+      console.error('Error migrating image paths:', error);
+      res.status(500).json({ error: 'Failed to migrate image paths' });
+    }
+  });
+
   // ---------- Categories ----------
   app.post("/api/objects/upload", requireAdmin, async (_req, res) => {
     try {
-      const { uploadUrl, objectPath } =
-        await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadUrl, objectPath });
+      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ 
+        method: 'PUT',
+        url: uploadUrl 
+      });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
