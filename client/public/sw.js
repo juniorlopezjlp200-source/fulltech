@@ -80,6 +80,11 @@ self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // NO interceptar requests críticos del admin y auth - dejar que pasen directo
+  if (url.pathname.startsWith('/api/admin/') || url.pathname.startsWith('/api/auth/')) {
+    return; // No interceptar - dejar que fetch normal maneje esto
+  }
+
   // API requests - Stale While Revalidate
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(handleAPIRequest(request));

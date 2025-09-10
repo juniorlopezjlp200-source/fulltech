@@ -41,6 +41,18 @@ self.addEventListener('activate', event => {
 
 // Estrategia simple de cache
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  
+  // NO interceptar requests del API admin - dejar que pasen directo
+  if (url.pathname.startsWith('/api/admin/')) {
+    return; // No interceptar - dejar que fetch normal maneje esto
+  }
+  
+  // NO interceptar requests del API auth - dejar que pasen directo  
+  if (url.pathname.startsWith('/api/auth/')) {
+    return; // No interceptar - dejar que fetch normal maneje esto
+  }
+  
   event.respondWith(
     fetch(event.request)
       .then(response => {
