@@ -185,6 +185,7 @@ export default function Catalog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [showOnlyOffers, setShowOnlyOffers] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isFooterExpanded, setIsFooterExpanded] = useState(false);
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
@@ -355,6 +356,49 @@ export default function Catalog() {
             </section>
             </div>
           </main>
+
+          {/* Buscador expandible flotante */}
+          <div className="fixed bottom-32 right-6 z-[60] md:bottom-36 md:right-8">
+            <div className="flex flex-col items-end gap-2">
+              {/* Barra de búsqueda expandible */}
+              {isSearchOpen && (
+                <div className="bg-white/95 backdrop-blur-sm border border-gray-200 rounded-xl shadow-xl p-3 w-80 max-w-[calc(100vw-3rem)] transform transition-all duration-300">
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <i className="fas fa-search text-gray-400 text-sm"></i>
+                    </div>
+                    <input 
+                      type="search" 
+                      placeholder="Buscar productos..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full h-10 pl-9 pr-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200"
+                      data-testid="input-search"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+              )}
+              
+              {/* Botón de búsqueda */}
+              <button
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className={`w-14 h-14 rounded-full shadow-lg transition-all duration-300 flex items-center justify-center ${
+                  isSearchOpen 
+                    ? 'bg-primary text-white scale-110 shadow-primary/25' 
+                    : 'bg-white text-gray-600 hover:bg-gray-50 hover:scale-105'
+                }`}
+                title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
+                aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
+                aria-expanded={isSearchOpen}
+                data-testid="search-toggle-button"
+              >
+                <i className={`fas transition-transform duration-200 ${
+                  isSearchOpen ? 'fa-times' : 'fa-search'
+                }`}></i>
+              </button>
+            </div>
+          </div>
 
           {/* Floating WhatsApp Button */}
           <button 
