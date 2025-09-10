@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, lazy, Suspense, useRef } from "react";
+import { useShareMotivation } from "@/hooks/useShareMotivation";
 import { TopBar } from "@/components/TopBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
@@ -196,6 +197,9 @@ export default function Catalog() {
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Hook para motivación de compartir cada 15 segundos
+  useShareMotivation();
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
