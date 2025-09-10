@@ -69,7 +69,7 @@ export function HeroSlider() {
       ))}
       
       {/* Slider Indicators */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-50">
+      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
         {heroImages.map((_, index) => (
           <button
             key={index}
