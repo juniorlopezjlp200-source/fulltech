@@ -147,7 +147,7 @@ export function TopBar() {
           <img
             src={logoUrl}
             alt={logoAlt}
-            className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-full ring-2 ring-blue-500/20"
+            className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-full ring-2 ring-blue-500/20 animate-logo-rotate hover:scale-110 transition-transform duration-300"
           />
           <div className="text-left">
             <h1 className="text-slate-900 font-extrabold tracking-tight text-xl md:text-2xl">

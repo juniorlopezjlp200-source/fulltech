@@ -64,12 +64,12 @@ export function ProductCard({ product, layout }: ProductCardProps) {
 
   if (layout === "grid") {
     return (
-      <div className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer" onClick={handleViewProduct} data-product-id={product.id}>
+      <div className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group" onClick={handleViewProduct} data-product-id={product.id}>
         <ImageCarousel
           images={product.images}
           videos={product.videos || []}
           alt={product.name}
-          className="rounded-t-xl h-48 sm:h-52 lg:h-56"
+          className="rounded-t-xl h-44 sm:h-48 md:h-52 lg:h-56 xl:h-60"
           fallbackIcon={getFallbackIcon()}
           width={400}
           height={400}
@@ -111,35 +111,34 @@ export function ProductCard({ product, layout }: ProductCardProps) {
           </button>
         </div>
 
-        <div className="p-3 lg:p-4">
-          <h3 className="font-semibold text-sm lg:text-base text-card-foreground mb-1">{product.name}</h3>
-          <p className="text-xs lg:text-sm text-muted-foreground mb-2">{product.description}</p>
+        <div className="p-3 sm:p-4 lg:p-5">
+          <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-card-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">{product.name}</h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-lg lg:text-xl font-bold text-primary">{formatPrice(product.price)}</span>
-            <div className="flex items-center gap-2">
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{formatPrice(product.price)}</span>
+            <div className="flex items-center gap-2 lg:gap-3">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleWhatsAppOrder();
                 }}
-                className="bg-green-600 text-white px-3 py-1 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-1 animate-pulse-ring"
+                className="bg-green-600 text-white px-3 py-2 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-green-700 hover:scale-105 transition-all duration-200 flex items-center gap-1 lg:gap-2 animate-pulse-ring"
                 data-testid={`button-whatsapp-grid-${product.id}`}
                 title="Pedir por WhatsApp"
               >
-                <i className="fab fa-whatsapp text-xs"></i>
-                <span className="hidden sm:inline">Pedir</span>
+                <i className="fab fa-whatsapp text-xs lg:text-sm"></i>
+                <span className="hidden sm:inline lg:inline">Pedir</span>
               </button>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShareProduct();
                 }}
-                className="bg-primary text-primary-foreground px-3 py-1 lg:px-4 lg:py-2 rounded-lg text-xs lg:text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1"
+                className="bg-primary text-primary-foreground w-8 h-8 lg:w-10 lg:h-10 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
                 data-testid={`button-share-grid-${product.id}`}
                 title="Compartir producto"
               >
-                <i className="fas fa-share-alt text-xs"></i>
-                <span className="hidden sm:inline">Compartir</span>
+                <i className="fas fa-share-alt text-xs lg:text-sm"></i>
               </button>
             </div>
           </div>
@@ -149,13 +148,13 @@ export function ProductCard({ product, layout }: ProductCardProps) {
   }
 
   return (
-    <div className="product-item bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer" onClick={handleViewProduct}>
-      <div className="flex gap-4 p-4">
+    <div className="product-item bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-pointer group" onClick={handleViewProduct}>
+      <div className="flex gap-4 p-4 sm:p-5">
         <ImageCarousel
           images={product.images}
           videos={product.videos || []}
           alt={product.name}
-          className="w-20 h-20 rounded-xl flex-shrink-0"
+          className="w-20 h-20 sm:w-24 sm:h-24 lg:w-28 lg:h-28 rounded-xl flex-shrink-0"
           fallbackIcon={getFallbackIcon()}
           width={200}
           height={200}
@@ -164,8 +163,8 @@ export function ProductCard({ product, layout }: ProductCardProps) {
         />
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-card-foreground mb-1">{product.name}</h3>
-          <p className="text-sm text-muted-foreground mb-2">{product.description}</p>
+          <h3 className="font-semibold text-base sm:text-lg lg:text-xl text-card-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
+          <p className="text-sm lg:text-base text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center gap-2 mb-2">
             <div className="flex">
               {renderStars(product.rating || 5)}
@@ -173,28 +172,28 @@ export function ProductCard({ product, layout }: ProductCardProps) {
             <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-lg font-bold text-primary">{formatPrice(product.price)}</span>
-            <div className="flex items-center gap-2">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">{formatPrice(product.price)}</span>
+            <div className="flex items-center gap-2 lg:gap-3">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShareProduct();
                 }}
-                className="bg-gray-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors flex items-center gap-1"
+                className="bg-primary text-primary-foreground w-9 h-9 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
                 data-testid={`button-share-list-${product.id}`}
                 title="Compartir"
               >
-                <i className="fas fa-share-alt text-xs"></i>
+                <i className="fas fa-share-alt text-sm"></i>
               </button>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleWhatsAppOrder();
                 }}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors flex items-center gap-2 animate-pulse-ring"
+                className="bg-green-600 text-white px-4 py-2 lg:px-5 lg:py-3 rounded-lg text-sm lg:text-base font-medium hover:bg-green-700 hover:scale-105 transition-all duration-200 flex items-center gap-2 animate-pulse-ring"
                 data-testid={`button-whatsapp-${product.id}`}
               >
-                <i className="fab fa-whatsapp"></i>
+                <i className="fab fa-whatsapp text-sm lg:text-base"></i>
                 Pedir
               </button>
             </div>

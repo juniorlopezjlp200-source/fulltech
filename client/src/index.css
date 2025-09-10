@@ -200,6 +200,11 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes logoRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 @keyframes pulse-subtle {
   0%, 100% {
     opacity: 1;
@@ -345,6 +350,19 @@
 
 .animate-spin-slow {
   animation: spinSlow 25s linear infinite;
+}
+
+.animate-logo-rotate {
+  animation: logoRotate 8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-rotate {
+    animation: none;
+  }
+  .animate-pulse-ring {
+    animation: none;
+  }
 }
 
 .scrollbar-hide {
