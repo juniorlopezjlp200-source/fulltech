@@ -264,42 +264,42 @@ export default function Catalog() {
           <WelcomeMessage />
           <UserActivityTracker />
 
-          <div id="hero-container" className="relative h-96 sm:h-[450px] lg:h-[550px] xl:h-[650px] bg-gray-300 mt-0 w-full">
+          <div id="hero-container" className="relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 mt-0 w-full">
             <HeroSlider />
 
             {/* Título del slider con botones centrados debajo */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
               <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
               
-              {/* Botones All y Ofertas centrados debajo del título */}
-              <div className="flex gap-3 bg-black/30 backdrop-blur-md rounded-xl p-3 border border-white/20 pointer-events-auto z-30 relative">
+              {/* Botones All y Ofertas - compactos y elegantes */}
+              <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto z-30 relative mt-4">
                 <button
                   onClick={() => setShowOnlyOffers(false)}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${!showOnlyOffers 
-                    ? 'bg-white text-blue-600 shadow-lg scale-105' 
-                    : 'bg-white/20 text-white/80 hover:bg-white/30 hover:text-white'
+                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${!showOnlyOffers 
+                    ? 'bg-white text-blue-600 shadow-md scale-105' 
+                    : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
                   }`}
                   data-testid="button-filter-all"
                   title="Todos los productos"
                   aria-pressed={!showOnlyOffers}
                   aria-label="Mostrar todos los productos"
                 >
-                  <i className="fas fa-th-large"></i>
+                  <i className="fas fa-th-large text-xs"></i>
                   <span>All</span>
                 </button>
 
                 <button
                   onClick={() => setShowOnlyOffers(true)}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 ${showOnlyOffers 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg scale-105' 
-                    : 'bg-white/20 text-red-300 hover:bg-red-500/30 hover:text-red-200'
+                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${showOnlyOffers 
+                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
+                    : 'bg-white/15 text-red-300 hover:bg-red-500/25 hover:text-red-200'
                   }`}
                   data-testid="button-filter-offers"
                   title="Solo ofertas"
                   aria-pressed={showOnlyOffers}
                   aria-label="Mostrar solo ofertas"
                 >
-                  <i className="fas fa-fire animate-shake"></i>
+                  <i className="fas fa-fire text-xs animate-shake"></i>
                   <span>Ofertas</span>
                 </button>
               </div>
