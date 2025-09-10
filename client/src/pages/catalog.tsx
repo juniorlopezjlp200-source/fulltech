@@ -267,11 +267,14 @@ export default function Catalog() {
           <div id="hero-container" className="relative h-96 sm:h-[450px] lg:h-[550px] xl:h-[650px] bg-gray-300 mt-0 w-full">
             <HeroSlider />
 
+            {/* Título del slider */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
-              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold mb-6 drop-shadow-lg">Tecnología de Vanguardia</h2>
-              
-              {/* Filtros All y Ofertas dentro del slider */}
-              <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 inline-flex gap-2 shadow-lg border border-white/20 pointer-events-auto">
+              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
+            </div>
+            
+            {/* Botones All y Ofertas - Capa separada clickeable */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
+              <div className="bg-black/20 backdrop-blur-sm rounded-xl p-3 inline-flex gap-2 shadow-lg border border-white/20">
                 <button
                   onClick={() => setShowOnlyOffers(false)}
                   className={`px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${!showOnlyOffers 
