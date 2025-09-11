@@ -14,7 +14,9 @@ import { Readable } from "stream";
 const REQUIRED = ["S3_ENDPOINT", "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_BUCKET_NAME"] as const;
 for (const key of REQUIRED) {
   if (!process.env[key]) {
-    console.warn(`[objectStorage] Falta env ${key}. Revisa tus Secrets.`);
+    console.error(`[objectStorage] ❌ Falta env ${key}. Revisa tus Secrets.`);
+  } else {
+    console.log(`[objectStorage] ✅ ${key} configurado`);
   }
 }
 
@@ -27,6 +29,10 @@ const s3Client = new S3Client({
   },
   forcePathStyle: true,           // 🔑 necesario para MinIO/SeaweedFS
 });
+
+// Log de configuración para debugging
+console.log(`[objectStorage] 📡 Conectando a: ${process.env.S3_ENDPOINT}`);
+console.log(`[objectStorage] 🪣 Bucket: ${process.env.S3_BUCKET_NAME}`);
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
 
