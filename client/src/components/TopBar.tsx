@@ -174,10 +174,10 @@ export function TopBar() {
           {/* ✅ Avatar de Usuario Autenticado - Clickeable */}
           {isAuthenticated && customer && (
             <button 
-              onClick={createInstantClickHandler(() => navigateInstantly('/'))}
-              onMouseEnter={onMouseEnterPreload('/')}
+              onClick={createInstantClickHandler(() => navigateInstantly('/customer/dashboard'))}
+              onMouseEnter={onMouseEnterPreload('/customer/dashboard')}
               className="flex items-center gap-2 hover:opacity-90 transition-opacity"
-              title="Ir al Catálogo"
+              title="Ir a Mi Perfil"
             >
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg hover:scale-105 transition-transform">
                 {customer.picture ? (
@@ -197,6 +197,16 @@ export function TopBar() {
             </button>
           )}
           
+          {/* Compartir */}
+          <button
+            onClick={handleShareClick}
+            className="rounded-full p-2 md:p-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+            data-testid="button-share-app"
+            title="Compartir App"
+            aria-label="Compartir App"
+          >
+            <i className="fas fa-share-alt text-black text-sm md:text-base" />
+          </button>
 
           {/* Menú */}
           <button
