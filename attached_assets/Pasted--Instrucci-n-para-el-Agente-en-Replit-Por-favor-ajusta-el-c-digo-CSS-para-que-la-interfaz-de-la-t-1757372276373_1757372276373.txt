@@ -1,0 +1,44 @@
+📝 Instrucción para el Agente en Replit
+Por favor, ajusta el código CSS para que la interfaz de la tienda sea completamente responsiva y se visualice correctamente en pantallas de escritorio (PC). Actualmente, el diseño se mantiene en una columna estrecha, como en un móvil.
+
+Objetivo: Transformar el diseño de una sola columna a una cuadrícula (grid) en pantallas grandes para aprovechar todo el espacio horizontal.
+
+Pasos a seguir:
+
+Identificar el Contenedor Principal: Localiza el div o contenedor principal que envuelve toda la sección de productos. En este momento, probablemente tiene un max-width muy pequeño (ej. 480px).
+
+Aplicar Media Queries: Utiliza una media query de CSS para aplicar estilos únicamente a pantallas más grandes. Un buen punto de partida es min-width: 768px.
+
+CSS
+
+@media (min-width: 768px) {
+  /* Aquí irán los estilos para PC */
+}
+Ajustar el Contenedor Principal: Dentro de la media query, aumenta el max-width del contenedor principal a un valor más apropiado para escritorios, como 1200px o 90%, y asegúrate de que esté centrado.
+
+CSS
+
+@media (min-width: 768px) {
+  .contenedor-principal {
+    max-width: 1200px;
+    margin: 0 auto; /* Centrar el contenedor */
+  }
+}
+Crear la Cuadrícula de Productos: El cambio más importante es en el contenedor de las tarjetas de productos. Conviértelo en una cuadrícula flexible usando CSS Grid o Flexbox.
+
+Opción recomendada (CSS Grid):
+Es ideal para crear cuadrículas que se ajustan solas.
+
+CSS
+
+@media (min-width: 768px) {
+  .contenedor-de-productos {
+    display: grid;
+    /* Crea columnas automáticas que midan entre 250px y 1fr */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px; /* Espacio entre los productos */
+  }
+}
+Ajustar Elementos del Header y Footer: Asegúrate de que la barra de búsqueda, los botones de categorías y los elementos del pie de página también se expandan para ocupar el nuevo ancho del contenedor principal en la vista de escritorio.
+
+Al finalizar, la vista en PC debería mostrar múltiples productos por fila, eliminando los grandes espacios en blanco a los lados y ofreciendo una experiencia de usuario mucho mejor.

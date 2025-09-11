@@ -174,8 +174,8 @@ export function TopBar() {
           {/* ✅ Avatar de Usuario Autenticado - Clickeable */}
           {isAuthenticated && customer && (
             <button 
-              onClick={createInstantClickHandler(() => navigateInstantly('/mi/tablero'))}
-              onMouseEnter={onMouseEnterPreload('/mi/tablero')}
+              onClick={createInstantClickHandler(() => navigateInstantly('/customer/dashboard'))}
+              onMouseEnter={onMouseEnterPreload('/customer/dashboard')}
               className="flex items-center gap-2 hover:opacity-90 transition-opacity"
               title="Ir a Mi Perfil"
             >

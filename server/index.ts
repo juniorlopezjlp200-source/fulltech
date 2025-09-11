@@ -35,7 +35,7 @@ function validateEnvironment() {
 
   if (!process.env.NODE_ENV) {
     process.env.NODE_ENV = "production";
-    // NODE_ENV por defecto: producción
+    console.log("NODE_ENV not set, defaulting to production");
   }
 
   const baseUrl =
@@ -44,7 +44,13 @@ function validateEnvironment() {
       ? `https://${process.env.REPLIT_DEV_DOMAIN}`
       : `https://3d2437f9e7f2.replit.app`);
 
-  // OAuth configurado para BASE_URL (modo silencioso en producción)
+  console.log("BASE_URL:", baseUrl);
+  console.log("Google OAuth URLs:");
+  console.log("  Authorized JavaScript origins:", baseUrl);
+  console.log(
+    "  Authorized redirect URIs:",
+    `${baseUrl}/api/auth/google/callback`,
+  );
 }
 validateEnvironment();
 
@@ -58,46 +64,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 /* --------------------------- Logger simple de API --------------------------- */
-// 🔒 SOLO registrar middleware de logging en desarrollo (NO en producción)
-const isProduction = process.env.NODE_ENV === "production";
-if (!isProduction) {
-  app.use((req, res, next) => {
-    const start = Date.now();
-    const p = req.path;
-    let capturedJsonResponse: any;
+app.use((req, res, next) => {
+  const start = Date.now();
+  const p = req.path;
+  let capturedJsonResponse: any;
 
-    const originalResJson = res.json.bind(res);
-    (res as any).json = (bodyJson: any) => {
-      capturedJsonResponse = bodyJson;
-      return originalResJson(bodyJson);
-    };
+  const originalResJson = res.json.bind(res);
+  (res as any).json = (bodyJson: any, ...args: any[]) => {
+    capturedJsonResponse = bodyJson;
+    return originalResJson(bodyJson, ...args);
+  };
 
-    res.on("finish", () => {
-      if (!p.startsWith("/api")) return;
-      const duration = Date.now() - start;
-      let logLine = `${req.method} ${p} ${res.statusCode} in ${duration}ms`;
-      
-      if (capturedJsonResponse) {
-        const short = JSON.stringify(capturedJsonResponse);
-        logLine += ` :: ${short.length > 400 ? short.slice(0, 400) + "…" : short}`;
-      }
-      log(logLine);
-    });
-
-    next();
+  res.on("finish", () => {
+    if (!p.startsWith("/api")) return;
+    const duration = Date.now() - start;
+    let logLine = `${req.method} ${p} ${res.statusCode} in ${duration}ms`;
+    if (capturedJsonResponse) {
+      // evita log infinito
+      const short = JSON.stringify(capturedJsonResponse);
+      logLine += ` :: ${short.length > 400 ? short.slice(0, 400) + "…" : short}`;
+    }
+    log(logLine);
   });
-} else {
-  // 🔒 Logger mínimo en producción (SIN response bodies)
-  app.use((req, res, next) => {
-    const start = Date.now();
-    res.on("finish", () => {
-      if (!req.path.startsWith("/api")) return;
-      const duration = Date.now() - start;
-      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-    });
-    next();
-  });
-}
+
+  next();
+});
 
 /* --------------------------- Apagado elegante --------------------------- */
 let server: any = null;

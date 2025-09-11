@@ -153,14 +153,7 @@ export class DatabaseStorage implements IStorage {
       const existingAdmin = await this.getAdminByEmail('admin@fulltech.com');
       if (!existingAdmin) {
         const bcrypt = await import('bcrypt');
-        // 🔒 Contraseña de admin desde variable de entorno (REQUERIDA)
-        const adminPassword = process.env.ADMIN_DEFAULT_PASSWORD;
-        if (!adminPassword) {
-          const errorMsg = 'ADMIN_DEFAULT_PASSWORD environment variable is required for admin creation';
-          console.error('🚨 CRITICAL:', errorMsg);
-          process.exit(1); // 🔒 FAIL-FAST: No permitir que la app inicie sin admin seguro
-        }
-        const hashedPassword = await bcrypt.hash(adminPassword, 10);
+        const hashedPassword = await bcrypt.hash('admin123', 10);
         await db.insert(admins).values({
           email: 'admin@fulltech.com',
           password: hashedPassword,
@@ -168,7 +161,6 @@ export class DatabaseStorage implements IStorage {
           role: 'super_admin',
           active: true
         }).onConflictDoNothing();
-        console.log('✅ Admin creado exitosamente.');
       }
 
       const existingConfigs = await this.getSiteConfigs();
@@ -1013,7 +1005,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(sql`EXTRACT(HOUR FROM created_at)`);
 
       // Clientes más activos (si no se especifica un cliente)
-      let mostActiveCustomers: any[] = [];
+      let mostActiveCustomers = [];
       if (!customerId) {
         mostActiveCustomers = await db
           .select({

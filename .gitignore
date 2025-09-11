@@ -26,11 +26,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build files
-.vite/
-attached_assets/*.txt
-*.local
-
-# Logs temporales
-/tmp/logs/
+.vite/node_modules/\ndist/\n.env\nattached_assets/*.txt\n*.local
 
 .git.backup.*
