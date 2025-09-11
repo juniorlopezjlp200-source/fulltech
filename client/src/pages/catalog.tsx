@@ -512,6 +512,7 @@ export default function Catalog() {
                     key={product.id} 
                     product={product} 
                     layout="grid"
+                    isHomePage={true}
                     data-testid={`card-product-${product.id}`}
                   />
                 ))}

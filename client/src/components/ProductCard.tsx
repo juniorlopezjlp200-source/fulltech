@@ -1,14 +1,15 @@
 import { ImageCarousel } from "./ImageCarousel";
 import { useLocation } from "wouter";
 import type { Product } from "@shared/schema";
-import { formatPrice } from "@/utils/currency";
+import { formatPrice, formatPriceHome } from "@/utils/currency";
 
 interface ProductCardProps {
   product: Product;
   layout: "grid" | "list";
+  isHomePage?: boolean;
 }
 
-export function ProductCard({ product, layout }: ProductCardProps) {
+export function ProductCard({ product, layout, isHomePage = false }: ProductCardProps) {
   const [, setLocation] = useLocation();
 
 
@@ -113,7 +114,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
           <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-card-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">{product.name}</h3>
           <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{formatPrice(product.price)}</span>
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
             <div className="flex items-center gap-1 sm:gap-2">
               <button 
                 onClick={(e) => {
@@ -170,7 +171,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
             <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">{formatPrice(product.price)}</span>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
             <div className="flex items-center gap-2 lg:gap-3">
               <button 
                 onClick={(e) => {
