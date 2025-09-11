@@ -232,146 +232,457 @@ export function TopBar() {
         </div>
       )}
 
-      {/* Menú desplegable */}
+      {/* 🎨 MENÚ PROFESIONAL EXPANDIDO - OCUPA 50% DE PANTALLA */}
       <div
-        className={`absolute top-20 md:top-24 right-4 md:right-8 w-64 md:w-80 bg-white border border-slate-200 rounded-xl shadow-lg p-4 md:p-6 z-50 transition-all duration-200 ${
-          isMenuOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2"
+        className={`fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/2 bg-gradient-to-br from-blue-900/95 via-purple-900/95 to-indigo-900/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-50 transition-all duration-300 overflow-y-auto ${
+          isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        data-testid="dropdown-menu"
+        data-testid="professional-side-menu"
       >
-        {isAuthenticated ? (
-          <>
-            <div className="px-3 py-2 bg-slate-50 rounded-lg mb-3">
-              <div className="flex items-center gap-3">
-                <img src={customer?.picture} alt={customer?.name} className="w-10 h-10 rounded-full" />
-                <div>
-                  <p className="font-medium text-sm text-slate-900">{customer?.name}</p>
-                  <p className="text-xs text-slate-600">{customer?.email}</p>
-                  <p className="text-xs text-emerald-600 font-medium">Código: {customer?.referralCode}</p>
-                </div>
+        {/* 🎯 Header del Menú */}
+        <div className="bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm border-b border-white/10 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img
+                src={logoUrl}
+                alt={logoAlt}
+                className="w-12 h-12 object-contain rounded-full ring-2 ring-white/20"
+              />
+              <div>
+                <h2 className="text-white font-bold text-xl">{siteName}</h2>
+                <p className="text-white/70 text-sm">Menú Principal</p>
               </div>
             </div>
-
-            <button className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-user text-slate-700" />
-              <span className="text-slate-900">Mi Perfil</span>
-            </button>
-            <button className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-heart text-slate-700" />
-              <span className="text-slate-900">Favoritos</span>
-            </button>
-            <button className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-shopping-cart text-slate-700" />
-              <span className="text-slate-900">Carrito</span>
-            </button>
-
-            <hr className="my-2 border-slate-200" />
-
-            {groupedPages.main?.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => {
-                  closeMenu();
-                  goToCustomPage(page.slug);
-                }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <i className="fas fa-file-alt text-slate-700" />
-                <span className="text-slate-900">{page.title}</span>
-              </button>
-            ))}
-
-            {groupedPages.support?.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => {
-                  closeMenu();
-                  goToCustomPage(page.slug);
-                }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <i className="fas fa-headset text-slate-700" />
-                <span className="text-slate-900">{page.title}</span>
-              </button>
-            ))}
-
-            <Link href="/garantia" className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-shield-alt text-slate-700" />
-              <span className="text-slate-900">Garantía</span>
-            </Link>
-            <Link href="/contacto" className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-headset text-slate-700" />
-              <span className="text-slate-900">Contacto</span>
-            </Link>
-
-            <hr className="my-2 border-slate-200" />
-
             <button
-              className="w-full flex items-center gap-3 p-3 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-              onClick={() => {
-                closeMenu();
-                logout();
-              }}
-              data-testid="button-logout"
+              onClick={closeMenu}
+              className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm flex items-center justify-center transition-colors"
+              aria-label="Cerrar menú"
             >
-              <i className="fas fa-sign-out-alt" />
-              <span className="font-semibold">Cerrar Sesión</span>
+              <i className="fas fa-times text-white text-lg" />
             </button>
-          </>
-        ) : (
-          <>
-            {groupedPages.main?.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => {
-                  closeMenu();
-                  goToCustomPage(page.slug);
-                }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <i className="fas fa-file-alt text-slate-700" />
-                <span className="text-slate-900">{page.title}</span>
-              </button>
-            ))}
+          </div>
+        </div>
 
-            {groupedPages.support?.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => {
-                  closeMenu();
-                  goToCustomPage(page.slug);
-                }}
-                className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <i className="fas fa-headset text-slate-700" />
-                <span className="text-slate-900">{page.title}</span>
-              </button>
-            ))}
+        {/* 📱 Contenido Principal del Menú */}
+        <div className="p-6 space-y-6">
+          {isAuthenticated ? (
+            <>
+              {/* 👤 Perfil de Usuario */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                    {customer?.picture ? (
+                      <img src={customer.picture} alt={customer.name} className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <i className="fas fa-user text-white text-xl" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-semibold text-lg">{customer?.name}</h3>
+                    <p className="text-white/70 text-sm">{customer?.email}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs font-medium border border-green-500/30">
+                        <i className="fas fa-gift mr-1" />
+                        {customer?.referralCode}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <Link href="/garantia" className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-shield-alt text-slate-700" />
-              <span className="text-slate-900">Garantía</span>
-            </Link>
-            <Link href="/contacto" className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 rounded-lg transition-colors" onClick={closeMenu}>
-              <i className="fas fa-headset text-slate-700" />
-              <span className="text-slate-900">Contacto</span>
-            </Link>
+              {/* 🎯 Navegación Principal */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Mi Cuenta</h4>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={() => { closeMenu(); window.location.href = '/dashboard'; }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                    <i className="fas fa-tachometer-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Mi Dashboard</p>
+                    <p className="text-white/60 text-sm">Ganancias y referidos</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
 
-            <hr className="my-2 border-slate-200" />
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center">
+                    <i className="fas fa-heart text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Favoritos</p>
+                    <p className="text-white/60 text-sm">Productos guardados</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
 
-            <button
-              className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 text-blue-700 rounded-lg transition-colors"
-              onClick={() => {
-                closeMenu();
-                window.location.href = "/login";
-              }}
-              data-testid="button-login"
-            >
-              <i className="fas fa-sign-in-alt" />
-              <span className="font-semibold">Iniciar Sesión</span>
-            </button>
-          </>
-        )}
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                    <i className="fas fa-shopping-cart text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Mi Carrito</p>
+                    <p className="text-white/60 text-sm">Productos seleccionados</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+
+              {/* 🛍️ Tienda y Productos */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Tienda</h4>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={() => { closeMenu(); goHome(); }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <i className="fas fa-store text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Catálogo</p>
+                    <p className="text-white/60 text-sm">Ver productos</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+
+              {/* 💰 PUBLICIDAD ESTRATÉGICA PARA REFERIDOS */}
+              <div className="bg-gradient-to-r from-green-500/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                    <i className="fas fa-gift text-white text-sm" />
+                  </div>
+                  <h4 className="text-white font-semibold text-sm">¡Gana dinero invitando!</h4>
+                </div>
+                <p className="text-white/80 text-xs mb-3 leading-relaxed">
+                  Comparte tu código <strong className="text-green-400">{customer?.referralCode}</strong> y gana comisiones por cada venta
+                </p>
+                <button 
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200"
+                  onClick={() => { closeMenu(); window.location.href = '/dashboard'; }}
+                >
+                  Ver mis ganancias
+                </button>
+              </div>
+
+              {/* 📄 Páginas principales y soporte */}
+              {groupedPages.main && groupedPages.main.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Información</h4>
+                  {groupedPages.main.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => {
+                        closeMenu();
+                        goToCustomPage(page.slug);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <i className="fas fa-file-alt text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-white font-medium">{page.title}</p>
+                        <p className="text-white/60 text-sm">Información importante</p>
+                      </div>
+                      <i className="fas fa-chevron-right text-white/40" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {groupedPages.support && groupedPages.support.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Soporte</h4>
+                  {groupedPages.support.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => {
+                        closeMenu();
+                        goToCustomPage(page.slug);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
+                        <i className="fas fa-headset text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-white font-medium">{page.title}</p>
+                        <p className="text-white/60 text-sm">Centro de ayuda</p>
+                      </div>
+                      <i className="fas fa-chevron-right text-white/40" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 🛡️ Enlaces importantes: Garantía y Contacto */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Servicios</h4>
+                
+                <Link 
+                  href="/garantia" 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <i className="fas fa-shield-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Garantía</p>
+                    <p className="text-white/60 text-sm">Protección total</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </Link>
+
+                <Link 
+                  href="/contacto" 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <i className="fas fa-headset text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Contacto</p>
+                    <p className="text-white/60 text-sm">Atención al cliente</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </Link>
+              </div>
+
+              {/* ⚙️ Configuraciones y Preferencias */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Configuración</h4>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-slate-500 to-gray-600 flex items-center justify-center">
+                    <i className="fas fa-cog text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Preferencias</p>
+                    <p className="text-white/60 text-sm">Configurar cuenta</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <i className="fas fa-bell text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Notificaciones</p>
+                    <p className="text-white/60 text-sm">Gestionar alertas</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+
+              {/* 🚪 Botón de Cerrar Sesión Profesional */}
+              <div className="pt-4 border-t border-white/10">
+                <button
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-red-500/20 to-pink-600/20 hover:from-red-500/30 hover:to-pink-600/30 rounded-xl transition-all duration-200 border border-red-500/30"
+                  onClick={() => {
+                    closeMenu();
+                    logout();
+                  }}
+                  data-testid="button-logout"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center">
+                    <i className="fas fa-sign-out-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Cerrar Sesión</p>
+                    <p className="text-white/60 text-sm">Salir de mi cuenta</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* 🎯 MENÚ PARA USUARIOS NO AUTENTICADOS */}
+              
+              {/* 🎉 Publicidad para motivar registro */}
+              <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-xl p-4 border border-blue-500/30 mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                    <i className="fas fa-star text-white text-sm" />
+                  </div>
+                  <h4 className="text-white font-semibold text-sm">¡Únete a FULLTECH!</h4>
+                </div>
+                <p className="text-white/80 text-xs mb-3 leading-relaxed">
+                  Registrate y empieza a <strong className="text-blue-400">ganar dinero</strong> refiriendo amigos
+                </p>
+                <button 
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
+                  onClick={() => { closeMenu(); window.location.href = '/login'; }}
+                >
+                  Crear cuenta gratis
+                </button>
+              </div>
+
+              {/* 🛍️ Navegación principal */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Tienda</h4>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={() => { closeMenu(); goHome(); }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <i className="fas fa-store text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Catálogo</p>
+                    <p className="text-white/60 text-sm">Ver productos</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+
+              {/* 📄 Páginas principales y soporte para no autenticados */}
+              {groupedPages.main && groupedPages.main.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Información</h4>
+                  {groupedPages.main.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => {
+                        closeMenu();
+                        goToCustomPage(page.slug);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <i className="fas fa-file-alt text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-white font-medium">{page.title}</p>
+                        <p className="text-white/60 text-sm">Información importante</p>
+                      </div>
+                      <i className="fas fa-chevron-right text-white/40" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {groupedPages.support && groupedPages.support.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Soporte</h4>
+                  {groupedPages.support.map((page) => (
+                    <button
+                      key={page.id}
+                      onClick={() => {
+                        closeMenu();
+                        goToCustomPage(page.slug);
+                      }}
+                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
+                        <i className="fas fa-headset text-white" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-white font-medium">{page.title}</p>
+                        <p className="text-white/60 text-sm">Centro de ayuda</p>
+                      </div>
+                      <i className="fas fa-chevron-right text-white/40" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* 🛡️ Enlaces importantes para no autenticados */}
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Servicios</h4>
+                
+                <Link 
+                  href="/garantia" 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <i className="fas fa-shield-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Garantía</p>
+                    <p className="text-white/60 text-sm">Protección total</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </Link>
+
+                <Link 
+                  href="/contacto" 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  onClick={closeMenu}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
+                    <i className="fas fa-headset text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Contacto</p>
+                    <p className="text-white/60 text-sm">Atención al cliente</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </Link>
+              </div>
+
+              {/* 🔐 Acciones de autenticación */}
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                <button
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 rounded-xl transition-all duration-200 border border-blue-500/30"
+                  onClick={() => {
+                    closeMenu();
+                    window.location.href = "/login";
+                  }}
+                  data-testid="button-login"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                    <i className="fas fa-sign-in-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Iniciar Sesión</p>
+                    <p className="text-white/60 text-sm">Accede a tu cuenta</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+
+                <button
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-600/20 hover:from-green-500/30 hover:to-emerald-600/30 rounded-xl transition-all duration-200 border border-green-500/30"
+                  onClick={() => {
+                    closeMenu();
+                    window.location.href = "/login";
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
+                    <i className="fas fa-user-plus text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Crear Cuenta</p>
+                    <p className="text-white/60 text-sm">Únete y gana dinero</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {isMenuOpen && <div className="fixed inset-0 z-40" onClick={closeMenu} />}
