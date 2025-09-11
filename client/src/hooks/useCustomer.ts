@@ -4,11 +4,15 @@ import { useState, useEffect } from "react";
 
 export interface Customer {
   id: string;
-  googleId: string;
-  email: string;
+  googleId?: string;
+  email?: string;
+  phone?: string;
   name: string;
-  picture: string;
+  picture?: string;
+  address?: string;
   referralCode: string;
+  authProvider: 'google' | 'phone';
+  isPhoneVerified?: boolean;
   createdAt: string;
   lastVisit?: string;
 }
@@ -92,8 +96,12 @@ export function useCustomer() {
         id: customer.id,
         name: customer.name,
         email: customer.email,
+        phone: customer.phone,
         picture: customer.picture,
-        referralCode: customer.referralCode
+        address: customer.address,
+        referralCode: customer.referralCode,
+        authProvider: customer.authProvider,
+        isPhoneVerified: customer.isPhoneVerified
       }));
     }
   }, [customer, isLoading]);
