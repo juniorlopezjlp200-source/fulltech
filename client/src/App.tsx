@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import Catalog from "@/pages/catalog";
 import ProductDetail from "@/pages/ProductDetail";
 import { Login } from "@/pages/Login";
+import { Register } from "@/pages/Register";
 import { PhoneAuth } from "@/pages/PhoneAuth";
 import { CustomerDashboard } from "@/pages/CustomerDashboard";
 import AdminLogin from "@/pages/AdminLogin";
@@ -72,6 +73,7 @@ function Router() {
           <Route path="/" component={Catalog} />
           <Route path="/product/:id" component={ProductDetail} />
           <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
           <Route path="/phone-auth" component={PhoneAuth} />
           <Route path="/customer/dashboard" component={CustomerDashboard} />
           <Route path="/admin/login" component={AdminLogin} />

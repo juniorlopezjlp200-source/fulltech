@@ -633,11 +633,12 @@ export function TopBar() {
                 </button>
 
                 <button
-                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-600/20 hover:from-green-500/30 hover:to-emerald-600/30 rounded-xl transition-all duration-200 border border-green-500/30"
-                  onClick={() => {
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-600/20 hover:from-green-500/30 hover:to-emerald-600/30 rounded-xl transition-all duration-100 border border-green-500/30"
+                  onClick={createInstantClickHandler(() => {
                     closeMenu();
-                    window.location.href = "/login";
-                  }}
+                    navigateInstantly("/register");
+                  })}
+                  onMouseEnter={onMouseEnterPreload('/register')}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
                     <i className="fas fa-user-plus text-white" />
