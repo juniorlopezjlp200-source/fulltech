@@ -6,7 +6,8 @@ interface OfflineAction {
   type: string;
   url: string;
   method: string;
-  data?: any;
+  body?: any;
+  headers?: any;
   timestamp: number;
   retries: number;
 }
@@ -56,14 +57,16 @@ export function useOfflineSync() {
     type: string,
     url: string,
     method: string = 'POST',
-    data?: any
+    body?: any,
+    headers?: any
   ) => {
     const action: OfflineAction = {
       id: Date.now().toString(),
       type,
       url,
       method,
-      data,
+      body,
+      headers,
       timestamp: Date.now(),
       retries: 0
     };
@@ -122,7 +125,7 @@ export function useOfflineSync() {
     try {
       if (!isOnline) {
         // Si no hay conexión, agregar a cola offline
-        await addOfflineAction('api-request', url, options.method || 'GET', options.body);
+        await addOfflineAction('api-request', url, options.method || 'GET', options.body, options.headers);
         
         // Ejecutar acción fallback si existe
         if (fallbackAction) {
@@ -146,7 +149,7 @@ export function useOfflineSync() {
       
       // Si falla el request y hay conexión, agregar a cola offline
       if (isOnline) {
-        await addOfflineAction('failed-request', url, options.method || 'GET', options.body);
+        await addOfflineAction('failed-request', url, options.method || 'GET', options.body, options.headers);
       }
       
       if (fallbackAction) {

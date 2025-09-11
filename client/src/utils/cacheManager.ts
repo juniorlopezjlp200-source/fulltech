@@ -9,7 +9,8 @@ export class CacheManager {
     IMAGES: 'images',
     USER_DATA: 'userData',
     ACTIVITIES: 'activities',
-    OFFLINE_QUEUE: 'offlineQueue'
+    OFFLINE_QUEUE: 'offlineQueue',
+    FILE_UPLOADS: 'fileUploads'
   };
 
   static getInstance(): CacheManager {
@@ -181,10 +182,13 @@ export class CacheManager {
 
   // Cola de acciones offline
   async addToOfflineQueue(action: {
+    id?: string;
     url: string;
     method: string;
     body?: any;
     headers?: any;
+    type?: string;
+    retries?: number;
   }): Promise<void> {
     if (!this.db) await this.init();
     
@@ -192,9 +196,10 @@ export class CacheManager {
     const store = transaction.objectStore(this.STORES.OFFLINE_QUEUE);
     
     await store.put({
-      id: Date.now().toString(),
+      id: action.id || Date.now().toString(),
       ...action,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      retries: action.retries || 0
     });
   }
 
@@ -204,25 +209,49 @@ export class CacheManager {
     
     if (!this.db) await this.init();
     
-    const transaction = this.db!.transaction([this.STORES.OFFLINE_QUEUE], 'readwrite');
-    const store = transaction.objectStore(this.STORES.OFFLINE_QUEUE);
+    const transaction = this.db!.transaction([this.STORES.OFFLINE_QUEUE, this.STORES.FILE_UPLOADS], 'readwrite');
+    const queueStore = transaction.objectStore(this.STORES.OFFLINE_QUEUE);
+    const fileStore = transaction.objectStore(this.STORES.FILE_UPLOADS);
     
-    const request = store.getAll();
+    const request = queueStore.getAll();
     request.onsuccess = async () => {
       const actions = request.result;
       
       for (const action of actions) {
         try {
+          let requestBody = action.body;
+          
+          // Si es una subida de archivo, obtener el blob desde file store
+          if (action.type === 'file-upload' && action.body?.tempId) {
+            const fileData = await this.getFileFromStore(action.body.tempId);
+            if (fileData) {
+              requestBody = fileData.blob;
+            }
+          }
+          
           await fetch(action.url, {
             method: action.method,
             headers: action.headers,
-            body: action.body
+            body: requestBody
           });
           
           // Eliminar acción procesada
-          await store.delete(action.id);
+          await queueStore.delete(action.id);
+          
+          // Limpiar archivo temporal si existe
+          if (action.type === 'file-upload' && action.body?.tempId) {
+            await fileStore.delete(action.body.tempId);
+          }
         } catch (error) {
           console.error('Error processing offline action:', error);
+          // Incrementar contador de intentos
+          action.retries = (action.retries || 0) + 1;
+          if (action.retries < 3) {
+            await queueStore.put(action);
+          } else {
+            // Si falla después de 3 intentos, eliminar
+            await queueStore.delete(action.id);
+          }
         }
       }
     };
@@ -287,6 +316,48 @@ export class CacheManager {
     stats.offlineQueue = await this.getStoreCount(queueStore);
     
     return stats;
+  }
+
+  // Guardar archivo temporal para upload offline
+  async saveFileForOfflineUpload(tempId: string, file: File): Promise<void> {
+    if (!this.db) await this.init();
+    
+    const transaction = this.db!.transaction([this.STORES.FILE_UPLOADS], 'readwrite');
+    const store = transaction.objectStore(this.STORES.FILE_UPLOADS);
+    
+    await store.put({
+      id: tempId,
+      blob: file,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+      timestamp: Date.now()
+    });
+  }
+
+  // Obtener archivo temporal
+  async getFileFromStore(tempId: string): Promise<{blob: File, fileName: string, fileType: string} | null> {
+    if (!this.db) await this.init();
+    
+    const transaction = this.db!.transaction([this.STORES.FILE_UPLOADS], 'readonly');
+    const store = transaction.objectStore(this.STORES.FILE_UPLOADS);
+    
+    return new Promise((resolve) => {
+      const request = store.get(tempId);
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          resolve({
+            blob: result.blob,
+            fileName: result.fileName,
+            fileType: result.fileType
+          });
+        } else {
+          resolve(null);
+        }
+      };
+      request.onerror = () => resolve(null);
+    });
   }
 
   private getStoreCount(store: IDBObjectStore): Promise<number> {

@@ -185,14 +185,16 @@ process.on("unhandledRejection", (reason, promise) => {
 
       console.log(`Successfully found static files at: ${distPath}`);
       
-      // 🔧 FIX: Headers anti-cache para JavaScript, CSS y HTML
+      // 🔥 ULTRA AGRESIVO: Headers anti-cache para forzar actualizaciones
       app.use(express.static(distPath, {
         setHeaders: (res, filePath) => {
-          // Para archivos JS, CSS y HTML: no cache (evita Ctrl+F5)
+          // Para archivos JS, CSS y HTML: ULTRA anti-cache
           if (filePath.match(/\.(js|css|html)$/)) {
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
+            res.setHeader('Last-Modified', new Date().toUTCString());
+            res.setHeader('ETag', Date.now().toString());
           }
           // Para otros archivos (imágenes, etc): cache normal
           else {
@@ -206,10 +208,12 @@ process.on("unhandledRejection", (reason, promise) => {
         const indexPath = path.resolve(distPath, "index.html");
         console.log(`Attempting to serve index.html from: ${indexPath}`);
         if (fs.existsSync(indexPath)) {
-          // Headers anti-cache también para index.html del fallback
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          // Headers ULTRA anti-cache para index.html del fallback
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
           res.setHeader('Pragma', 'no-cache');
           res.setHeader('Expires', '0');
+          res.setHeader('Last-Modified', new Date().toUTCString());
+          res.setHeader('ETag', Date.now().toString());
           res.sendFile(indexPath);
         } else {
           console.error(`index.html not found at: ${indexPath}`);
