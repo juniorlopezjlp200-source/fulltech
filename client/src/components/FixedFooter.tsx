@@ -23,7 +23,7 @@ export function FixedFooter() {
 
   const handleAdClick = createInstantClickHandler(() => {
     if (isAuthenticated) {
-      navigateInstantly('/customer/dashboard');
+      navigateInstantly('/mi/tablero');
     } else {
       navigateInstantly('/login');
     }
@@ -96,7 +96,7 @@ export function FixedFooter() {
             <div className="flex justify-center md:flex">
               <div 
                 onClick={handleAdClick}
-                onMouseEnter={onMouseEnterPreload(isAuthenticated ? '/customer/dashboard' : '/login')}
+                onMouseEnter={onMouseEnterPreload(isAuthenticated ? '/mi/tablero' : '/login')}
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg px-3 py-2 md:px-4 md:py-2 cursor-pointer transition-all duration-100 transform hover:scale-105 shadow-lg border border-blue-400/30"
               >
                 {isAuthenticated ? (
