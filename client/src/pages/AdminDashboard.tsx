@@ -6,9 +6,9 @@ import { SiteConfigForm } from "@/components/admin/SiteConfigForm";
 import { LegalPagesManager } from "@/components/admin/LegalPagesManager";
 import { CustomPagesManager } from "@/components/admin/CustomPagesManager";
 import { CategoriesManager } from "../components/admin/CategoriesManager";
-import AdminCustomers from "./AdminCustomers";
-import AdminReferrals from "./AdminReferrals";
-import AdminAnalytics from "./AdminAnalytics";
+import { AdminCustomers } from "@/components/admin/AdminCustomers";
+import { AdminReferrals } from "@/components/admin/AdminReferrals";
+import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 
 export default function AdminDashboard() {
   const { admin, isLoading, isAuthenticated, logout } = useAdmin();
