@@ -72,9 +72,32 @@ export function setupGoogleAuth(app: Express) {
 
   app.get('/api/auth/google/callback',
     passport.authenticate('google', { failureRedirect: '/login' }),
-    (req, res) => {
-      // Redireccionar al dashboard del cliente
-      res.redirect('/customer/dashboard');
+    (req: any, res) => {
+      // 🔒 SEGURIDAD COMPLETA: Regenerar sesión para Google OAuth
+      const customer = req.user;
+      req.session.regenerate((err: any) => {
+        if (err) {
+          console.error('Error regenerating Google OAuth session:', err);
+          return res.redirect('/login?error=session');
+        }
+        
+        req.login(customer, (loginErr: any) => {
+          if (loginErr) {
+            console.error('Error logging in customer after session regeneration:', loginErr);
+            return res.redirect('/login?error=login');
+          }
+          
+          req.session.save((saveErr: any) => {
+            if (saveErr) {
+              console.error('Error saving Google OAuth session:', saveErr);
+              return res.redirect('/login?error=save');
+            }
+            
+            // Redireccionar al dashboard del cliente
+            res.redirect('/customer/dashboard');
+          });
+        });
+      });
     }
   );
 
@@ -109,6 +132,11 @@ export function setupGoogleAuth(app: Express) {
   // ✅ GET /api/me endpoint - returns standardized auth status (new format)
   app.get('/api/me', async (req: any, res) => {
     try {
+      // 🔒 SEGURIDAD: Deshabilitar caché para evitar datos de auth obsoletos
+      res.set('Cache-Control', 'no-store');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       let customer = null;
       
       // Check Google OAuth first
@@ -150,6 +178,11 @@ export function setupGoogleAuth(app: Express) {
   // ✅ Keep legacy endpoint for backward compatibility
   app.get('/api/auth/me', async (req: any, res) => {
     try {
+      // 🔒 SEGURIDAD: Deshabilitar caché para evitar datos de auth obsoletos
+      res.set('Cache-Control', 'no-store');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       // Check Google OAuth first
       if (req.isAuthenticated() && req.user) {
         return res.json(req.user);

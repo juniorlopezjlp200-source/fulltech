@@ -32,6 +32,11 @@ const requireAdmin = async (
   res: Response,
   next: NextFunction,
 ) => {
+  // 🔒 GUARDIA DEFENSA: Rechazar si hay sesión de cliente activa
+  if ((req as any).isAuthenticated?.() || req.session.customerId) {
+    return res.status(401).json({ error: "Admin authentication required" });
+  }
+  
   if (!req.session.adminId) {
     return res.status(401).json({ error: "Admin authentication required" });
   }
@@ -443,17 +448,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Invalid credentials" });
 
       await storage.updateAdminLastLogin(admin.id);
-      req.session.adminId = admin.id;
-      req.session.adminEmail = admin.email;
-
-      res.json({
-        success: true,
-        admin: {
-          id: admin.id,
-          email: admin.email,
-          name: admin.name,
-          role: admin.role,
-        },
+      
+      // 🔒 SEGURIDAD COMPLETA: Regenerar sesión para evitar fijación de sesión
+      req.session.regenerate((err: any) => {
+        if (err) {
+          console.error('Error regenerating admin session:', err);
+          return res.status(500).json({ error: 'Session error' });
+        }
+        
+        req.session.adminId = admin.id;
+        req.session.adminEmail = admin.email;
+        
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error('Error saving admin session:', saveErr);
+            return res.status(500).json({ error: 'Session save error' });
+          }
+          
+          res.json({
+            success: true,
+            admin: {
+              id: admin.id,
+              email: admin.email,
+              name: admin.name,
+              role: admin.role,
+            },
+          });
+        });
       });
     } catch (error) {
       console.error("Admin login error:", error);
@@ -470,6 +491,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/me", requireAdmin, async (req, res) => {
     try {
+      // 🔒 SEGURIDAD: Deshabilitar caché para evitar datos de admin obsoletos
+      res.set('Cache-Control', 'no-store');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      
       const admin = await storage.getAdminByEmail(req.session.adminEmail!);
       if (!admin) return res.status(404).json({ error: "Admin not found" });
       res.json({
@@ -553,18 +579,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isPhoneVerified: false,
       });
 
-      // Set session (same pattern as admin login)
-      req.session.customerId = customer.id;
-      
-      res.json({
-        success: true,
-        customer: {
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-          address: customer.address,
-          referralCode: customer.referralCode,
-        },
+      // 🔒 SEGURIDAD COMPLETA: Regenerar sesión para evitar fijación
+      req.session.regenerate((err: any) => {
+        if (err) {
+          console.error('Error regenerating customer register session:', err);
+          return res.status(500).json({ error: 'Session error' });
+        }
+        
+        req.session.customerId = customer.id;
+        
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error('Error saving customer register session:', saveErr);
+            return res.status(500).json({ error: 'Session save error' });
+          }
+          
+          res.json({
+            success: true,
+            customer: {
+              id: customer.id,
+              name: customer.name,
+              phone: customer.phone,
+              address: customer.address,
+              referralCode: customer.referralCode,
+            },
+          });
+        });
       });
     } catch (error) {
       console.error("Phone register error:", error);
@@ -593,19 +633,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update last visit
       await storage.updateCustomerLastVisit(customer.id);
       
-      // Set session (same pattern as admin login)
-      req.session.customerId = customer.id;
-
-      res.json({
-        success: true,
-        customer: {
-          id: customer.id,
-          name: customer.name,
-          phone: customer.phone,
-          address: customer.address,
-          referralCode: customer.referralCode,
-          isPhoneVerified: customer.isPhoneVerified,
-        },
+      // 🔒 SEGURIDAD COMPLETA: Regenerar sesión para evitar fijación
+      req.session.regenerate((err: any) => {
+        if (err) {
+          console.error('Error regenerating customer login session:', err);
+          return res.status(500).json({ error: 'Session error' });
+        }
+        
+        req.session.customerId = customer.id;
+        
+        req.session.save((saveErr: any) => {
+          if (saveErr) {
+            console.error('Error saving customer login session:', saveErr);
+            return res.status(500).json({ error: 'Session save error' });
+          }
+          
+          res.json({
+            success: true,
+            customer: {
+              id: customer.id,
+              name: customer.name,
+              phone: customer.phone,
+              address: customer.address,
+              referralCode: customer.referralCode,
+              isPhoneVerified: customer.isPhoneVerified,
+            },
+          });
+        });
       });
     } catch (error) {
       console.error("Phone login error:", error);
