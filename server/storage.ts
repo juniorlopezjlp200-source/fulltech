@@ -14,10 +14,11 @@ import {
   type LegalPage, type InsertLegalPage,
   type CustomPage, type InsertCustomPage,
   type Category, type InsertCategory,
+  type FeatureFlag, type InsertFeatureFlag,
   users, admins, products, heroSlides, raffleParticipants,
   customers, customerActivities, customerPurchases,
   referrals, monthlyRaffles, raffleEntries,
-  siteConfigs, legalPages, customPages, categories
+  siteConfigs, legalPages, customPages, categories, featureFlags
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -88,6 +89,13 @@ export interface IStorage {
   createSiteConfig(config: InsertSiteConfig): Promise<SiteConfig>;
   updateSiteConfig(key: string, config: Partial<InsertSiteConfig>): Promise<SiteConfig | undefined>;
   deleteSiteConfig(key: string): Promise<boolean>;
+
+  // 🔧 Feature Flags operations para rollout seguro
+  getFeatureFlags(): Promise<FeatureFlag[]>;
+  getFeatureFlagByKey(key: string): Promise<FeatureFlag | undefined>;
+  isFeatureEnabled(key: string): Promise<boolean>;
+  createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag>;
+  updateFeatureFlag(key: string, enabled: boolean): Promise<void>;
 
   // Legal pages operations
   getLegalPages(): Promise<LegalPage[]>;
@@ -320,7 +328,6 @@ export class DatabaseStorage implements IStorage {
       inStock: product.inStock ?? true,
       featured: product.featured ?? false,
       onSale: product.onSale ?? false,
-      originalPrice: product.originalPrice || null,
       rating: product.rating || 5,
       reviewCount: product.reviewCount || 0,
     };
@@ -340,7 +347,6 @@ export class DatabaseStorage implements IStorage {
     if (product.inStock !== undefined) updateData.inStock = product.inStock;
     if (product.featured !== undefined) updateData.featured = product.featured;
     if (product.onSale !== undefined) updateData.onSale = product.onSale;
-    if (product.originalPrice !== undefined) updateData.originalPrice = product.originalPrice;
     if (product.rating !== undefined) updateData.rating = product.rating;
     if (product.reviewCount !== undefined) updateData.reviewCount = product.reviewCount;
 
@@ -572,6 +578,33 @@ export class DatabaseStorage implements IStorage {
   async deleteSiteConfig(key: string): Promise<boolean> {
     const result = await db.delete(siteConfigs).where(eq(siteConfigs.key, key));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // 🔧 Feature Flags operations para rollout seguro
+  async getFeatureFlags(): Promise<FeatureFlag[]> {
+    return await db.select().from(featureFlags).orderBy(featureFlags.category, featureFlags.key);
+  }
+
+  async getFeatureFlagByKey(key: string): Promise<FeatureFlag | undefined> {
+    const [flag] = await db.select().from(featureFlags).where(eq(featureFlags.key, key));
+    return flag || undefined;
+  }
+
+  async isFeatureEnabled(key: string): Promise<boolean> {
+    const flag = await this.getFeatureFlagByKey(key);
+    return flag?.enabled || false;
+  }
+
+  async createFeatureFlag(flag: InsertFeatureFlag): Promise<FeatureFlag> {
+    const [newFlag] = await db.insert(featureFlags).values(flag).returning();
+    return newFlag;
+  }
+
+  async updateFeatureFlag(key: string, enabled: boolean): Promise<void> {
+    await db
+      .update(featureFlags)
+      .set({ enabled, updatedAt: new Date() })
+      .where(eq(featureFlags.key, key));
   }
 
   // Legal pages operations

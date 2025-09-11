@@ -235,6 +235,26 @@ export const insertSiteConfigSchema = createInsertSchema(siteConfigs).omit({
 export type SiteConfig = typeof siteConfigs.$inferSelect;
 export type InsertSiteConfig = z.infer<typeof insertSiteConfigSchema>;
 
+// 🔧 Feature Flags para rollout seguro del nuevo sistema
+export const featureFlags = pgTable("feature_flags", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key").notNull().unique(),
+  enabled: boolean("enabled").notNull().default(false),
+  description: varchar("description"),
+  category: varchar("category").default("system"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type FeatureFlag = typeof featureFlags.$inferSelect;
+export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+
 // Legal Pages
 export const legalPages = pgTable("legal_pages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
