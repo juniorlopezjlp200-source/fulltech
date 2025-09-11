@@ -485,6 +485,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/admin/change-password", requireAdmin, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ error: "New password must be at least 6 characters long" });
+      }
+
+      // Get current admin
+      const admin = await storage.getAdminByEmail(req.session.adminEmail!);
+      if (!admin) {
+        return res.status(404).json({ error: "Admin not found" });
+      }
+
+      // Verify current password
+      const passwordMatch = await bcrypt.compare(currentPassword, admin.password);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Current password is incorrect" });
+      }
+
+      // Hash new password
+      const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+      // Update password in database
+      await storage.updateAdminPassword(admin.id, newPasswordHash);
+
+      res.json({
+        success: true,
+        message: "Password updated successfully"
+      });
+    } catch (error) {
+      console.error("Change admin password error:", error);
+      res.status(500).json({ error: "Failed to change password" });
+    }
+  });
+
   // ---------- Phone Authentication ----------
   app.post("/api/auth/phone/register", async (req, res) => {
     try {

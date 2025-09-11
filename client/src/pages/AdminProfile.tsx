@@ -12,6 +12,14 @@ export default function AdminProfile() {
     picture: ""
   });
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       window.location.href = "/admin/login";
@@ -43,10 +51,71 @@ export default function AdminProfile() {
     }));
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPasswordError("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implementar actualización de perfil de admin
     console.log("Actualizar perfil admin:", formData);
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+
+    // Validación
+    if (!passwordData.currentPassword) {
+      setPasswordError("Debe ingresar su contraseña actual");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError("La nueva contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.error || "Error al cambiar la contraseña");
+        return;
+      }
+
+      // Limpiar el formulario si es exitoso
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      });
+      
+      alert("¡Contraseña cambiada exitosamente! Por seguridad, te recomendamos cerrar sesión y volver a iniciar.");
+    } catch (error) {
+      setPasswordError("Error de conexión al cambiar la contraseña");
+    }
   };
 
   if (isLoading) {
@@ -203,7 +272,135 @@ export default function AdminProfile() {
                 </div>
               </div>
             </div>
+          </form>
 
+          {/* Sección Separada para Cambio de Contraseña */}
+          <div className="border-t border-gray-200">
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="p-6 space-y-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center">
+                    <i className="fas fa-key text-white"></i>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Seguridad de la Cuenta</h3>
+                    <p className="text-sm text-gray-500">Cambia tu contraseña para mantener tu cuenta segura</p>
+                  </div>
+                </div>
+
+                {passwordError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-exclamation-triangle text-red-500"></i>
+                      <span className="text-red-700 text-sm">{passwordError}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contraseña Actual */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <i className="fas fa-lock mr-1"></i>
+                      Contraseña Actual
+                    </label>
+                    <Input
+                      type="password"
+                      name="currentPassword"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Ingrese su contraseña actual"
+                      required
+                    />
+                  </div>
+
+                  <div></div> {/* Espacio vacío para alineación */}
+
+                  {/* Nueva Contraseña */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <i className="fas fa-key mr-1"></i>
+                      Nueva Contraseña
+                    </label>
+                    <Input
+                      type="password"
+                      name="newPassword"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Mínimo 6 caracteres"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+
+                  {/* Confirmar Nueva Contraseña */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <i className="fas fa-check-circle mr-1"></i>
+                      Confirmar Nueva Contraseña
+                    </label>
+                    <Input
+                      type="password"
+                      name="confirmPassword"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Repetir nueva contraseña"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Consejos de Seguridad */}
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-blue-900 mb-2">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    Consejos para una contraseña segura:
+                  </h4>
+                  <ul className="text-xs text-blue-700 space-y-1">
+                    <li>• Usa al menos 6 caracteres</li>
+                    <li>• Combina letras, números y símbolos</li>
+                    <li>• Evita usar información personal</li>
+                    <li>• No compartas tu contraseña con nadie</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Botones para Cambio de Contraseña */}
+              <div className="px-6 py-4 bg-red-50 border-t border-red-200 flex items-center justify-between">
+                <div className="flex items-center text-sm text-gray-600">
+                  <i className="fas fa-shield-alt mr-2 text-red-500"></i>
+                  Cambio de contraseña requiere confirmación
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setPasswordData({
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmPassword: ""
+                      });
+                      setPasswordError("");
+                    }}
+                  >
+                    <i className="fas fa-eraser mr-2"></i>
+                    Limpiar
+                  </Button>
+                  <Button 
+                    type="submit"
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    <i className="fas fa-key mr-2"></i>
+                    Cambiar Contraseña
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Form Actions para Perfil */}
+          <form onSubmit={handleSubmit}>
             {/* Form Actions */}
             <div className="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex items-center justify-between">
               <Button

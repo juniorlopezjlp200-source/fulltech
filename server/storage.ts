@@ -316,6 +316,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(admins.id, id));
   }
 
+  async updateAdminPassword(id: string, newPasswordHash: string): Promise<void> {
+    await db.update(admins)
+      .set({ password: newPasswordHash })
+      .where(eq(admins.id, id));
+  }
+
   // Product operations
   async getAllProducts(): Promise<Product[]> {
     return await db.select().from(products);
