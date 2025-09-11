@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useCustomer } from "@/hooks/useCustomer";
 import { useCustomPages } from "@/hooks/useCustomPages";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
+import { useRoutePreloader } from "@/hooks/useRoutePreloader";
 import { useConfigLoader, getConfigValue } from "@/lib/config";
 import { Link, useLocation } from "wouter";
 
@@ -44,7 +46,9 @@ export function TopBar() {
     customerHookResult;
   
   const { groupedPages } = useCustomPages();
-  const { goHome, goToCustomPage } = useInstantNavigation();
+  const { goHome, goToCustomPage, navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
+  const { onMouseEnterPreload } = useRoutePreloader();
 
   useConfigLoader();
   const logoUrl = getConfigValue("logo_url", logoDefault);
@@ -146,7 +150,7 @@ export function TopBar() {
           <img
             src={logoUrl}
             alt={logoAlt}
-            className="w-12 h-12 md:w-14 md:h-14 object-contain drop-shadow-lg animate-logo-rotate hover:scale-110 transition-all duration-300 hover:drop-shadow-xl"
+            className="w-12 h-12 md:w-14 md:h-14 object-contain drop-shadow-lg animate-logo-rotate hover:scale-110 transition-all duration-100 hover:drop-shadow-xl"
           />
           <div className="text-left">
             <h1 className="text-slate-900 font-extrabold tracking-tight text-xl md:text-2xl">
@@ -233,7 +237,7 @@ export function TopBar() {
 
       {/* 🎨 MENÚ PROFESIONAL EXPANDIDO - OCUPA 50% DE PANTALLA */}
       <div
-        className={`fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/2 bg-gradient-to-br from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-l border-blue-300/20 shadow-2xl z-50 transition-all duration-300 overflow-y-auto ${
+        className={`fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/2 bg-gradient-to-br from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-l border-blue-300/20 shadow-2xl z-50 transition-all duration-100 overflow-y-auto ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
         data-testid="professional-side-menu"
@@ -294,8 +298,9 @@ export function TopBar() {
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Mi Cuenta</h4>
                 
                 <button 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={() => { closeMenu(); window.location.href = '/dashboard'; }}
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/customer/dashboard'); })}
+                  onMouseEnter={onMouseEnterPreload('/customer/dashboard')}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                     <i className="fas fa-tachometer-alt text-white" />
@@ -609,11 +614,12 @@ export function TopBar() {
               {/* 🔐 Acciones de autenticación */}
               <div className="pt-4 border-t border-white/10 space-y-3">
                 <button
-                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 rounded-xl transition-all duration-200 border border-blue-500/30"
-                  onClick={() => {
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30 rounded-xl transition-all duration-100 border border-blue-500/30"
+                  onClick={createInstantClickHandler(() => {
                     closeMenu();
-                    window.location.href = "/login";
-                  }}
+                    navigateInstantly("/login");
+                  })}
+                  onMouseEnter={onMouseEnterPreload('/login')}
                   data-testid="button-login"
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">

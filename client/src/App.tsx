@@ -29,7 +29,7 @@ import { FixedFooter } from "@/components/FixedFooter";
 function ScrollToTop() {
   const [location] = useLocation();
   useEffect(() => {
-    const id = window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+    const id = window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
     return () => window.cancelAnimationFrame(id);
   }, [location]);
   return null;

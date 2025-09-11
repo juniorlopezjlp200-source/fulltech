@@ -52,10 +52,10 @@ export function useInstantNavigation() {
         const savedPosition = sessionScrollPositions.get(location) || 0;
         window.scrollTo({
           top: savedPosition,
-          behavior: 'instant'
+          behavior: 'auto'
         });
         isNavigatingRef.current = false;
-      }, 50); // Small delay to ensure content is rendered
+      }, 0); // Instant rendering
 
       return () => clearTimeout(timer);
     }

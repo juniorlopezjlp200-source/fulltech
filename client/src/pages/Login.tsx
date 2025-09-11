@@ -1,22 +1,30 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
 
 export function Login() {
   const [selectedRole, setSelectedRole] = useState<'admin' | 'google' | 'phone' | null>(null);
+  const { navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
 
   const handleRoleSelect = (role: 'admin' | 'google' | 'phone') => {
     setSelectedRole(role);
     if (role === 'admin') {
-      window.location.href = '/admin/login';
+      navigateInstantly('/admin/login');
     } else if (role === 'google') {
       // Iniciar Google OAuth para clientes
       handleGoogleLogin();
     } else if (role === 'phone') {
       // Ir a registro/login con teléfono
-      window.location.href = '/phone-auth';
+      navigateInstantly('/phone-auth');
     }
   };
+
+  const handlePhoneClick = createInstantClickHandler(() => handleRoleSelect('phone'));
+  const handleGoogleClick = createInstantClickHandler(() => handleRoleSelect('google'));
+  const handleAdminClick = createInstantClickHandler(() => handleRoleSelect('admin'));
 
   const handleGoogleLogin = () => {
     window.location.href = '/api/auth/google';
@@ -54,8 +62,8 @@ export function Login() {
               </div>
 
               <Button 
-                onClick={() => handleRoleSelect('phone')}
-                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-2.5 shadow-lg transition-all duration-300"
+                onClick={handlePhoneClick}
+                className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-2.5 shadow-lg transition-all duration-100"
                 data-testid="button-phone-auth"
               >
                 <i className="fas fa-rocket mr-2"></i>
@@ -76,7 +84,7 @@ export function Login() {
             {/* GOOGLE OAUTH */}
             <div className="space-y-3">
               <Button 
-                onClick={() => handleRoleSelect('google')}
+                onClick={handleGoogleClick}
                 className="w-full bg-white hover:bg-gray-100 text-gray-900 font-semibold py-2.5"
                 data-testid="button-google-login"
               >
@@ -88,7 +96,7 @@ export function Login() {
               <div className="text-center pt-2">
                 <Button 
                   variant="ghost"
-                  onClick={() => handleRoleSelect('admin')}
+                  onClick={handleAdminClick}
                   className="text-blue-300 hover:text-white hover:bg-white/10 text-xs py-2"
                   data-testid="button-admin-login"
                 >

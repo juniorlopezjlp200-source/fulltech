@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { useCustomer } from "@/hooks/useCustomer";
 import { Button } from "@/components/ui/button";
+import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
+import { useRoutePreloader } from "@/hooks/useRoutePreloader";
 
 export function FixedFooter() {
   const { customer, isAuthenticated } = useCustomer();
   const [isExpanded, setIsExpanded] = useState(false);
+  const { navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
+  const { onMouseEnterPreload } = useRoutePreloader();
 
   const handleWhatsAppShare = () => {
     const message = isAuthenticated && customer?.referralCode 
@@ -15,13 +21,13 @@ export function FixedFooter() {
     window.open(whatsappUrl, '_blank');
   };
 
-  const handleAdClick = () => {
+  const handleAdClick = createInstantClickHandler(() => {
     if (isAuthenticated) {
-      window.location.href = '/customer/dashboard';
+      navigateInstantly('/customer/dashboard');
     } else {
-      window.location.href = '/login';
+      navigateInstantly('/login');
     }
-  };
+  });
 
   const handleFacebookClick = () => {
     window.open('https://facebook.com/fulltechrd', '_blank');
@@ -37,7 +43,7 @@ export function FixedFooter() {
 
   return (
     <footer 
-      className={`fixed left-0 right-0 bg-gradient-to-r from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-t border-blue-300/20 text-white shadow-2xl z-40 transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-16 md:h-20'}`}
+      className={`fixed left-0 right-0 bg-gradient-to-r from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-t border-blue-300/20 text-white shadow-2xl z-40 transition-all duration-100 ${isExpanded ? 'h-auto' : 'h-16 md:h-20'}`}
       style={{
         bottom: 'env(safe-area-inset-bottom)',
         paddingBottom: 'env(safe-area-inset-bottom)'
@@ -90,7 +96,8 @@ export function FixedFooter() {
             <div className="flex justify-center md:flex">
               <div 
                 onClick={handleAdClick}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg px-3 py-2 md:px-4 md:py-2 cursor-pointer transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30"
+                onMouseEnter={onMouseEnterPreload(isAuthenticated ? '/customer/dashboard' : '/login')}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg px-3 py-2 md:px-4 md:py-2 cursor-pointer transition-all duration-100 transform hover:scale-105 shadow-lg border border-blue-400/30"
               >
                 {isAuthenticated ? (
                   <div className="text-center">
