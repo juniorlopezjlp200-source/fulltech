@@ -54,9 +54,10 @@ function Router() {
   if (isCustomPage) {
     return (
       <div className="min-h-screen flex flex-col">
-        <div className="flex-1">
+        <div className="flex-1 pb-16 md:pb-20 safe-area-bottom" style={{paddingBottom: `max(4rem, calc(4rem + env(safe-area-inset-bottom)))`}}>
           <CustomPage />
         </div>
+        <FixedFooter />
       </div>
     );
   }
@@ -64,7 +65,7 @@ function Router() {
   return (
     <div className="min-h-screen flex flex-col">
       
-      <div className={`flex-1 ${shouldShowFooter ? "pb-20" : "pb-20"}`}>
+      <div className={`flex-1 pb-16 md:pb-20 safe-area-bottom`} style={{paddingBottom: `max(4rem, calc(4rem + env(safe-area-inset-bottom)))`}}>
         <ScrollToTop />
         <Switch>
           <Route path="/" component={Catalog} />

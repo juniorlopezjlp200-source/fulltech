@@ -113,6 +113,23 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
         <div className="p-3 sm:p-4 lg:p-5">
           <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-card-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">{product.name}</h3>
           <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
+          
+          {/* ⭐ Rating y Likes juntos */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-1">
+              <div className="flex">
+                {renderStars(product.rating || 5)}
+              </div>
+              <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+            </div>
+            {/* ❤️ Likes del producto */}
+            {product.likes && product.likes > 0 && (
+              <div className="flex items-center gap-1">
+                <i className="fas fa-heart text-red-500 text-xs"></i>
+                <span className="text-xs font-medium text-red-600">{product.likes.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-between">
             <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
             <div className="flex items-center gap-1 sm:gap-2">
@@ -169,6 +186,13 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
               {renderStars(product.rating || 5)}
             </div>
             <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
+            {/* ❤️ Likes del producto */}
+            {product.likes && product.likes > 0 && (
+              <div className="flex items-center gap-1 ml-2">
+                <i className="fas fa-heart text-red-500 text-xs"></i>
+                <span className="text-xs font-medium text-muted-foreground">{product.likes}</span>
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
