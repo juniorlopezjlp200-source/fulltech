@@ -174,9 +174,10 @@ export function TopBar() {
           {/* ✅ Avatar de Usuario Autenticado - Clickeable */}
           {isAuthenticated && customer && (
             <button 
-              onClick={createInstantClickHandler(() => navigateInstantly('/mi/tablero'))}
+              onClick={createInstantClickHandler(() => navigateInstantly('/'))}
+              onMouseEnter={onMouseEnterPreload('/')}
               className="flex items-center gap-2 hover:opacity-90 transition-opacity"
-              title="Ir a mi Dashboard"
+              title="Ir al Catálogo"
             >
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg hover:scale-105 transition-transform">
                 {customer.picture ? (
