@@ -19,7 +19,6 @@ import { MiPerfil } from "@/pages/MiPerfil";
 import { MiConfiguracion } from "@/pages/MiConfiguracion";
 import { MiReferir } from "@/pages/MiReferir";
 import { MiSoporte } from "@/pages/MiSoporte";
-import { AuthGate } from "@/components/AuthGate";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminProfile from "@/pages/AdminProfile";
@@ -83,37 +82,13 @@ function Router() {
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route path="/phone-auth" component={PhoneAuth} />
-          <Route path="/customer/dashboard">
-            <AuthGate>
-              <CustomerDashboard />
-            </AuthGate>
-          </Route>
+          <Route path="/customer/dashboard" component={CustomerDashboard} />
           {/* ✅ Rutas del área cliente protegidas */}
-          <Route path="/mi/tablero">
-            <AuthGate>
-              <MiTablero />
-            </AuthGate>
-          </Route>
-          <Route path="/mi/perfil">
-            <AuthGate>
-              <MiPerfil />
-            </AuthGate>
-          </Route>
-          <Route path="/mi/configuracion">
-            <AuthGate>
-              <MiConfiguracion />
-            </AuthGate>
-          </Route>
-          <Route path="/mi/referir">
-            <AuthGate>
-              <MiReferir />
-            </AuthGate>
-          </Route>
-          <Route path="/mi/soporte">
-            <AuthGate>
-              <MiSoporte />
-            </AuthGate>
-          </Route>
+          <Route path="/mi/tablero" component={MiTablero} />
+          <Route path="/mi/perfil" component={MiPerfil} />
+          <Route path="/mi/configuracion" component={MiConfiguracion} />
+          <Route path="/mi/referir" component={MiReferir} />
+          <Route path="/mi/soporte" component={MiSoporte} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/dashboard" component={AdminDashboard} />
           <Route path="/admin/profile" component={AdminProfile} />

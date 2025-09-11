@@ -13,10 +13,8 @@ export function setupGoogleAuth(app: Express) {
   // Configurar estrategia de Google
   const baseUrl = process.env.REPLIT_DEV_DOMAIN 
     ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    : 'https://3d2437f9e7f2.replit.app';
   const callbackURL = `${baseUrl}/api/auth/google/callback`;
-  
-  console.log(`🔐 Google OAuth configurado con callback: ${callbackURL}`);
     
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '',

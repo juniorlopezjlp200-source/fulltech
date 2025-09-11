@@ -25,46 +25,11 @@ export function useCustomer() {
   const [welcomeMessage, setWelcomeMessage] = useState<string>("");
   const [showWelcome, setShowWelcome] = useState(false);
 
-  const { data: authResponse, isLoading, error } = useQuery<{
-    authenticated: boolean;
-    user?: {
-      id: string;
-      name: string;
-      email?: string;
-      avatarUrl?: string;
-    };
-  }>({
-    queryKey: ["/api/me"],
-    queryFn: async () => {
-      const response = await fetch("/api/me", {
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      return response.json();
-    },
+  const { data: customer, isLoading, error } = useQuery<Customer>({
+    queryKey: ["/api/auth/me"],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
-
-  // Map the response to Customer format for compatibility
-  const customer: Customer | null = authResponse?.authenticated && authResponse.user
-    ? {
-        id: authResponse.user.id,
-        name: authResponse.user.name,
-        email: authResponse.user.email || undefined,
-        picture: (authResponse.user as any).avatarUrl || (authResponse.user as any).avatar || undefined,
-        referralCode: '', // Will be loaded from profile endpoint if needed
-        authProvider: 'google' as const, // Determined from auth method
-        isPhoneVerified: false,
-        createdAt: new Date().toISOString(), // Default value
-        lastVisit: new Date().toISOString(),
-        isActive: true
-      }
-    : null;
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -80,7 +45,7 @@ export function useCustomer() {
       // Limpiar localStorage
       localStorage.removeItem("customer_last_visit");
       localStorage.removeItem("customer_preferences");
-      queryClient.removeQueries({ queryKey: ["/api/me"] });
+      queryClient.removeQueries({ queryKey: ["/api/auth/me"] });
       setLocation("/");
     },
   });
@@ -166,7 +131,7 @@ export function useCustomer() {
     customer,
     isLoading,
     error,
-    isAuthenticated: authResponse?.authenticated === true,
+    isAuthenticated: !!customer,
     logout,
     isLoggingOut: logoutMutation.isPending,
     welcomeMessage,

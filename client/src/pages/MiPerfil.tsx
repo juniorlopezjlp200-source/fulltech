@@ -85,7 +85,7 @@ export function MiPerfil() {
       toast({ title: "¡Perfil actualizado!", description: "Tus cambios han sido guardados exitosamente." });
       setIsEditing(false);
       queryClient.invalidateQueries({ queryKey: [`/api/customer/profile`] });
-      queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
     onError: () => {
       toast({ title: "Error", description: "No se pudo actualizar tu perfil. Inténtalo de nuevo.", variant: "destructive" });
@@ -162,7 +162,7 @@ export function MiPerfil() {
         
         // Refrescar datos del usuario
         queryClient.invalidateQueries({ queryKey: [`/api/customer/profile`] });
-        queryClient.invalidateQueries({ queryKey: ["/api/me"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         
         toast({
           title: "¡Avatar actualizado!",
