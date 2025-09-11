@@ -1,17 +1,13 @@
 {
-  "name": "FULLTECH - Catálogo de Productos",
+  "name": "FULLTECH - Tecnología y herramientas",
   "short_name": "FULLTECH",
-  "description": "Catálogo de productos tecnológicos con sistema de referidos",
+  "description": "FULLTECH - Tecnología y herramientas profesionales. Equipos especializados y soluciones tecnológicas innovadoras.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "lang": "es",
   "categories": ["shopping", "business"],
-
-  // 🎨 Colores FULLTECH basados en el logo:
-  // - background_color: Fondo del splash screen
-  // - theme_color: Barra de navegador (azul principal del logo)
   "background_color": "#FFFFFF",
   "theme_color": "#3B82F6",
 
@@ -28,9 +24,9 @@
 
   "shortcuts": [
     {
-      "name": "Ver Catálogo",
-      "short_name": "Catálogo",
-      "description": "Ver todos los productos",
+      "name": "Ver Productos",
+      "short_name": "Productos",
+      "description": "Ver tecnología y herramientas",
       "url": "/?action=catalog",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192", "type": "image/png" }]
     },

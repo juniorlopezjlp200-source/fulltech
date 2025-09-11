@@ -164,7 +164,7 @@ export function TopBar() {
             </h1>
             {!isAuthenticated && (
               <p className="text-slate-600 text-xs md:text-sm font-medium">
-                Catálogo Tecnológico
+                Tecnología y herramientas
               </p>
             )}
           </div>
