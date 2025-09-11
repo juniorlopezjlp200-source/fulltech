@@ -33,18 +33,6 @@ export function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* BOTÓN VOLVER AL CATÁLOGO */}
-        <div className="mb-4 text-center">
-          <Button
-            variant="ghost" 
-            onClick={createInstantClickHandler(() => navigateInstantly('/'))}
-            className="text-white/70 hover:text-white hover:bg-white/10 text-sm py-2 px-4 transition-all duration-100"
-          >
-            <i className="fas fa-arrow-left mr-2"></i>
-            Volver al Catálogo
-          </Button>
-        </div>
-
         {/* TARJETA ÚNICA COMPACTA */}
         <Card className="bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-2xl relative overflow-hidden">
           {/* Badge "NUEVO" */}
@@ -52,7 +40,18 @@ export function Login() {
             ¡NUEVO!
           </div>
           
-          <CardHeader className="text-center pb-4">
+          {/* BOTÓN VOLVER AL CATÁLOGO - PROMINENTE */}
+          <div className="p-4 pb-2">
+            <Button
+              onClick={createInstantClickHandler(() => navigateInstantly('/'))}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 text-base transition-all duration-100 shadow-lg"
+            >
+              <i className="fas fa-arrow-left mr-2"></i>
+              ← Volver al Catálogo
+            </Button>
+          </div>
+
+          <CardHeader className="text-center pb-4 pt-2">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl">
               <i className="fas fa-mobile-alt text-3xl text-white"></i>
             </div>
