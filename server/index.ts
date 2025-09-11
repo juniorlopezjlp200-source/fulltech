@@ -184,13 +184,32 @@ process.on("unhandledRejection", (reason, promise) => {
       }
 
       console.log(`Successfully found static files at: ${distPath}`);
-      app.use(express.static(distPath));
+      
+      // 🔧 FIX: Headers anti-cache para JavaScript, CSS y HTML
+      app.use(express.static(distPath, {
+        setHeaders: (res, filePath) => {
+          // Para archivos JS, CSS y HTML: no cache (evita Ctrl+F5)
+          if (filePath.match(/\.(js|css|html)$/)) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+          // Para otros archivos (imágenes, etc): cache normal
+          else {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+          }
+        }
+      }));
 
       // SPA fallback
       app.use("*", (_req, res) => {
         const indexPath = path.resolve(distPath, "index.html");
         console.log(`Attempting to serve index.html from: ${indexPath}`);
         if (fs.existsSync(indexPath)) {
+          // Headers anti-cache también para index.html del fallback
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
           res.sendFile(indexPath);
         } else {
           console.error(`index.html not found at: ${indexPath}`);
