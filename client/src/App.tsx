@@ -21,6 +21,7 @@ import { MiReferir } from "@/pages/MiReferir";
 import { MiSoporte } from "@/pages/MiSoporte";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminProfile from "@/pages/AdminProfile";
 import Warranty from "@/pages/Warranty";
 import Refund from "@/pages/Refund";
 import Privacy from "@/pages/Privacy";
@@ -64,8 +65,8 @@ function Router() {
         <div className="flex-1 pb-16 md:pb-20 safe-area-bottom" style={{paddingBottom: `max(4rem, calc(4rem + env(safe-area-inset-bottom)))`}}>
           <CustomPage />
         </div>
-        {/* 📌 Footer oculto en rutas /mi/* incluso en custom pages */}
-        {!location.startsWith('/mi/') && <FixedFooter />}
+        {/* 📌 Footer oculto en rutas /mi/* y /admin* incluso en custom pages */}
+        {!location.startsWith('/mi/') && !location.startsWith('/admin') && <FixedFooter />}
       </div>
     );
   }
@@ -90,6 +91,7 @@ function Router() {
           <Route path="/mi/soporte" component={MiSoporte} />
           <Route path="/admin/login" component={AdminLogin} />
           <Route path="/admin/dashboard" component={AdminDashboard} />
+          <Route path="/admin/profile" component={AdminProfile} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/garantia" component={Warranty} />
           <Route path="/reembolsos" component={Refund} />
@@ -103,8 +105,8 @@ function Router() {
 
       {shouldShowFooter && <Footer />}
       
-      {/* 📌 Footer Fijo con Publicidad Central - Oculto en rutas /mi/* */}
-      {!location.startsWith('/mi/') && <FixedFooter />}
+      {/* 📌 Footer Fijo con Publicidad Central - Oculto en rutas /mi/* y /admin* */}
+      {!location.startsWith('/mi/') && !location.startsWith('/admin') && <FixedFooter />}
     </div>
   );
 }

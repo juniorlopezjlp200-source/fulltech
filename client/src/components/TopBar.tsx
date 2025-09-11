@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCustomer } from "@/hooks/useCustomer";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useCustomPages } from "@/hooks/useCustomPages";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 import { useInstantFeedback } from "@/hooks/useInstantFeedback";
@@ -39,11 +40,16 @@ export function TopBar() {
   // ✅ Detectar si estamos en páginas admin
   const isAdminPage = location.startsWith('/admin');
   
-  // Siempre ejecutar useCustomer (reglas de hooks) pero ignorar resultado en admin
+  // Hooks de autenticación
   const customerHookResult = useCustomer();
+  const adminHookResult = useAdmin();
+  
+  // Determinar tipo de usuario y datos según la página actual
   const { customer, isAuthenticated, logout } = isAdminPage ? 
     { customer: null, isAuthenticated: false, logout: () => {} } : 
     customerHookResult;
+  
+  const { admin, isAuthenticated: isAdminAuthenticated } = adminHookResult;
   
   const { groupedPages } = useCustomPages();
   const { goHome, goToCustomPage, navigateInstantly } = useInstantNavigation();
@@ -293,6 +299,61 @@ export function TopBar() {
 
         {/* 📱 Contenido Principal del Menú */}
         <div className="p-6 space-y-6">
+          {/* 🔧 SECCIÓN DE ADMINISTRACIÓN - Solo para administradores autenticados */}
+          {isAdminAuthenticated && admin && (
+            <>
+              <div className="space-y-2">
+                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">
+                  <i className="fas fa-crown mr-2 text-yellow-400"></i>
+                  Panel de Administración
+                </h4>
+                
+                <button
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 rounded-xl transition-all duration-200 border border-yellow-500/30"
+                  onClick={() => {
+                    closeMenu();
+                    navigateInstantly("/admin/dashboard");
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-600 flex items-center justify-center">
+                    <i className="fas fa-tachometer-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Panel de Control</p>
+                    <p className="text-white/60 text-sm">Administrar sistema</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+
+                <button
+                  className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 rounded-xl transition-all duration-200 border border-purple-500/30"
+                  onClick={() => {
+                    closeMenu();
+                    navigateInstantly("/admin/profile");
+                  }}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
+                      {admin.picture ? (
+                        <img src={admin.picture} alt="" className="w-6 h-6 rounded-full object-cover" />
+                      ) : (
+                        <i className="fas fa-user-tie text-white text-xs" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Mi Perfil Admin</p>
+                    <p className="text-white/60 text-sm">Editar información y foto</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+              </div>
+
+              {/* Separador */}
+              <div className="border-t border-white/10"></div>
+            </>
+          )}
+
           {isAuthenticated ? (
             <>
               {/* 👤 Perfil de Usuario - Clickeable */}

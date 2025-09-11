@@ -2,11 +2,13 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useEffect, useState } from "react";
 import AdminProducts from "./AdminProducts";
 import AdminHeroSlides from "./AdminHeroSlides";
-import AdminRaffle from "./AdminRaffle";
 import { SiteConfigForm } from "@/components/admin/SiteConfigForm";
 import { LegalPagesManager } from "@/components/admin/LegalPagesManager";
 import { CustomPagesManager } from "@/components/admin/CustomPagesManager";
 import { CategoriesManager } from "../components/admin/CategoriesManager";
+import AdminCustomers from "./AdminCustomers";
+import AdminReferrals from "./AdminReferrals";
+import AdminAnalytics from "./AdminAnalytics";
 
 export default function AdminDashboard() {
   const { admin, isLoading, isAuthenticated, logout } = useAdmin();
@@ -39,7 +41,9 @@ export default function AdminDashboard() {
     { id: 'products', label: 'Productos', icon: 'fa-box' },
     { id: 'categories', label: 'Categorías', icon: 'fa-tags' },
     { id: 'hero-slides', label: 'Hero Slides', icon: 'fa-images' },
-    { id: 'raffle', label: 'Participantes Rifa', icon: 'fa-gift' },
+    { id: 'customers', label: 'Clientes', icon: 'fa-users' },
+    { id: 'referrals', label: 'Sistema de Referidos', icon: 'fa-share-alt' },
+    { id: 'analytics', label: 'Analíticas', icon: 'fa-chart-bar' },
     { id: 'site-config', label: 'Configuración del Sitio', icon: 'fa-cog' },
     { id: 'custom-pages', label: 'Páginas Personalizadas', icon: 'fa-edit' },
     { id: 'legal-pages', label: 'Páginas Legales', icon: 'fa-file-alt' }
@@ -72,7 +76,7 @@ export default function AdminDashboard() {
               <i className="fas fa-users text-green-600 text-sm lg:text-base"></i>
             </div>
             <div className="ml-3 lg:ml-4">
-              <p className="text-xs lg:text-sm font-medium text-gray-600">Participantes</p>
+              <p className="text-xs lg:text-sm font-medium text-gray-600">Clientes</p>
               <p className="text-lg lg:text-2xl font-semibold text-gray-900">156</p>
             </div>
           </div>
@@ -93,11 +97,11 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-lg shadow p-4 lg:p-6">
           <div className="flex items-center">
             <div className="w-10 h-10 lg:w-12 lg:h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <i className="fas fa-fire text-purple-600 text-sm lg:text-base"></i>
+              <i className="fas fa-share-alt text-purple-600 text-sm lg:text-base"></i>
             </div>
             <div className="ml-3 lg:ml-4">
-              <p className="text-xs lg:text-sm font-medium text-gray-600">Ofertas</p>
-              <p className="text-lg lg:text-2xl font-semibold text-gray-900">8</p>
+              <p className="text-xs lg:text-sm font-medium text-gray-600">Referidos</p>
+              <p className="text-lg lg:text-2xl font-semibold text-gray-900">43</p>
             </div>
           </div>
         </div>
@@ -128,13 +132,13 @@ export default function AdminDashboard() {
           </button>
           
           <button 
-            onClick={() => setActiveSection('raffle')}
+            onClick={() => setActiveSection('customers')}
             className="bg-purple-500 hover:bg-purple-600 text-white p-4 rounded-lg text-left transition-colors"
-            data-testid="quick-action-raffle"
+            data-testid="quick-action-customers"
           >
-            <i className="fas fa-list text-xl mb-2"></i>
-            <div className="font-medium">Ver Participantes</div>
-            <div className="text-sm opacity-90">Gestionar rifa</div>
+            <i className="fas fa-users text-xl mb-2"></i>
+            <div className="font-medium">Gestionar Clientes</div>
+            <div className="text-sm opacity-90">Usuarios y perfiles</div>
           </button>
         </div>
 
@@ -192,7 +196,11 @@ export default function AdminDashboard() {
 
   const renderHeroSlides = () => <AdminHeroSlides />;
 
-  const renderRaffle = () => <AdminRaffle />;
+  const renderCustomers = () => <AdminCustomers />;
+  
+  const renderReferrals = () => <AdminReferrals />;
+  
+  const renderAnalytics = () => <AdminAnalytics />;
 
   const renderSiteConfig = () => <SiteConfigForm />;
 
@@ -326,7 +334,9 @@ export default function AdminDashboard() {
           {activeSection === 'products' && renderProducts()}
           {activeSection === 'categories' && renderCategories()}
           {activeSection === 'hero-slides' && renderHeroSlides()}
-          {activeSection === 'raffle' && renderRaffle()}
+          {activeSection === 'customers' && renderCustomers()}
+          {activeSection === 'referrals' && renderReferrals()}
+          {activeSection === 'analytics' && renderAnalytics()}
           {activeSection === 'site-config' && renderSiteConfig()}
           {activeSection === 'custom-pages' && renderCustomPages()}
           {activeSection === 'legal-pages' && renderLegalPages()}
