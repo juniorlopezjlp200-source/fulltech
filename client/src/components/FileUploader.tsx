@@ -143,21 +143,29 @@ export function FileUploader({
       }
 
       // 1. Obtener URL de subida
+      console.log("🔄 [DEBUG] Solicitando URL de upload...");
       const uploadResponse = await apiRequest("POST", "/api/upload-url");
       const uploadData = await uploadResponse.json() as { uploadUrl: string; objectPath: string };
+      console.log("✅ [DEBUG] URL obtenida exitosamente:", uploadData.objectPath);
       
       // Decodificar HTML entities en la URL
       const uploadURL = uploadData.uploadUrl.replace(/&amp;/g, '&');
+      console.log("🔗 [DEBUG] URL final para upload:", uploadURL.substring(0, 100) + "...");
 
       // 2. Subir archivo a SeaweedFS/S3
+      console.log("📤 [DEBUG] Iniciando upload a SeaweedFS...");
       const fileUploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: file,
         headers: { 'Content-Type': file.type },
       });
 
+      console.log("📊 [DEBUG] Respuesta SeaweedFS - Status:", fileUploadResponse.status, "OK:", fileUploadResponse.ok);
+
       if (!fileUploadResponse.ok) {
-        throw new Error(`Upload failed: ${fileUploadResponse.status}`);
+        const errorText = await fileUploadResponse.text();
+        console.error("❌ [DEBUG] Error en SeaweedFS:", errorText);
+        throw new Error(`Upload failed: ${fileUploadResponse.status} - ${errorText}`);
       }
 
       // 3. Generar URL final
