@@ -401,20 +401,6 @@ export function TopBar() {
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
 
-                {/* 🔒 Logout Button */}
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition-all duration-100 border border-red-500/30" 
-                  onClick={() => { logout(); closeMenu(); }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center">
-                    <i className="fas fa-sign-out-alt text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Cerrar Sesión</p>
-                    <p className="text-white/60 text-sm">Logout seguro</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </button>
               </div>
 
               {/* 🛍️ Tienda y Productos */}
