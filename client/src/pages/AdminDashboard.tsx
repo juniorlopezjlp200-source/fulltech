@@ -9,11 +9,24 @@ import { CategoriesManager } from "../components/admin/CategoriesManager";
 import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminReferrals } from "@/components/admin/AdminReferrals";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
+import { useConfigLoader, getConfigValue } from "@/lib/config";
+
+const logoDefault = "/fulltech-logo-main.png";
 
 export default function AdminDashboard() {
   const { admin, isLoading, isAuthenticated, logout } = useAdmin();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Configuración del logo
+  const { configs } = useConfigLoader();
+  const logoUrl = getConfigValue(configs, 'logo_url', logoDefault);
+  const logoAlt = getConfigValue(configs, 'logo_alt', 'FULLTECH Logo');
+  
+  // Función para ir al catálogo principal
+  const goToCatalog = () => {
+    window.location.href = '/';
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -244,9 +257,18 @@ export default function AdminDashboard() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                <i className="fas fa-cog text-white"></i>
-              </div>
+              <button
+                onClick={goToCatalog}
+                className="w-10 h-10 bg-white rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm hover:shadow-md"
+                title="Ir al Catálogo Principal"
+                aria-label="Ir al Catálogo Principal"
+              >
+                <img
+                  src={logoUrl}
+                  alt={logoAlt}
+                  className="w-8 h-8 object-contain hover:scale-110 transition-transform"
+                />
+              </button>
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Panel de Administración</h1>
                 <p className="text-sm text-gray-500">FULLTECH Catalog Admin</p>
