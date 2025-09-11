@@ -70,9 +70,14 @@ export function FileUploader({
       // 1. Obtener URL de subida
       const uploadResponse = await apiRequest("POST", "/api/upload-url");
       const uploadData = await uploadResponse.json() as { uploadUrl: string; objectPath: string };
-      const uploadURL = uploadData.uploadUrl;
+      
+      // Decodificar HTML entities en la URL (corregir &amp; a &)
+      const uploadURL = uploadData.uploadUrl.replace(/&amp;/g, '&');
+      
+      console.log("Upload URL obtenida:", uploadURL);
+      console.log("Object path:", uploadData.objectPath);
 
-      // 2. Subir archivo directamente a Google Cloud Storage
+      // 2. Subir archivo directamente a SeaweedFS/S3
       const fileUploadResponse = await fetch(uploadURL, {
         method: "PUT",
         body: file,
@@ -81,12 +86,17 @@ export function FileUploader({
         },
       });
 
+      console.log("Upload response status:", fileUploadResponse.status);
+      console.log("Upload response headers:", Object.fromEntries(fileUploadResponse.headers.entries()));
+
       if (!fileUploadResponse.ok) {
-        throw new Error(`Upload failed: ${fileUploadResponse.status}`);
+        const errorText = await fileUploadResponse.text();
+        console.error("Upload failed details:", errorText);
+        throw new Error(`Upload failed: ${fileUploadResponse.status} - ${errorText}`);
       }
 
-      // 3. Usar el objectPath devuelto por el backend
-      const localImageUrl = `/uploads/${uploadData.objectPath}`;
+      // 3. Usar el objectPath correcto para la URL local
+      const localImageUrl = `/uploads/${uploadData.objectPath.replace('uploads/', '')}`;
 
       // 4. Notificar al componente padre
       onUploadComplete(localImageUrl);

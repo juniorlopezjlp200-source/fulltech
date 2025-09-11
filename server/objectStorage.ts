@@ -100,11 +100,18 @@ export class ObjectStorageService {
    */
   async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; objectPath: string }> {
     const objectPath = `uploads/${randomUUID()}`; // sin extensión; opcional si quieres forzar .png/.jpg
-    const uploadUrl = await getSignedUrl(
+    let uploadUrl = await getSignedUrl(
       s3Client,
       new PutObjectCommand({ Bucket: BUCKET_NAME, Key: objectPath }),
       { expiresIn: 900 } // 15 min
     );
+    
+    // 🔧 Importante: asegurar que no hay HTML encoding en la URL
+    uploadUrl = uploadUrl.replace(/&amp;/g, '&');
+    
+    console.log(`[objectStorage] 📤 Upload URL generada para: ${objectPath}`);
+    console.log(`[objectStorage] 🔗 URL: ${uploadUrl.substring(0, 100)}...`);
+    
     return { uploadUrl, objectPath };
   }
 
