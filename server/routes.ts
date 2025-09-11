@@ -483,8 +483,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint legacy para compatibilidad
   app.post("/api/upload-url", requireAdmin, async (_req, res) => {
     try {
-      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadUrl, objectPath: uploadUrl });
+      const uploadResult = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ 
+        uploadUrl: uploadResult.uploadUrl, 
+        objectPath: uploadResult.objectPath 
+      });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
