@@ -31,7 +31,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
       <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-white to-black z-[9999] flex items-center justify-center animate-splash-fade-out">
         <div className="text-center animate-splash-zoom-out">
           <img 
-            src="/fulltech-logo.png" 
+            src="/fulltech-logo-transparent.png" 
             alt="FULLTECH" 
             className="w-24 h-24 mx-auto opacity-0"
           />
@@ -56,7 +56,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           {/* Logo principal */}
           <div className="relative">
             <img 
-              src="/fulltech-logo.png" 
+              src="/fulltech-logo-transparent.png" 
               alt="FULLTECH" 
               className="w-32 h-32 mx-auto relative z-10 animate-logo-float drop-shadow-2xl"
             />
