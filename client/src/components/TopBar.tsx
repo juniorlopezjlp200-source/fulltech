@@ -355,7 +355,7 @@ export function TopBar() {
             </>
           )}
 
-          {isAuthenticated ? (
+          {(isAuthenticated || isAdminAuthenticated) ? (
             <>
               {/* 👤 Perfil de Usuario - Clickeable */}
               <button 
