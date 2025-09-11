@@ -79,28 +79,29 @@ export function setupGoogleAuth(app: Express) {
   );
 
   // Unified logout endpoint for both Google and phone users
-  app.get('/api/auth/logout', (req, res) => {
+  app.post('/api/auth/logout', (req: any, res) => {
     // Handle Google OAuth logout
     if (req.isAuthenticated()) {
-      req.logout((err) => {
+      req.logout((err: any) => {
         if (err) {
           console.error('Error during Google logout:', err);
         }
         // Also destroy session to clear any phone auth data
-        req.session.destroy((sessionErr) => {
+        req.session.destroy((sessionErr: any) => {
           if (sessionErr) {
             console.error('Error destroying session:', sessionErr);
           }
-          res.redirect('/');
+          res.json({ success: true, message: 'Logged out successfully' });
         });
       });
     } else {
       // Handle phone auth logout by destroying session
-      req.session.destroy((err) => {
+      req.session.destroy((err: any) => {
         if (err) {
           console.error('Error destroying session:', err);
+          return res.status(500).json({ error: 'Error destroying session' });
         }
-        res.redirect('/');
+        res.json({ success: true, message: 'Logged out successfully' });
       });
     }
   });
