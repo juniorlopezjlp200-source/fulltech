@@ -98,19 +98,6 @@ export function Login() {
               </div>
             </div>
           </CardContent>
-          
-          {/* Back button integrado */}
-          <div className="text-center pb-4">
-            <Button 
-              variant="ghost" 
-              className="text-blue-200 hover:text-white hover:bg-white/10 text-xs"
-              onClick={() => window.location.href = '/'}
-              data-testid="button-back-home"
-            >
-              <i className="fas fa-arrow-left mr-1"></i>
-              Volver al Catálogo
-            </Button>
-          </div>
         </Card>
       </div>
     </div>
