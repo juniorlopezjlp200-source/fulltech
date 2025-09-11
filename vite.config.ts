@@ -13,17 +13,25 @@ export default defineConfig(async ({ mode }) => {
   const plugins = [react()];
 
   if (!isProd) {
-    // Plugins SOLO en dev
-    const runtimeErrorOverlayMod = await import(
-      "@replit/vite-plugin-runtime-error-modal"
-    );
-    plugins.push(runtimeErrorOverlayMod.default());
+    // Plugins SOLO en dev - con manejo de errores para plugins faltantes
+    try {
+      const runtimeErrorOverlayMod = await import(
+        "@replit/vite-plugin-runtime-error-modal"
+      );
+      plugins.push(runtimeErrorOverlayMod.default());
+    } catch (error) {
+      console.warn("⚠️ @replit/vite-plugin-runtime-error-modal no disponible:", (error as Error).message);
+    }
 
     if (isReplit) {
-      const { cartographer } = await import(
-        "@replit/vite-plugin-cartographer"
-      );
-      plugins.push(cartographer());
+      try {
+        const { cartographer } = await import(
+          "@replit/vite-plugin-cartographer"
+        );
+        plugins.push(cartographer());
+      } catch (error) {
+        console.warn("⚠️ @replit/vite-plugin-cartographer no disponible:", (error as Error).message);
+      }
     }
   }
 

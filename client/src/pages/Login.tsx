@@ -67,7 +67,10 @@ export function Login() {
                 className="w-10 h-10 object-contain"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling!.style.display = 'block';
+                  const nextElement = e.currentTarget.nextElementSibling;
+                  if (nextElement instanceof HTMLElement) {
+                    nextElement.style.display = 'block';
+                  }
                 }}
               />
               <i className="fas fa-sign-in-alt text-2xl text-white hidden"></i>
