@@ -37,7 +37,7 @@ export function FixedFooter() {
 
   return (
     <footer 
-      className={`fixed left-0 right-0 bg-gradient-to-r from-blue-900/95 via-purple-900/95 to-indigo-900/95 backdrop-blur-xl border-t border-white/10 text-white shadow-2xl z-40 transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-16 md:h-20'}`}
+      className={`fixed left-0 right-0 bg-gradient-to-r from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-t border-blue-300/20 text-white shadow-2xl z-40 transition-all duration-300 ${isExpanded ? 'h-auto' : 'h-16 md:h-20'}`}
       style={{
         bottom: 'env(safe-area-inset-bottom)',
         paddingBottom: 'env(safe-area-inset-bottom)'
@@ -90,7 +90,7 @@ export function FixedFooter() {
             <div className="flex justify-center md:flex">
               <div 
                 onClick={handleAdClick}
-                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-lg px-3 py-2 md:px-4 md:py-2 cursor-pointer transition-all duration-200 transform hover:scale-105 shadow-lg border border-green-400/30"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg px-3 py-2 md:px-4 md:py-2 cursor-pointer transition-all duration-200 transform hover:scale-105 shadow-lg border border-blue-400/30"
               >
                 {isAuthenticated ? (
                   <div className="text-center">
@@ -98,7 +98,7 @@ export function FixedFooter() {
                       <i className="fas fa-gift text-white text-xs"></i>
                       <span className="font-bold text-white text-xs md:text-sm">RD$25!</span>
                     </div>
-                    <p className="text-green-100 text-xs hidden md:block">
+                    <p className="text-blue-100 text-xs hidden md:block">
                       {customer?.referralCode}
                     </p>
                   </div>
@@ -108,7 +108,7 @@ export function FixedFooter() {
                       <i className="fas fa-user-plus text-white text-xs"></i>
                       <span className="font-bold text-white text-xs md:text-sm">¡Únete!</span>
                     </div>
-                    <p className="text-green-100 text-xs hidden md:block">10% descuento</p>
+                    <p className="text-blue-100 text-xs hidden md:block">10% descuento</p>
                   </div>
                 )}
               </div>

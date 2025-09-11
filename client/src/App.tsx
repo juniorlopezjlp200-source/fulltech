@@ -5,6 +5,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useShareMotivation } from "@/hooks/useShareMotivation";
+import { SplashScreen } from "@/components/SplashScreen";
 
 import NotFound from "@/pages/not-found";
 import Catalog from "@/pages/catalog";
@@ -95,6 +96,16 @@ function Router() {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={150}>

@@ -9,11 +9,11 @@
   "lang": "es",
   "categories": ["shopping", "business"],
 
-  // Colores de marca:
-  // - background_color: se usa en splash-screen/carga (sólido).
-  // - theme_color: pinta la barra del navegador y UI cromada.
-  "background_color": "#0B1220",
-  "theme_color": "#2563EB",
+  // 🎨 Colores FULLTECH basados en el logo:
+  // - background_color: Fondo del splash screen
+  // - theme_color: Barra de navegador (azul principal del logo)
+  "background_color": "#FFFFFF",
+  "theme_color": "#3B82F6",
 
   "icons": [
     { "src": "/icon-72x72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any" },

@@ -137,7 +137,7 @@ export function TopBar() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 safe-area-top">
       {/* Fondo claro tipo vidrio para que el negro siempre contraste */}
-      <div className="bg-white/60 backdrop-blur-lg border-b border-white/70 shadow-sm px-4 py-3 flex items-center justify-between h-16 md:h-20 md:px-8">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-blue-200/50 shadow-md px-4 py-3 flex items-center justify-between h-16 md:h-20 md:px-8">
         <button
           onClick={goHome}
           className="flex items-center gap-3 hover:opacity-90 transition-opacity"
@@ -177,7 +177,7 @@ export function TopBar() {
           {canInstall && !isAppInstalled && (
             <button
               onClick={handleInstallClick}
-              className="rounded-full p-2 md:p-3 bg-emerald-200 hover:bg-emerald-300 border border-emerald-300 transition-colors"
+              className="rounded-full p-2 md:p-3 bg-blue-200 hover:bg-blue-300 border border-blue-300 transition-colors"
               data-testid="button-install-app"
               title="Instalar App"
               aria-label="Instalar App"
@@ -234,7 +234,7 @@ export function TopBar() {
 
       {/* 🎨 MENÚ PROFESIONAL EXPANDIDO - OCUPA 50% DE PANTALLA */}
       <div
-        className={`fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/2 bg-gradient-to-br from-blue-900/95 via-purple-900/95 to-indigo-900/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-50 transition-all duration-300 overflow-y-auto ${
+        className={`fixed top-0 right-0 h-full w-full md:w-1/2 lg:w-1/2 bg-gradient-to-br from-blue-900/95 via-blue-800/95 to-blue-700/95 backdrop-blur-xl border-l border-blue-300/20 shadow-2xl z-50 transition-all duration-300 overflow-y-auto ${
           isMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
         data-testid="professional-side-menu"
