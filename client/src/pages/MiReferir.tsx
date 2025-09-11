@@ -42,7 +42,7 @@ export function MiReferir() {
     total: referrals.length,
     qualified: referrals.filter(r => r.status === 'qualified').length,
     pending: referrals.filter(r => r.status === 'pending').length,
-    earnings: referrals.filter(r => r.status === 'qualified').length * 25, // RD$25 por referido
+    earnings: customer?.discountEarned || 0, // 5% real del valor de las compras
   };
 
   const referralUrl = customer ? `${window.location.origin}/?ref=${customer.referralCode}` : '';
@@ -147,7 +147,7 @@ export function MiReferir() {
           
           <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-2xl p-6 text-white">
             <h1 className="text-2xl md:text-3xl font-bold mb-2">Programa de Referidos</h1>
-            <p className="text-yellow-100">Gana RD$25 por cada amigo que se registre</p>
+            <p className="text-yellow-100">Gana 5% del valor de cada compra de tus referidos</p>
           </div>
         </div>
 

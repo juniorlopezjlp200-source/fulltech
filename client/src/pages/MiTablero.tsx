@@ -54,7 +54,7 @@ export function MiTablero() {
 
   // 📈 Calcular estadísticas
   const earningsStats = {
-    totalEarnings: referrals.filter(r => r.status === 'qualified').length * 25, // RD$25 por referido
+    totalEarnings: customer?.discountEarned || 0, // 5% real del valor de las compras
     qualifiedReferrals: referrals.filter(r => r.status === 'qualified').length,
     pendingReferrals: referrals.filter(r => r.status === 'pending').length,
     totalReferrals: referrals.length,
@@ -181,7 +181,7 @@ export function MiTablero() {
             </CardHeader>
             <CardContent>
               <p className="text-slate-600 text-sm">
-                Comparte tu código y gana RD$25 por cada amigo que se registre.
+                Comparte tu código y gana el 5% del valor de cada compra de tus referidos.
               </p>
               <Button variant="outline" className="w-full mt-4">
                 Empezar a Referir
@@ -250,7 +250,7 @@ export function MiTablero() {
                             {referral.referredCustomer?.name || 'Usuario referido'}
                           </p>
                           <p className="text-sm text-slate-500">
-                            {referral.status === 'qualified' ? 'Referido calificado - RD$25 ganados' :
+                            {referral.status === 'qualified' ? 'Referido calificado - Ganaste 5% de su compra' :
                              referral.status === 'pending' ? 'Referido pendiente' : 'Referido expirado'}
                           </p>
                         </div>

@@ -60,6 +60,7 @@ export interface IStorage {
   getCustomerByPhone(phone: string): Promise<Customer | undefined>;
   getCustomerByReferralCode(referralCode: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer & { referralCode: string }): Promise<Customer>;
+  updateCustomer(id: string, updates: Partial<InsertCustomer>): Promise<Customer | undefined>;
   updateCustomerLastVisit(id: string): Promise<void>;
   getAllCustomers(): Promise<Customer[]>;
 

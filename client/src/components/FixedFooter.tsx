@@ -103,7 +103,7 @@ export function FixedFooter() {
                   <div className="text-center">
                     <div className="flex items-center justify-center gap-1">
                       <i className="fas fa-gift text-white text-xs"></i>
-                      <span className="font-bold text-white text-xs md:text-sm">RD$25!</span>
+                      <span className="font-bold text-white text-xs md:text-sm">¡5%!</span>
                     </div>
                     <p className="text-blue-100 text-xs hidden md:block">
                       {customer?.referralCode}
@@ -170,7 +170,7 @@ export function FixedFooter() {
                   </div>
                   <p className="text-white/90 text-xs mb-3">
                     {isAuthenticated 
-                      ? `Comparte tu código ${customer?.referralCode} y gana RD$25 por cada referido que compre`
+                      ? `Comparte tu código ${customer?.referralCode} y gana 5% de cada compra de tus referidos`
                       : 'Regístrate GRATIS y obtén 10% descuento + gana dinero refiriendo amigos'
                     }
                   </p>
