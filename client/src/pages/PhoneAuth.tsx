@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
 
 interface SiteConfig {
   id: string;
@@ -24,7 +25,8 @@ export function PhoneAuth() {
   const [success, setSuccess] = useState("");
   
   // Navegación instantánea
-  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
+  const { navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
 
   // Configuraciones del sitio
   const { data: configs = [] } = useQuery<SiteConfig[]>({
@@ -149,7 +151,10 @@ export function PhoneAuth() {
               className="w-12 h-12 object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling!.style.display = 'block';
+                const nextElement = e.currentTarget.nextElementSibling;
+                if (nextElement instanceof HTMLElement) {
+                  nextElement.style.display = 'block';
+                }
               }}
             />
             <i className="fas fa-mobile-alt text-2xl text-blue-600 hidden"></i>

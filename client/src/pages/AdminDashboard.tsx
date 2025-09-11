@@ -11,6 +11,7 @@ import { AdminReferrals } from "@/components/admin/AdminReferrals";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { useConfigLoader, getConfigValue } from "@/lib/config";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
 
 const logoDefault = "/fulltech-logo-main.png";
 
@@ -25,7 +26,8 @@ export default function AdminDashboard() {
   const logoAlt = getConfigValue(configs, 'logo_alt') || 'FULLTECH Logo';
   
   // Navegación instantánea
-  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
+  const { navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
   
   // Función para ir al catálogo principal instantáneamente
   const goToCatalog = createInstantClickHandler(() => navigateInstantly('/'));

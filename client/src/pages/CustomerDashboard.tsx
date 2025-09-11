@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomer, type Customer } from "@/hooks/useCustomer";
 import { useInstantNavigation } from "@/hooks/useInstantNavigation";
+import { useInstantFeedback } from "@/hooks/useInstantFeedback";
 
 // 📊 Tipos para el dashboard expandido
 interface Referral {
@@ -72,7 +73,8 @@ export function CustomerDashboard() {
   const [uploadingImage, setUploadingImage] = useState(false);
   
   // Navegación instantánea
-  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
+  const { navigateInstantly } = useInstantNavigation();
+  const { createInstantClickHandler } = useInstantFeedback();
   
   // Settings state
   const [notifications, setNotifications] = useState({
