@@ -184,20 +184,20 @@ export default function ProductDetail() {
             e.stopPropagation();
             handleShare();
           }}
-          className="fab-share-button absolute top-20 md:top-24 right-4 md:right-6 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all duration-300 z-[70]"
+          className="fab-share-button absolute top-20 md:top-24 right-4 md:right-6 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/90 backdrop-blur-md border border-white/50 flex items-center justify-center hover:bg-white transition-all duration-300 z-[70] shadow-lg"
           title="Compartir"
           aria-label="Compartir"
         >
-          <i className="fas fa-share-alt text-white text-sm md:text-base" />
+          <i className="fas fa-share-alt text-black text-sm md:text-base" />
         </button>
 
         {/* BACK */}
         <button
           onClick={handleBack}
-          className="absolute top-20 md:top-24 left-4 md:left-8 w-10 h-10 md:w-12 md:h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors z-[70]"
+          className="absolute top-20 md:top-24 left-4 md:left-8 w-10 h-10 md:w-12 md:h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-[70] shadow-lg"
           title="Volver"
         >
-          <i className="fas fa-arrow-left text-white text-sm md:text-base" />
+          <i className="fas fa-arrow-left text-black text-sm md:text-base" />
         </button>
 
         {/* MINIATURAS — ENCIMA DE TODO */}
