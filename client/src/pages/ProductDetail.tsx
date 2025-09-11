@@ -184,7 +184,7 @@ export default function ProductDetail() {
             e.stopPropagation();
             handleShare();
           }}
-          className="absolute top-20 md:top-24 right-4 md:right-6 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-colors z-[70]"
+          className="fab-share-button absolute top-20 md:top-24 right-4 md:right-6 w-10 h-10 md:w-11 md:h-11 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center hover:bg-white/30 transition-all duration-300 z-[70]"
           title="Compartir"
           aria-label="Compartir"
         >

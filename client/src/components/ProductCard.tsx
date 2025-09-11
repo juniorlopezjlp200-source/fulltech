@@ -134,7 +134,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
                   e.stopPropagation();
                   handleShareProduct();
                 }}
-                className="bg-primary text-primary-foreground w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center flex-shrink-0"
+                className="bg-primary text-primary-foreground w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 rounded-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center flex-shrink-0"
                 data-testid={`button-share-grid-${product.id}`}
                 title="Compartir producto"
               >
@@ -179,7 +179,7 @@ export function ProductCard({ product, layout }: ProductCardProps) {
                   e.stopPropagation();
                   handleShareProduct();
                 }}
-                className="bg-primary text-primary-foreground w-9 h-9 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center"
+                className="bg-primary text-primary-foreground w-9 h-9 rounded-lg hover:bg-primary/90 transition-all duration-300 flex items-center justify-center"
                 data-testid={`button-share-list-${product.id}`}
                 title="Compartir"
               >

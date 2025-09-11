@@ -6,13 +6,14 @@ import { useEffect, useRef } from 'react';
  */
 export const useShareMotivation = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const initialTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Función para aplicar la animación a todos los botones de compartir
     const motivateShare = () => {
-      // Verificar si el usuario prefiere movimiento reducido
+      // Verificar si el usuario prefiere movimiento reducido o si la página no está visible
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReducedMotion) return;
+      if (prefersReducedMotion || document.visibilityState !== 'visible') return;
 
       // Selectores para diferentes tipos de botones de compartir
       const shareSelectors = [
@@ -26,36 +27,60 @@ export const useShareMotivation = () => {
       // Buscar todos los botones de compartir visibles
       const shareButtons = document.querySelectorAll(shareSelectors.join(', '));
       
-      shareButtons.forEach((button, index) => {
+      // Filtrar solo elementos que están realmente visibles en el viewport
+      const visibleButtons: HTMLElement[] = [];
+      
+      shareButtons.forEach((button) => {
         if (button instanceof HTMLElement) {
-          // Aplicar la animación con un pequeño delay entre botones para efecto cascada
-          setTimeout(() => {
-            // Remover clases de animación previas
-            button.classList.remove('animate-share-motivation', 'animate-glow-pulse');
-            
-            // Forzar reflow para reiniciar la animación
-            void button.offsetHeight;
-            
-            // Aplicar la animación de motivación
-            button.classList.add('animate-share-motivation');
-            
-            // Remover la clase después de que termine la animación
-            setTimeout(() => {
-              button.classList.remove('animate-share-motivation');
-            }, 1200); // Duración de la animación
-            
-          }, index * 100); // Delay escalonado de 100ms entre botones
+          // Verificar si el elemento es visible en CSS
+          const style = getComputedStyle(button);
+          if (style.visibility === 'hidden' || style.display === 'none') return;
+          
+          // Verificar si el elemento tiene dimensiones
+          const rect = button.getBoundingClientRect();
+          if (rect.width <= 0 || rect.height <= 0) return;
+          
+          // Verificar si el elemento está en el viewport
+          const inViewport = rect.bottom > 0 && 
+                            rect.top < window.innerHeight && 
+                            rect.right > 0 && 
+                            rect.left < window.innerWidth;
+          
+          if (inViewport) {
+            visibleButtons.push(button);
+          }
         }
+      });
+
+      // Aplicar animación solo a botones visibles
+      visibleButtons.forEach((button, index) => {
+        // Aplicar la animación con un pequeño delay entre botones para efecto cascada
+        setTimeout(() => {
+          // Remover clases de animación previas
+          button.classList.remove('animate-share-motivation');
+          
+          // Forzar reflow para reiniciar la animación
+          void button.offsetHeight;
+          
+          // Aplicar la animación de motivación
+          button.classList.add('animate-share-motivation');
+          
+          // Remover la clase después de que termine la animación
+          setTimeout(() => {
+            button.classList.remove('animate-share-motivation');
+          }, 1200); // Duración de la animación
+          
+        }, index * 100); // Delay escalonado de 100ms entre botones
       });
 
       // Log para debugging (solo en desarrollo)
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🔄 Animación de motivación aplicada a ${shareButtons.length} botones de compartir`);
+        console.log(`🔄 Animación de motivación aplicada a ${visibleButtons.length} de ${shareButtons.length} botones de compartir`);
       }
     };
 
     // Ejecutar inmediatamente para mostrar el comportamiento
-    setTimeout(motivateShare, 2000); // Esperar 2 segundos después del mount
+    initialTimeoutRef.current = setTimeout(motivateShare, 2000); // Esperar 2 segundos después del mount
 
     // Configurar el intervalo de 15 segundos
     intervalRef.current = setInterval(motivateShare, 15000);
@@ -66,14 +91,12 @@ export const useShareMotivation = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (initialTimeoutRef.current) {
+        clearTimeout(initialTimeoutRef.current);
+        initialTimeoutRef.current = null;
+      }
     };
   }, []);
 
-  // Función para triggear manualmente la animación (útil para testing)
-  const triggerMotivation = () => {
-    const event = new CustomEvent('motivateShare');
-    window.dispatchEvent(event);
-  };
-
-  return { triggerMotivation };
+  return {};
 };

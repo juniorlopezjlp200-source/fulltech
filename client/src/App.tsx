@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useShareMotivation } from "@/hooks/useShareMotivation";
 
 import NotFound from "@/pages/not-found";
 import Catalog from "@/pages/catalog";
@@ -34,6 +35,9 @@ function ScrollToTop() {
 function Router() {
   const [location] = useLocation();
   const [hash, setHash] = useState(typeof window !== "undefined" ? window.location.hash : "");
+
+  // Hook global para motivación de compartir cada 15 segundos
+  useShareMotivation();
 
   // escuchar cambios de hash (para páginas custom)
   useEffect(() => {
