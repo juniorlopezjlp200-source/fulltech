@@ -33,6 +33,18 @@ export function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* BOTÓN VOLVER AL CATÁLOGO */}
+        <div className="mb-4 text-center">
+          <Button
+            variant="ghost" 
+            onClick={createInstantClickHandler(() => navigateInstantly('/'))}
+            className="text-white/70 hover:text-white hover:bg-white/10 text-sm py-2 px-4 transition-all duration-100"
+          >
+            <i className="fas fa-arrow-left mr-2"></i>
+            Volver al Catálogo
+          </Button>
+        </div>
+
         {/* TARJETA ÚNICA COMPACTA */}
         <Card className="bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-2xl relative overflow-hidden">
           {/* Badge "NUEVO" */}
