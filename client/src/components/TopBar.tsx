@@ -66,9 +66,7 @@ export function TopBar() {
 
   // ---- PWA listeners ----
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
+    // Service Worker ya se registra en index.html, no duplicar
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();

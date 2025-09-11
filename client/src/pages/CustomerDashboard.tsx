@@ -85,7 +85,7 @@ export function CustomerDashboard() {
   });
 
   // Usar hook personalizado con tipos correctos
-  const { customer, isLoading: customerLoading } = useCustomer();
+  const { customer, isLoading: customerLoading, logout } = useCustomer();
 
   // 📊 Obtener datos expandidos del cliente
   const { data: activities = [] } = useQuery<Activity[]>({
@@ -231,7 +231,7 @@ export function CustomerDashboard() {
   }, [customer]);
 
   const handleLogout = () => {
-    window.location.href = '/api/auth/logout';
+    logout();
   };
 
   if (customerLoading) {

@@ -74,21 +74,16 @@
 
         async function registerSW() {
           try {
-            const reg = await navigator.serviceWorker.register('/sw.js');
-            console.log('[SW] registered /sw.js', reg.scope);
+            // Usar el Service Worker simple para evitar problemas de cache
+            const reg = await navigator.serviceWorker.register('/sw-minimal.js');
+            console.log('[SW] registered /sw-minimal.js', reg.scope);
+            
+            navigator.serviceWorker.ready
+              .then((r) => console.log('[SW] ready:', r.scope))
+              .catch(() => {});
           } catch (e1) {
-            console.warn('[SW] /sw.js failed, trying /sw-minimal.js...', e1);
-            try {
-              const reg2 = await navigator.serviceWorker.register('/sw-minimal.js');
-              console.log('[SW] registered /sw-minimal.js', reg2.scope);
-            } catch (e2) {
-              console.error('[SW] registration failed:', e2);
-            }
+            console.error('[SW] registration failed:', e1);
           }
-
-          navigator.serviceWorker.ready
-            .then((r) => console.log('[SW] ready:', r.scope))
-            .catch(() => {});
         }
 
         if (document.readyState === 'complete') registerSW();
