@@ -1358,5 +1358,160 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ---------- Admin Statistics & Analytics ----------
+  
+  // 📊 Complete referral statistics
+  app.get('/api/admin/stats/referrals', requireAdmin, async (_req, res) => {
+    try {
+      // Get comprehensive referral data
+      const referralStats = await storage.getReferralStatistics();
+      
+      res.json({
+        success: true,
+        data: referralStats
+      });
+    } catch (error) {
+      console.error('Error fetching referral stats:', error);
+      res.status(500).json({ error: 'Failed to fetch referral statistics' });
+    }
+  });
+  
+  // 👥 Complete customer management with filters
+  app.get('/api/admin/customers', requireAdmin, async (req, res) => {
+    try {
+      const { page = 1, limit = 50, search, authProvider, hasReferrals } = req.query;
+      
+      const customers = await storage.getCustomersWithStats({
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string,
+        authProvider: authProvider as string,
+        hasReferrals: hasReferrals === 'true'
+      });
+      
+      res.json({
+        success: true,
+        data: customers
+      });
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+  });
+  
+  // 📈 Customer activity analytics
+  app.get('/api/admin/stats/activity', requireAdmin, async (req, res) => {
+    try {
+      const { period = '7d', customerId } = req.query;
+      
+      const activityStats = await storage.getActivityStatistics({
+        period: period as string,
+        customerId: customerId as string
+      });
+      
+      res.json({
+        success: true,
+        data: activityStats
+      });
+    } catch (error) {
+      console.error('Error fetching activity stats:', error);
+      res.status(500).json({ error: 'Failed to fetch activity statistics' });
+    }
+  });
+  
+  // 📊 Dashboard overview statistics
+  app.get('/api/admin/stats/overview', requireAdmin, async (_req, res) => {
+    try {
+      const overview = await storage.getDashboardOverview();
+      
+      res.json({
+        success: true,
+        data: overview
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard overview:', error);
+      res.status(500).json({ error: 'Failed to fetch dashboard overview' });
+    }
+  });
+  
+  // 🎯 Individual customer details
+  app.get('/api/admin/customers/:id', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const customerDetails = await storage.getCustomerFullDetails(id);
+      
+      if (!customerDetails) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      res.json({
+        success: true,
+        data: customerDetails
+      });
+    } catch (error) {
+      console.error('Error fetching customer details:', error);
+      res.status(500).json({ error: 'Failed to fetch customer details' });
+    }
+  });
+  
+  // 🎯 Update customer status (activate/deactivate)
+  app.put('/api/admin/customers/:id/status', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+      
+      const updated = await storage.updateCustomerStatus(id, isActive);
+      
+      if (!updated) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+      
+      res.json({
+        success: true,
+        message: `Customer ${isActive ? 'activated' : 'deactivated'} successfully`
+      });
+    } catch (error) {
+      console.error('Error updating customer status:', error);
+      res.status(500).json({ error: 'Failed to update customer status' });
+    }
+  });
+  
+  // 🔗 Get referrals for specific customer
+  app.get('/api/admin/customers/:id/referrals', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const referrals = await storage.getCustomerReferrals(id);
+      
+      res.json({
+        success: true,
+        data: referrals
+      });
+    } catch (error) {
+      console.error('Error fetching customer referrals:', error);
+      res.status(500).json({ error: 'Failed to fetch customer referrals' });
+    }
+  });
+  
+  // 📋 Get activity history for specific customer
+  app.get('/api/admin/customers/:id/activity', requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { page = 1, limit = 20 } = req.query;
+      
+      const activities = await storage.getCustomerActivityHistory(id, {
+        page: parseInt(page as string),
+        limit: parseInt(limit as string)
+      });
+      
+      res.json({
+        success: true,
+        data: activities
+      });
+    } catch (error) {
+      console.error('Error fetching customer activity:', error);
+      res.status(500).json({ error: 'Failed to fetch customer activity' });
+    }
+  });
+
   return createServer(app);
 }
