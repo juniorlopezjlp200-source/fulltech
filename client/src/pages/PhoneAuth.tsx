@@ -183,7 +183,7 @@ export function PhoneAuth() {
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div>
                     <Label className="text-white font-medium mb-2 block">
-                      <i className="fas fa-user mr-2 text-yellow-300"></i>
+                      <i className="fas fa-user mr-2 text-blue-300"></i>
                       Nombre Completo
                     </Label>
                     <Input
@@ -198,7 +198,7 @@ export function PhoneAuth() {
 
                   <div>
                     <Label className="text-white font-medium mb-2 block">
-                      <i className="fas fa-phone mr-2 text-yellow-300"></i>
+                      <i className="fas fa-phone mr-2 text-blue-300"></i>
                       Teléfono
                     </Label>
                     <Input
@@ -213,7 +213,7 @@ export function PhoneAuth() {
 
                   <div>
                     <Label className="text-white font-medium mb-2 block">
-                      <i className="fas fa-map-marker-alt mr-2 text-yellow-300"></i>
+                      <i className="fas fa-map-marker-alt mr-2 text-blue-300"></i>
                       Dirección
                     </Label>
                     <Input
@@ -228,7 +228,7 @@ export function PhoneAuth() {
 
                   <div>
                     <Label className="text-white font-medium mb-2 block">
-                      <i className="fas fa-lock mr-2 text-yellow-300"></i>
+                      <i className="fas fa-lock mr-2 text-blue-300"></i>
                       Contraseña
                     </Label>
                     <Input
@@ -243,7 +243,7 @@ export function PhoneAuth() {
 
                   <div>
                     <Label className="text-white font-medium mb-2 block">
-                      <i className="fas fa-check-double mr-2 text-yellow-300"></i>
+                      <i className="fas fa-check-double mr-2 text-blue-300"></i>
                       Confirmar Contraseña
                     </Label>
                     <Input
@@ -256,11 +256,11 @@ export function PhoneAuth() {
                     />
                   </div>
 
-                  <div className="bg-yellow-400/20 border border-yellow-400/50 rounded-lg p-4 text-center">
-                    <p className="text-yellow-100 text-sm mb-2">
+                  <div className="bg-blue-400/20 border border-blue-400/50 rounded-lg p-4 text-center">
+                    <p className="text-white text-sm mb-2">
                       🎁 <span className="font-bold">Beneficios exclusivos al registrarte:</span>
                     </p>
-                    <ul className="text-yellow-200 text-xs space-y-1">
+                    <ul className="text-blue-100 text-xs space-y-1">
                       <li>✨ 10% descuento en tu primera compra</li>
                       <li>🎯 Acceso a ofertas exclusivas</li>
                       <li>🎪 Participación en rifas mensuales</li>

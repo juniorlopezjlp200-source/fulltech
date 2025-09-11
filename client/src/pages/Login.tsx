@@ -53,14 +53,14 @@ export function Login() {
               <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-xl group-hover:scale-110 transition-all duration-300">
                 <i className="fas fa-phone text-black text-3xl"></i>
               </div>
-              <CardTitle className="text-2xl text-yellow-200 mb-2">Registro con Teléfono</CardTitle>
-              <CardDescription className="text-yellow-100">
+              <CardTitle className="text-2xl text-gray-900 mb-2">Registro con Teléfono</CardTitle>
+              <CardDescription className="text-gray-800">
                 <span className="font-semibold">¡Rápido y Fácil!</span><br/>
                 Solo tu nombre, teléfono y dirección
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="text-center text-sm text-yellow-100 mb-3">
+              <div className="text-center text-sm text-gray-900 mb-3">
                 ✨ <span className="font-semibold">10% descuento</span> en tu primera compra<br/>
                 🎁 Participa en rifas exclusivas<br/>
                 📱 Acceso inmediato sin esperas
