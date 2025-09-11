@@ -5,8 +5,7 @@ import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 import { useConfigLoader, getConfigValue } from "@/lib/config";
 import { Link, useLocation } from "wouter";
 
-const logoDefault =
-  "data:image/svg+xml,%3Csvg width='40' height='40' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='20' cy='20' r='20' fill='%234F46E5'/%3E%3Ctext x='20' y='28' text-anchor='middle' fill='white' font-family='sans-serif' font-size='16' font-weight='bold'%3EFT%3C/text%3E%3C/svg%3E";
+const logoDefault = "/fulltech-logo-main.png";
 
 export function TopBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -147,7 +146,7 @@ export function TopBar() {
           <img
             src={logoUrl}
             alt={logoAlt}
-            className="w-10 h-10 md:w-12 md:h-12 object-contain rounded-full ring-2 ring-blue-500/20 animate-logo-rotate hover:scale-110 transition-transform duration-300"
+            className="w-12 h-12 md:w-14 md:h-14 object-contain drop-shadow-lg animate-logo-rotate hover:scale-110 transition-all duration-300 hover:drop-shadow-xl"
           />
           <div className="text-left">
             <h1 className="text-slate-900 font-extrabold tracking-tight text-xl md:text-2xl">
@@ -246,7 +245,7 @@ export function TopBar() {
               <img
                 src={logoUrl}
                 alt={logoAlt}
-                className="w-12 h-12 object-contain rounded-full ring-2 ring-white/20"
+                className="w-14 h-14 object-contain drop-shadow-lg"
               />
               <div>
                 <h2 className="text-white font-bold text-xl">{siteName}</h2>
