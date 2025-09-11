@@ -194,18 +194,24 @@ process.on("unhandledRejection", (reason, promise) => {
 
       console.log(`Successfully found static files at: ${distPath}`);
       
-      // 🔥 ULTRA AGRESIVO: Headers anti-cache para forzar actualizaciones
+      // ✅ Cache headers normales - NO más headers ultra agresivos
       app.use(express.static(distPath, {
         setHeaders: (res, filePath) => {
-          // Para archivos JS, CSS y HTML: ULTRA anti-cache
-          if (filePath.match(/\.(js|css|html)$/)) {
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+          // Service Worker necesita headers especiales para actualizaciones controladas
+          if (filePath.endsWith('sw.js')) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+          // HTML sin cache para actualizaciones inmediatas
+          else if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
-            res.setHeader('Last-Modified', new Date().toUTCString());
-            res.setHeader('ETag', Date.now().toString());
           }
-          // Para otros archivos (imágenes, etc): cache normal
+          // JS y CSS con cache normal
+          else if (filePath.match(/\.(js|css)$/)) {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+          }
+          // Otros archivos con cache normal
           else {
             res.setHeader('Cache-Control', 'public, max-age=3600');
           }
@@ -217,12 +223,10 @@ process.on("unhandledRejection", (reason, promise) => {
         const indexPath = path.resolve(distPath, "index.html");
         console.log(`Attempting to serve index.html from: ${indexPath}`);
         if (fs.existsSync(indexPath)) {
-          // Headers ULTRA anti-cache para index.html del fallback
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+          // Headers normales para index.html - SIN ETag que cambia constantemente
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
           res.setHeader('Pragma', 'no-cache');
           res.setHeader('Expires', '0');
-          res.setHeader('Last-Modified', new Date().toUTCString());
-          res.setHeader('ETag', Date.now().toString());
           res.sendFile(indexPath);
         } else {
           console.error(`index.html not found at: ${indexPath}`);
