@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, memo, useMemo } from 'react';
 import { OptimizedImage } from './OptimizedImage';
+import { formatPrice } from '@/utils/currency';
 
 interface VirtualizedProductListProps {
   products: any[];
@@ -28,12 +29,6 @@ const ProductListItem = memo(({
     return <div className="h-80" />; // Placeholder para mantener altura
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(price / 100);
-  };
 
   const handleShare = async (platform: string) => {
     if (navigator.share && platform === 'native') {

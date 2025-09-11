@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatPrice } from "@/utils/currency";
 
 export default function AdminProducts() {
   const { toast } = useToast();
@@ -70,12 +71,6 @@ export default function AdminProducts() {
     setEditingProduct(null);
   };
 
-  const formatPrice = (priceInCents: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(priceInCents / 100);
-  };
 
   if (showForm) {
     return (

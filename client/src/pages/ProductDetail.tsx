@@ -259,13 +259,13 @@ export default function ProductDetail() {
             <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl">
               {product.onSale && product.originalPrice ? (
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm text-white/60 line-through">{price(product.originalPrice)}</span>
+                  <span className="text-sm text-white/60 line-through">{formatPrice(product.originalPrice)}</span>
                   <span className="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
                     -{Math.round((1 - product.price / product.originalPrice) * 100)}%
                   </span>
                 </div>
               ) : null}
-              <span className="text-3xl lg:text-4xl font-bold text-white">{price(product.price)}</span>
+              <span className="text-3xl lg:text-4xl font-bold text-white">{formatPrice(product.price)}</span>
               <p className="text-sm text-white/80 mt-1">Precio incluye envío gratis</p>
             </div>
 
