@@ -456,9 +456,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             visibility: 'public'
           });
           
-          // Añadir prefijo /uploads/ para compatibilidad
+          // 🔧 FIX: Añadir prefijo /uploads/ solo si no existe ya
           const finalPath = normalizedPath.startsWith('uploads/') ? 
-            `/uploads/${normalizedPath}` : 
+            `/${normalizedPath}` : 
             `/uploads/${normalizedPath}`;
             
           finalizedPaths.push(finalPath);
@@ -510,19 +510,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Serve uploaded images con fallback (sin stacktrace 500) - legacy
   app.get("/uploads/:objectPath(*)", async (req, res) => {
-    const objectPath = req.params.objectPath;
     try {
       const objectStorageService = new ObjectStorageService();
-      const file = await objectStorageService.searchPublicObject(objectPath);
+      
+      // 🔧 FIX: Normalizar para evitar duplicación uploads/uploads/
+      const requested = req.params.objectPath.replace(/^\/+/, "");
+      const fullObjectPath = requested.startsWith("uploads/") ? requested : `uploads/${requested}`;
+      
+      console.log(`[routes] 🖼️ Buscando imagen: ${fullObjectPath}`);
+      
+      const file = await objectStorageService.searchPublicObject(fullObjectPath);
       if (file) {
+        console.log(`[routes] ✅ Imagen encontrada: ${file}`);
         await objectStorageService.downloadObject(file, res);
       } else {
+        console.log(`[routes] ❌ Imagen NO encontrada: ${fullObjectPath}`);
         return res.status(404).end();
       }
     } catch (error: any) {
       console.error("Error serving uploaded file:", {
         message: error?.message,
         code: error?.code,
+        requested: req.params.objectPath
       });
       return res.status(500).json({ error: "Error serving file" });
     }

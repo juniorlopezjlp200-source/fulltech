@@ -96,7 +96,13 @@ export function FileUploader({
       }
 
       // 3. Usar el objectPath correcto para la URL local
-      const localImageUrl = `/uploads/${uploadData.objectPath.replace('uploads/', '')}`;
+      // 🔧 FIX: Extracción robusta de uuid para evitar duplicaciones
+      const uuid = uploadData.objectPath.replace(/^\/?uploads\//, "");
+      const localImageUrl = `/uploads/${uuid}`;
+      
+      console.log("✅ Archivo subido exitosamente!");
+      console.log("📤 Object path:", uploadData.objectPath);
+      console.log("🔗 URL local:", localImageUrl);
 
       // 4. Notificar al componente padre
       onUploadComplete(localImageUrl);
