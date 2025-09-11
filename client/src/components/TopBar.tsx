@@ -156,15 +156,36 @@ export function TopBar() {
             <h1 className="text-slate-900 font-extrabold tracking-tight text-xl md:text-2xl">
               {siteName}
             </h1>
-            {isAuthenticated && customer && (
-              <p className="text-slate-700 text-xs md:text-sm">
-                Hola, <span className="font-semibold">{customer.name.split(" ")[0]}</span> 👋
+            {!isAuthenticated && (
+              <p className="text-slate-600 text-xs md:text-sm font-medium">
+                Catálogo Tecnológico
               </p>
             )}
           </div>
         </button>
 
         <div className="flex items-center gap-2 md:gap-3">
+          {/* ✅ Avatar de Usuario Autenticado */}
+          {isAuthenticated && customer && (
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg">
+                {customer.picture ? (
+                  <img 
+                    src={customer.picture} 
+                    alt={customer.name} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <i className="fas fa-user text-white text-xs md:text-sm" />
+                )}
+              </div>
+              <div className="hidden md:block">
+                <p className="text-slate-900 font-medium text-sm">{customer.name.split(" ")[0]}</p>
+                <p className="text-slate-600 text-xs">{customer.referralCode}</p>
+              </div>
+            </div>
+          )}
+          
           {/* Compartir */}
           <button
             onClick={handleShareClick}
@@ -299,29 +320,75 @@ export function TopBar() {
                 
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
-                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/customer/dashboard'); })}
-                  onMouseEnter={onMouseEnterPreload('/customer/dashboard')}
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/tablero'); })}
+                  onMouseEnter={onMouseEnterPreload('/mi/tablero')}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                     <i className="fas fa-tachometer-alt text-white" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Mi Dashboard</p>
-                    <p className="text-white/60 text-sm">Ganancias y referidos</p>
+                    <p className="text-white font-medium">Mi Tablero</p>
+                    <p className="text-white/60 text-sm">Dashboard personal</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/perfil'); })}
+                  onMouseEnter={onMouseEnterPreload('/mi/perfil')}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-teal-600 flex items-center justify-center">
+                    <i className="fas fa-user-edit text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Mi Perfil</p>
+                    <p className="text-white/60 text-sm">Editar información</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/referir'); })}
+                  onMouseEnter={onMouseEnterPreload('/mi/referir')}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-600 flex items-center justify-center">
+                    <i className="fas fa-share-alt text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Referir Amigos</p>
+                    <p className="text-white/60 text-sm">Gana descuentos</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/configuracion'); })}
+                  onMouseEnter={onMouseEnterPreload('/mi/configuracion')}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+                    <i className="fas fa-cog text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Configuración</p>
+                    <p className="text-white/60 text-sm">Preferencias</p>
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
 
+                {/* 🔒 Logout Button */}
                 <button 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={closeMenu}
+                  className="w-full flex items-center gap-4 p-4 bg-red-500/20 hover:bg-red-500/30 rounded-xl transition-all duration-100 border border-red-500/30" 
+                  onClick={() => { logout(); closeMenu(); }}
                 >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-pink-600 flex items-center justify-center">
-                    <i className="fas fa-heart text-white" />
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center">
+                    <i className="fas fa-sign-out-alt text-white" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Favoritos</p>
-                    <p className="text-white/60 text-sm">Productos guardados</p>
+                    <p className="text-white font-medium">Cerrar Sesión</p>
+                    <p className="text-white/60 text-sm">Logout seguro</p>
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
