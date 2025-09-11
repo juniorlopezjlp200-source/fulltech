@@ -10,6 +10,7 @@ import { AdminCustomers } from "@/components/admin/AdminCustomers";
 import { AdminReferrals } from "@/components/admin/AdminReferrals";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { useConfigLoader, getConfigValue } from "@/lib/config";
+import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 
 const logoDefault = "/fulltech-logo-main.png";
 
@@ -19,14 +20,15 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Configuración del logo
-  const { configs } = useConfigLoader();
-  const logoUrl = getConfigValue(configs, 'logo_url', logoDefault);
-  const logoAlt = getConfigValue(configs, 'logo_alt', 'FULLTECH Logo');
+  const configs = useConfigLoader();
+  const logoUrl = getConfigValue(configs, 'logo_url') || logoDefault;
+  const logoAlt = getConfigValue(configs, 'logo_alt') || 'FULLTECH Logo';
   
-  // Función para ir al catálogo principal
-  const goToCatalog = () => {
-    window.location.href = '/';
-  };
+  // Navegación instantánea
+  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
+  
+  // Función para ir al catálogo principal instantáneamente
+  const goToCatalog = createInstantClickHandler(() => navigateInstantly('/'));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

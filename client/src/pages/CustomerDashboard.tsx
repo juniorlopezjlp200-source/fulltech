@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useCustomer, type Customer } from "@/hooks/useCustomer";
+import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 
 // 📊 Tipos para el dashboard expandido
 interface Referral {
@@ -69,6 +70,9 @@ export function CustomerDashboard() {
   const [profileData, setProfileData] = useState({ name: "", phone: "", address: "" });
   const [selectedProfileImage, setSelectedProfileImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Navegación instantánea
+  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
   
   // Settings state
   const [notifications, setNotifications] = useState({
@@ -252,7 +256,7 @@ export function CustomerDashboard() {
           <CardContent>
             <Button 
               className="w-full" 
-              onClick={() => window.location.href = '/login'}
+              onClick={createInstantClickHandler(() => navigateInstantly('/login'))}
             >
               Iniciar Sesión
             </Button>
@@ -309,7 +313,7 @@ export function CustomerDashboard() {
             <div className="flex items-center space-x-4">
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/'}
+                onClick={createInstantClickHandler(() => navigateInstantly('/'))}
                 className="border-blue-200 text-blue-600 hover:bg-blue-50"
               >
                 <i className="fas fa-store mr-2"></i>
@@ -635,7 +639,7 @@ export function CustomerDashboard() {
                     <p className="text-sm text-gray-400">¡Explora nuestro catálogo y haz tu primera compra!</p>
                     <Button 
                       className="mt-4" 
-                      onClick={() => window.location.href = '/'}
+                      onClick={createInstantClickHandler(() => navigateInstantly('/'))}
                     >
                       <i className="fas fa-store mr-2"></i>
                       Ver Catálogo

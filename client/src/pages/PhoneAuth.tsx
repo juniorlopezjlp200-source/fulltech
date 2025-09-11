@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
+import { useInstantNavigation } from "@/hooks/useInstantNavigation";
 
 interface SiteConfig {
   id: string;
@@ -21,6 +22,9 @@ export function PhoneAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  
+  // Navegación instantánea
+  const { navigateInstantly, createInstantClickHandler } = useInstantNavigation();
 
   // Configuraciones del sitio
   const { data: configs = [] } = useQuery<SiteConfig[]>({
@@ -89,7 +93,7 @@ export function PhoneAuth() {
       if (response.ok) {
         setSuccess(`¡Registro exitoso! Bienvenido ${data.customer.name}. Tu código de referencia es: ${data.customer.referralCode}`);
         setTimeout(() => {
-          window.location.href = "/customer/dashboard";
+          navigateInstantly("/customer/dashboard");
         }, 2000);
       } else {
         setError(data.error || "Error en el registro");
@@ -121,7 +125,7 @@ export function PhoneAuth() {
       if (response.ok) {
         setSuccess(`¡Bienvenido de vuelta ${data.customer.name}!`);
         setTimeout(() => {
-          window.location.href = "/customer/dashboard";
+          navigateInstantly("/customer/dashboard");
         }, 1500);
       } else {
         setError(data.error || "Credenciales incorrectas");
@@ -377,7 +381,7 @@ export function PhoneAuth() {
               <Button
                 variant="ghost"
                 className="text-blue-200 hover:text-white hover:bg-white/10 text-sm py-2"
-                onClick={() => window.location.href = '/login'}
+                onClick={createInstantClickHandler(() => navigateInstantly('/login'))}
               >
                 <i className="fab fa-google mr-1"></i>
                 Google
@@ -385,7 +389,7 @@ export function PhoneAuth() {
               <Button
                 variant="ghost"
                 className="text-blue-200 hover:text-white hover:bg-white/10 text-sm py-2"
-                onClick={() => window.location.href = '/'}
+                onClick={createInstantClickHandler(() => navigateInstantly('/'))}
               >
                 <i className="fas fa-arrow-left mr-1"></i>
                 Volver
