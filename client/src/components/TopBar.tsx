@@ -197,29 +197,6 @@ export function TopBar() {
             </button>
           )}
           
-          {/* Compartir */}
-          <button
-            onClick={handleShareClick}
-            className="rounded-full p-2 md:p-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
-            data-testid="button-share-app"
-            title="Compartir App"
-            aria-label="Compartir App"
-          >
-            <i className="fas fa-share-alt text-black text-sm md:text-base" />
-          </button>
-
-          {/* Instalar (Android/Desktop con prompt) */}
-          {canInstall && !isAppInstalled && (
-            <button
-              onClick={handleInstallClick}
-              className="rounded-full p-2 md:p-3 bg-blue-200 hover:bg-blue-300 border border-blue-300 transition-colors"
-              data-testid="button-install-app"
-              title="Instalar App"
-              aria-label="Instalar App"
-            >
-              <i className="fas fa-download text-black text-sm md:text-base" />
-            </button>
-          )}
 
           {/* Menú */}
           <button
