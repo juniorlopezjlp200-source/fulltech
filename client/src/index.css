@@ -599,7 +599,7 @@ textarea {
   }
 }
 
-/* 🎨 Animaciones FULLTECH Splash Screen */
+/* 🎨 Animaciones Profesionales FULLTECH Splash Screen */
 @keyframes fadeOut {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-20px); }
@@ -611,6 +611,37 @@ textarea {
   100% { width: 100%; }
 }
 
+@keyframes splash-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes splash-zoom-out {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.8); opacity: 0; }
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes title-shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes subtitle-fade {
+  0% { opacity: 0; transform: translateY(15px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loading-progress {
+  0% { width: 0%; transform: translateX(-100%); }
+  50% { width: 70%; transform: translateX(0%); }
+  100% { width: 100%; transform: translateX(0%); }
+}
+
 /* Utilidades para splash screen */
 .animate-fade-out {
   animation: fadeOut 0.3s ease-out forwards;
@@ -618,4 +649,29 @@ textarea {
 
 .animate-loading-bar {
   animation: loadingBar 1.5s ease-in-out infinite;
+}
+
+.animate-splash-fade-out {
+  animation: splash-fade-out 0.5s ease-in forwards;
+}
+
+.animate-splash-zoom-out {
+  animation: splash-zoom-out 0.5s ease-in forwards;
+}
+
+.animate-logo-float {
+  animation: logo-float 3s ease-in-out infinite;
+}
+
+.animate-title-shine {
+  background-size: 200% auto;
+  animation: title-shine 2s linear infinite;
+}
+
+.animate-subtitle-fade {
+  animation: subtitle-fade 1s ease-out 0.5s both;
+}
+
+.animate-loading-progress {
+  animation: loading-progress 2.5s ease-in-out infinite;
 }
