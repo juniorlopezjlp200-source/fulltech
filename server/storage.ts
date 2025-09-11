@@ -130,6 +130,16 @@ export interface IStorage {
   getUserProfile(customerId: string): Promise<UserProfile | undefined>;
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
   updateUserProfile(customerId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile | undefined>;
+  
+  // 📊 Admin Statistics & Analytics operations
+  getReferralStatistics(): Promise<any>;
+  getCustomersWithStats(filters: any): Promise<any>;
+  getActivityStatistics(options: any): Promise<any>;
+  getDashboardOverview(): Promise<any>;
+  getCustomerFullDetails(id: string): Promise<any>;
+  updateCustomerStatus(id: string, isActive: boolean): Promise<Customer | undefined>;
+  getCustomerReferrals(id: string): Promise<any>;
+  getCustomerActivityHistory(id: string, options: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -790,6 +800,445 @@ export class DatabaseStorage implements IStorage {
 
     const result = await db.delete(categories).where(eq(categories.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // 📊 Admin Statistics & Analytics Methods
+
+  async getReferralStatistics(): Promise<any> {
+    try {
+      // Total de clientes
+      const [{ totalCustomers }] = await db
+        .select({ totalCustomers: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers);
+
+      // Total de referidos activos (con referredBy)
+      const [{ totalReferrals }] = await db
+        .select({ totalReferrals: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers)
+        .where(sql`referred_by IS NOT NULL`);
+
+      // Top 10 clientes con más referidos
+      const topReferrers = await db
+        .select({
+          customerId: customers.id,
+          customerName: customers.name,
+          customerPhone: customers.phone,
+          referralCode: customers.referralCode,
+          referralCount: sql<number>`CAST(COUNT(referred.id) AS INTEGER)`
+        })
+        .from(customers)
+        .leftJoin(sql`customers referred`, sql`customers.id = referred.referred_by`)
+        .groupBy(customers.id, customers.name, customers.phone, customers.referralCode)
+        .having(sql`COUNT(referred.id) > 0`)
+        .orderBy(sql`COUNT(referred.id) DESC`)
+        .limit(10);
+
+      // Estadísticas por método de auth
+      const referralsByAuthProvider = await db
+        .select({
+          authProvider: customers.authProvider,
+          totalCustomers: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+          customersWithReferrals: sql<number>`CAST(SUM(CASE WHEN referred_by IS NOT NULL THEN 1 ELSE 0 END) AS INTEGER)`
+        })
+        .from(customers)
+        .groupBy(customers.authProvider);
+
+      // Referidos por mes (últimos 12 meses)
+      const referralsByMonth = await db
+        .select({
+          month: sql<string>`TO_CHAR(created_at, 'YYYY-MM')`,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customers)
+        .where(sql`referred_by IS NOT NULL AND created_at >= NOW() - INTERVAL '12 months'`)
+        .groupBy(sql`TO_CHAR(created_at, 'YYYY-MM')`)
+        .orderBy(sql`TO_CHAR(created_at, 'YYYY-MM')`);
+
+      return {
+        overview: {
+          totalCustomers: totalCustomers || 0,
+          totalReferrals: totalReferrals || 0,
+          referralRate: totalCustomers > 0 ? ((totalReferrals / totalCustomers) * 100).toFixed(1) : '0.0'
+        },
+        topReferrers,
+        byAuthProvider: referralsByAuthProvider,
+        byMonth: referralsByMonth
+      };
+    } catch (error) {
+      console.error('Error getting referral statistics:', error);
+      throw error;
+    }
+  }
+
+  async getCustomersWithStats(filters: any): Promise<any> {
+    try {
+      const { page = 1, limit = 50, search, authProvider, hasReferrals } = filters;
+      const offset = (page - 1) * limit;
+
+      // Base query
+      let whereConditions = [];
+      
+      if (search) {
+        whereConditions.push(sql`(name ILIKE ${`%${search}%`} OR phone ILIKE ${`%${search}%`} OR email ILIKE ${`%${search}%`})`);
+      }
+      
+      if (authProvider) {
+        whereConditions.push(eq(customers.authProvider, authProvider));
+      }
+      
+      if (hasReferrals === true) {
+        whereConditions.push(sql`referred_by IS NOT NULL`);
+      } else if (hasReferrals === false) {
+        whereConditions.push(sql`referred_by IS NULL`);
+      }
+
+      // Construir la condición WHERE
+      const whereClause = whereConditions.length > 0 ? sql`${whereConditions.reduce((acc, condition, index) => 
+        index === 0 ? condition : sql`${acc} AND ${condition}`
+      )}` : sql`1=1`;
+
+      // Obtener clientes con estadísticas
+      const customersWithStats = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          phone: customers.phone,
+          email: customers.email,
+          authProvider: customers.authProvider,
+          isActive: customers.isActive,
+          createdAt: customers.createdAt,
+          lastVisit: customers.lastVisit,
+          referralCode: customers.referralCode,
+          referredBy: customers.referredBy,
+          // Estadísticas agregadas
+          totalReferrals: sql<number>`CAST((SELECT COUNT(*) FROM customers ref WHERE ref.referred_by = customers.id) AS INTEGER)`,
+          totalActivities: sql<number>`CAST((SELECT COUNT(*) FROM customer_activities ca WHERE ca.customer_id = customers.id) AS INTEGER)`,
+          lastActivity: sql<string>`(SELECT MAX(created_at) FROM customer_activities ca WHERE ca.customer_id = customers.id)`
+        })
+        .from(customers)
+        .where(whereClause)
+        .orderBy(desc(customers.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      // Contar total para paginación
+      const [{ totalCount }] = await db
+        .select({ totalCount: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers)
+        .where(whereClause);
+
+      return {
+        customers: customersWithStats,
+        pagination: {
+          page,
+          limit,
+          total: totalCount || 0,
+          totalPages: Math.ceil((totalCount || 0) / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Error getting customers with stats:', error);
+      throw error;
+    }
+  }
+
+  async getActivityStatistics(options: any): Promise<any> {
+    try {
+      const { period = '7d', customerId } = options;
+      
+      // Determinar el rango de fechas basado en el período
+      let dateFilter;
+      switch (period) {
+        case '1d':
+          dateFilter = sql`created_at >= NOW() - INTERVAL '1 day'`;
+          break;
+        case '7d':
+          dateFilter = sql`created_at >= NOW() - INTERVAL '7 days'`;
+          break;
+        case '30d':
+          dateFilter = sql`created_at >= NOW() - INTERVAL '30 days'`;
+          break;
+        case '90d':
+          dateFilter = sql`created_at >= NOW() - INTERVAL '90 days'`;
+          break;
+        default:
+          dateFilter = sql`created_at >= NOW() - INTERVAL '7 days'`;
+      }
+
+      // Base where condition
+      let whereCondition = dateFilter;
+      if (customerId) {
+        whereCondition = sql`${dateFilter} AND customer_id = ${customerId}`;
+      }
+
+      // Actividad por tipo
+      const activityByType = await db
+        .select({
+          activityType: customerActivities.activityType,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customerActivities)
+        .where(whereCondition)
+        .groupBy(customerActivities.activityType)
+        .orderBy(sql`COUNT(*) DESC`);
+
+      // Actividad por día
+      const activityByDay = await db
+        .select({
+          date: sql<string>`TO_CHAR(created_at, 'YYYY-MM-DD')`,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customerActivities)
+        .where(whereCondition)
+        .groupBy(sql`TO_CHAR(created_at, 'YYYY-MM-DD')`)
+        .orderBy(sql`TO_CHAR(created_at, 'YYYY-MM-DD')`);
+
+      // Actividad por hora del día
+      const activityByHour = await db
+        .select({
+          hour: sql<number>`CAST(EXTRACT(HOUR FROM created_at) AS INTEGER)`,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customerActivities)
+        .where(whereCondition)
+        .groupBy(sql`EXTRACT(HOUR FROM created_at)`)
+        .orderBy(sql`EXTRACT(HOUR FROM created_at)`);
+
+      // Clientes más activos (si no se especifica un cliente)
+      let mostActiveCustomers = [];
+      if (!customerId) {
+        mostActiveCustomers = await db
+          .select({
+            customerId: customerActivities.customerId,
+            customerName: customers.name,
+            customerPhone: customers.phone,
+            activityCount: sql<number>`CAST(COUNT(*) AS INTEGER)`
+          })
+          .from(customerActivities)
+          .leftJoin(customers, eq(customerActivities.customerId, customers.id))
+          .where(whereCondition)
+          .groupBy(customerActivities.customerId, customers.name, customers.phone)
+          .orderBy(sql`COUNT(*) DESC`)
+          .limit(10);
+      }
+
+      return {
+        period,
+        customerId,
+        byType: activityByType,
+        byDay: activityByDay,
+        byHour: activityByHour,
+        mostActiveCustomers
+      };
+    } catch (error) {
+      console.error('Error getting activity statistics:', error);
+      throw error;
+    }
+  }
+
+  async getDashboardOverview(): Promise<any> {
+    try {
+      // Estadísticas generales
+      const [{ totalCustomers }] = await db
+        .select({ totalCustomers: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers);
+
+      const [{ activeCustomers }] = await db
+        .select({ activeCustomers: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers)
+        .where(eq(customers.isActive, true));
+
+      const [{ customersWithReferrals }] = await db
+        .select({ customersWithReferrals: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers)
+        .where(sql`referred_by IS NOT NULL`);
+
+      const [{ totalProducts }] = await db
+        .select({ totalProducts: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(products);
+
+      // Actividad reciente (últimas 24 horas)
+      const [{ recentActivity }] = await db
+        .select({ recentActivity: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customerActivities)
+        .where(sql`created_at >= NOW() - INTERVAL '24 hours'`);
+
+      // Nuevos clientes (últimos 7 días)
+      const [{ newCustomers }] = await db
+        .select({ newCustomers: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customers)
+        .where(sql`created_at >= NOW() - INTERVAL '7 days'`);
+
+      // Clientes por proveedor de auth
+      const customersByAuthProvider = await db
+        .select({
+          authProvider: customers.authProvider,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customers)
+        .groupBy(customers.authProvider);
+
+      return {
+        totals: {
+          customers: totalCustomers || 0,
+          activeCustomers: activeCustomers || 0,
+          customersWithReferrals: customersWithReferrals || 0,
+          products: totalProducts || 0,
+          recentActivity: recentActivity || 0,
+          newCustomers: newCustomers || 0
+        },
+        breakdown: {
+          byAuthProvider: customersByAuthProvider
+        },
+        metrics: {
+          activationRate: totalCustomers > 0 ? ((activeCustomers / totalCustomers) * 100).toFixed(1) : '0.0',
+          referralRate: totalCustomers > 0 ? ((customersWithReferrals / totalCustomers) * 100).toFixed(1) : '0.0'
+        }
+      };
+    } catch (error) {
+      console.error('Error getting dashboard overview:', error);
+      throw error;
+    }
+  }
+
+  async getCustomerFullDetails(id: string): Promise<any> {
+    try {
+      // Obtener datos del cliente
+      const customer = await this.getCustomer(id);
+      if (!customer) return null;
+
+      // Obtener perfil del usuario
+      const profile = await this.getUserProfile(id);
+
+      // Obtener referidos que este cliente ha hecho
+      const referralsMade = await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          phone: customers.phone,
+          email: customers.email,
+          createdAt: customers.createdAt,
+          isActive: customers.isActive
+        })
+        .from(customers)
+        .where(eq(customers.referredBy, id))
+        .orderBy(desc(customers.createdAt));
+
+      // Obtener quién refirió a este cliente
+      let referredByCustomer = null;
+      if (customer.referredBy) {
+        referredByCustomer = await this.getCustomer(customer.referredBy);
+      }
+
+      // Obtener actividades recientes
+      const recentActivities = await db
+        .select()
+        .from(customerActivities)
+        .where(eq(customerActivities.customerId, id))
+        .orderBy(desc(customerActivities.createdAt))
+        .limit(20);
+
+      // Estadísticas de actividad
+      const [{ totalActivities }] = await db
+        .select({ totalActivities: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customerActivities)
+        .where(eq(customerActivities.customerId, id));
+
+      const activityByType = await db
+        .select({
+          activityType: customerActivities.activityType,
+          count: sql<number>`CAST(COUNT(*) AS INTEGER)`
+        })
+        .from(customerActivities)
+        .where(eq(customerActivities.customerId, id))
+        .groupBy(customerActivities.activityType);
+
+      return {
+        customer,
+        profile,
+        referrals: {
+          made: referralsMade,
+          referredBy: referredByCustomer
+        },
+        activity: {
+          recent: recentActivities,
+          total: totalActivities || 0,
+          byType: activityByType
+        }
+      };
+    } catch (error) {
+      console.error('Error getting customer full details:', error);
+      throw error;
+    }
+  }
+
+  async updateCustomerStatus(id: string, isActive: boolean): Promise<Customer | undefined> {
+    try {
+      const [updatedCustomer] = await db
+        .update(customers)
+        .set({ isActive })
+        .where(eq(customers.id, id))
+        .returning();
+      return updatedCustomer || undefined;
+    } catch (error) {
+      console.error('Error updating customer status:', error);
+      throw error;
+    }
+  }
+
+  async getCustomerReferrals(id: string): Promise<any> {
+    try {
+      return await db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          phone: customers.phone,
+          email: customers.email,
+          authProvider: customers.authProvider,
+          createdAt: customers.createdAt,
+          lastVisit: customers.lastVisit,
+          isActive: customers.isActive
+        })
+        .from(customers)
+        .where(eq(customers.referredBy, id))
+        .orderBy(desc(customers.createdAt));
+    } catch (error) {
+      console.error('Error getting customer referrals:', error);
+      throw error;
+    }
+  }
+
+  async getCustomerActivityHistory(id: string, options: any): Promise<any> {
+    try {
+      const { page = 1, limit = 20 } = options;
+      const offset = (page - 1) * limit;
+
+      const activities = await db
+        .select()
+        .from(customerActivities)
+        .where(eq(customerActivities.customerId, id))
+        .orderBy(desc(customerActivities.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const [{ totalCount }] = await db
+        .select({ totalCount: sql<number>`CAST(COUNT(*) AS INTEGER)` })
+        .from(customerActivities)
+        .where(eq(customerActivities.customerId, id));
+
+      return {
+        activities,
+        pagination: {
+          page,
+          limit,
+          total: totalCount || 0,
+          totalPages: Math.ceil((totalCount || 0) / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Error getting customer activity history:', error);
+      throw error;
+    }
   }
 }
 
