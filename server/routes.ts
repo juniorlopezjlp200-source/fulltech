@@ -76,6 +76,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup Google OAuth for customers
   setupGoogleAuth(app);
+  
+  // ✅ requireCustomerAuth middleware is imported from googleAuth.ts and supports:
+  // - Google OAuth authentication (req.isAuthenticated() && req.user)
+  // - Phone authentication (req.session.customerId)
+  // - Automatically loads customer data into req.user
+  // - Returns 401 for unauthenticated API requests
+  // Example usage: app.get('/api/protected-route', requireCustomerAuth, handler)
 
   // ---------- Customer API ----------
   app.get(
