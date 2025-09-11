@@ -21,6 +21,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   price: integer("price").notNull(), // Price in RD$
+  originalPrice: integer("original_price"), // Original price before discount
   category: text("category").notNull(),
   images: jsonb("images").$type<string[]>().notNull().default([]),
   videos: jsonb("videos").$type<string[]>().notNull().default([]),
