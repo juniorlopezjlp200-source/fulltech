@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { TopBar } from "@/components/TopBar";
 import type { Product } from "@shared/schema";
+import { formatPrice } from "@/utils/currency";
 
 type MediaItem =
   | { type: "image"; url: string }
@@ -43,7 +44,6 @@ export default function ProductDetail() {
   }, [product]);
 
   // helpers
-  const price = (n: number) => `$${(n / 100).toFixed(0)}`;
   const stars = (n: number) =>
     Array.from({ length: 5 }, (_, i) => (
       <i
@@ -61,14 +61,14 @@ export default function ProductDetail() {
       : `/product/${product?.id}`;
 
   const handleWhatsApp = () => {
-    const msg = `Quiero más información sobre: ${product?.name} - ${product ? price(product.price) : ""}`;
+    const msg = `Quiero más información sobre: ${product?.name} - ${product ? formatPrice(product.price) : ""}`;
     window.open(`https://wa.me/18295344286?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
   const handleShare = () => {
     const data = {
       title: `${product?.name} - FULLTECH`,
-      text: `¡Mira este producto! ${product?.name} - ${product ? price(product.price) : ""}`,
+      text: `¡Mira este producto! ${product?.name} - ${product ? formatPrice(product.price) : ""}`,
       url: productUrl,
     };
     if (navigator.share) navigator.share(data);

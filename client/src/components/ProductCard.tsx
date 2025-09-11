@@ -1,6 +1,7 @@
 import { ImageCarousel } from "./ImageCarousel";
 import { useLocation } from "wouter";
 import type { Product } from "@shared/schema";
+import { formatPrice } from "@/utils/currency";
 
 interface ProductCardProps {
   product: Product;
@@ -10,9 +11,6 @@ interface ProductCardProps {
 export function ProductCard({ product, layout }: ProductCardProps) {
   const [, setLocation] = useLocation();
 
-  const formatPrice = (priceInCents: number) => {
-    return `$${(priceInCents / 100).toFixed(0)}`;
-  };
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
