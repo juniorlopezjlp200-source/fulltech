@@ -127,6 +127,209 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Customer profile endpoints
+  app.get(
+    "/api/customer/profile",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        let profile = await storage.getUserProfile(req.user.id);
+        
+        // Create profile if it doesn't exist
+        if (!profile) {
+          profile = await storage.createUserProfile({
+            customerId: req.user.id,
+            firstName: req.user.name?.split(' ')[0] || '',
+            lastName: req.user.name?.split(' ').slice(1).join(' ') || '',
+            phone: req.user.phone || '',
+          });
+        }
+        
+        res.json(profile);
+      } catch (error) {
+        console.error("Error fetching customer profile:", error);
+        res.status(500).json({ error: "Failed to fetch profile" });
+      }
+    },
+  );
+
+  app.put(
+    "/api/customer/profile",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        const profileData = req.body;
+        
+        // Check if profile exists
+        let profile = await storage.getUserProfile(req.user.id);
+        
+        if (!profile) {
+          // Create new profile
+          profile = await storage.createUserProfile({
+            customerId: req.user.id,
+            ...profileData,
+          });
+        } else {
+          // Update existing profile
+          profile = await storage.updateUserProfile(req.user.id, profileData);
+        }
+        
+        res.json(profile);
+      } catch (error) {
+        console.error("Error updating customer profile:", error);
+        res.status(500).json({ error: "Failed to update profile" });
+      }
+    },
+  );
+
+  // Customer preferences endpoints
+  app.get(
+    "/api/customer/preferences",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        const profile = await storage.getUserProfile(req.user.id);
+        
+        // Extract preferences from profile or return defaults
+        const preferences = profile?.preferences || {
+          notifications: {
+            email: true,
+            sms: false,
+            push: true,
+            marketing: false,
+            referralUpdates: true,
+            orderUpdates: true
+          },
+          settings: {
+            language: 'es',
+            currency: 'DOP',
+            theme: 'light',
+            autoLogin: true,
+            dataSharing: false
+          }
+        };
+        
+        res.json(preferences);
+      } catch (error) {
+        console.error("Error fetching customer preferences:", error);
+        res.status(500).json({ error: "Failed to fetch preferences" });
+      }
+    },
+  );
+
+  app.put(
+    "/api/customer/preferences",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        const { notifications, settings } = req.body;
+        
+        // Get or create profile
+        let profile = await storage.getUserProfile(req.user.id);
+        
+        const preferences = {
+          notifications: notifications || {},
+          settings: settings || {}
+        };
+
+        if (!profile) {
+          // Create new profile with preferences
+          profile = await storage.createUserProfile({
+            customerId: req.user.id,
+            preferences,
+          });
+        } else {
+          // Update existing profile preferences
+          const updatedPreferences = {
+            ...profile.preferences,
+            ...preferences
+          };
+          profile = await storage.updateUserProfile(req.user.id, { 
+            preferences: updatedPreferences 
+          });
+        }
+        
+        res.json({ success: true, preferences: profile?.preferences });
+      } catch (error) {
+        console.error("Error updating customer preferences:", error);
+        res.status(500).json({ error: "Failed to update preferences" });
+      }
+    },
+  );
+
+  // Support tickets endpoints
+  app.get(
+    "/api/customer/support-tickets",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        // For now, return mock support tickets
+        // In a real implementation, you'd query from a support_tickets table
+        const tickets = [
+          {
+            id: "1",
+            customerId: req.user.id,
+            type: "technical",
+            subject: "Problema con el inicio de sesión",
+            message: "No puedo acceder a mi cuenta",
+            priority: "normal",
+            status: "open",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        ];
+        
+        res.json(tickets);
+      } catch (error) {
+        console.error("Error fetching support tickets:", error);
+        res.status(500).json({ error: "Failed to fetch support tickets" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/customer/support-tickets",
+    requireCustomerAuth,
+    async (req: any, res) => {
+      try {
+        const { type, subject, message, priority = 'normal' } = req.body;
+        
+        if (!type || !subject || !message) {
+          return res.status(400).json({ error: "Type, subject, and message are required" });
+        }
+
+        // For now, create a mock ticket response
+        // In a real implementation, you'd insert into a support_tickets table
+        const ticket = {
+          id: `ticket_${Date.now()}`,
+          customerId: req.user.id,
+          customerName: req.user.name,
+          customerEmail: req.user.email,
+          customerPhone: req.user.phone,
+          type,
+          subject,
+          message,
+          priority,
+          status: "open",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        // In a real implementation, you could also:
+        // - Send email notification to support team
+        // - Create a Slack notification
+        // - Add to a ticketing system like Zendesk
+        
+        console.log("📧 New support ticket created:", ticket);
+        
+        res.json({ success: true, ticket });
+      } catch (error) {
+        console.error("Error creating support ticket:", error);
+        res.status(500).json({ error: "Failed to create support ticket" });
+      }
+    },
+  );
+
   app.get("/api/raffle/current", async (_req, res) => {
     try {
       const currentRaffle = await storage.getCurrentMonthlyRaffle();
