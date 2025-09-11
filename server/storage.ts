@@ -15,10 +15,12 @@ import {
   type CustomPage, type InsertCustomPage,
   type Category, type InsertCategory,
   type FeatureFlag, type InsertFeatureFlag,
+  type UserProfile, type InsertUserProfile,
   users, admins, products, heroSlides, raffleParticipants,
   customers, customerActivities, customerPurchases,
   referrals, monthlyRaffles, raffleEntries,
-  siteConfigs, legalPages, customPages, categories, featureFlags
+  siteConfigs, legalPages, customPages, categories, featureFlags,
+  userProfiles
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -122,6 +124,11 @@ export interface IStorage {
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
   deleteCategory(id: string): Promise<boolean>;
+  
+  // User Profile operations
+  getUserProfile(customerId: string): Promise<UserProfile | undefined>;
+  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(customerId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -465,6 +472,35 @@ export class DatabaseStorage implements IStorage {
     await db.update(customers)
       .set({ lastVisit: new Date() })
       .where(eq(customers.id, id));
+  }
+
+  // ✅ User Profile operations
+  async getUserProfile(customerId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles)
+      .where(eq(userProfiles.customerId, customerId));
+    return profile || undefined;
+  }
+
+  async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const [newProfile] = await db.insert(userProfiles)
+      .values({
+        ...profile,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning();
+    return newProfile;
+  }
+
+  async updateUserProfile(customerId: string, profile: Partial<InsertUserProfile>): Promise<UserProfile | undefined> {
+    const [updatedProfile] = await db.update(userProfiles)
+      .set({
+        ...profile,
+        updatedAt: new Date()
+      })
+      .where(eq(userProfiles.customerId, customerId))
+      .returning();
+    return updatedProfile || undefined;
   }
 
   async getAllCustomers(): Promise<Customer[]> {

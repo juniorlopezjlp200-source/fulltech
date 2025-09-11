@@ -1,24 +1,12 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import type { Express } from 'express';
-import session from 'express-session';
 import type { Customer } from '@shared/schema';
 import { storage } from './storage';
 
-// Configurar Google OAuth
+// ✅ Configure Google OAuth - assumes session middleware already configured in routes.ts
 export function setupGoogleAuth(app: Express) {
-  // Configurar sesiones
-  app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret-here',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: false, // Cambiar a true en producción con HTTPS
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
-    }
-  }));
-
+  // ✅ Initialize passport after session middleware (configured in routes.ts)
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -117,8 +105,49 @@ export function setupGoogleAuth(app: Express) {
     }
   });
 
-  // Middleware para verificar autenticación de cliente
-  app.get('/api/auth/me', async (req, res) => {
+  // ✅ GET /api/me endpoint - returns standardized auth status (new format)
+  app.get('/api/me', async (req: any, res) => {
+    try {
+      let customer = null;
+      
+      // Check Google OAuth first
+      if (req.isAuthenticated() && req.user) {
+        customer = req.user;
+      }
+      // Check phone authentication
+      else if (req.session && req.session.customerId) {
+        customer = await storage.getCustomer(req.session.customerId);
+      }
+      
+      if (customer) {
+        // Load profile data for avatar
+        let profile = null;
+        try {
+          profile = await storage.getUserProfile(customer.id);
+        } catch (err) {
+          // Profile might not exist yet, that's ok
+        }
+        
+        return res.json({
+          authenticated: true,
+          user: {
+            id: customer.id,
+            name: customer.name,
+            email: customer.email || null,
+            avatarUrl: profile?.avatar || customer.picture || null
+          }
+        });
+      }
+      
+      res.json({ authenticated: false });
+    } catch (error) {
+      console.error('Error in /api/me:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+  // ✅ Keep legacy endpoint for backward compatibility
+  app.get('/api/auth/me', async (req: any, res) => {
     try {
       // Check Google OAuth first
       if (req.isAuthenticated() && req.user) {
@@ -126,7 +155,7 @@ export function setupGoogleAuth(app: Express) {
       }
       
       // Check phone authentication
-      if (req.session.customerId) {
+      if (req.session && req.session.customerId) {
         const customer = await storage.getCustomer(req.session.customerId);
         if (customer) {
           return res.json(customer);

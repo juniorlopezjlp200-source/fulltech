@@ -13,6 +13,7 @@ import {
 } from "@shared/schema";
 import bcrypt from "bcrypt";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupGoogleAuth, requireCustomerAuth } from "./googleAuth";
 
@@ -48,19 +49,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ✅ Configure trust proxy for proper cookie handling behind proxies
   app.set('trust proxy', 1);
   
-  // Configure session middleware
+  // ✅ Configure persistent session store with Postgres
+  const PgSession = connectPgSimple(session);
+  const pgSessionStore = new PgSession({
+    connectionString: process.env.DATABASE_URL,
+    tableName: 'sessions',
+    createTableIfMissing: true, // Auto-create table if missing
+  });
+
+  // Configure session middleware with persistent store
   app.use(
     session({
-      secret:
-        process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+      store: pgSessionStore,
+      secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // ✅ Auto-detect: true en HTTPS production
-        httpOnly: true,
-        sameSite: 'lax', // ✅ Protección CSRF y compatibilidad
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: process.env.NODE_ENV === 'production', // ✅ HTTPS only in production
+        httpOnly: true, // ✅ Prevent XSS
+        sameSite: 'lax', // ✅ CSRF protection + compatibility
+        maxAge: 90 * 24 * 60 * 60 * 1000, // ✅ 90 days as specified
       },
+      name: 'sid', // ✅ Custom session ID name
     }),
   );
 

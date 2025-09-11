@@ -527,6 +527,40 @@ export const insertCustomPageSchema = createInsertSchema(customPages).omit({
 export type CustomPage = typeof customPages.$inferSelect;
 export type InsertCustomPage = z.infer<typeof insertCustomPageSchema>;
 
+// Sessions table for express-session store
+export const sessions = pgTable("sessions", {
+  sid: varchar("sid").primaryKey().notNull(),
+  sess: jsonb("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
+
+// User profiles table - extends customers with additional profile data
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id").notNull().unique(),
+  avatar: text("avatar"), // URL to uploaded avatar image
+  cedula: text("cedula"), // Encrypted ID number
+  fechaNacimiento: timestamp("fecha_nacimiento"),
+  genero: varchar("genero"), // "masculino", "femenino", "otro", "prefiero-no-decir"
+  provincia: text("provincia"),
+  municipio: text("municipio"),
+  sector: text("sector"),
+  calle: text("calle"),
+  referencia: text("referencia"), // Reference point for address
+  profileCompleted: boolean("profile_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Foreign Key to customers table
+  customerFk: foreignKey({
+    columns: [table.customerId],
+    foreignColumns: [customers.id],
+    name: "fk_user_profiles_customer_id"
+  }),
+  // Performance Indexes
+  customerIdx: index("idx_user_profiles_customer_id").on(table.customerId),
+}));
+
 // Categories table for CRUD management
 export const categories = pgTable("categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -545,3 +579,50 @@ export const insertCategorySchema = createInsertSchema(categories).omit({
 
 export type Category = typeof categories.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
+
+// Insert schemas for new tables
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Profile update schema for PUT requests
+export const updateProfileSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  phone: z.string().min(10, "Phone must be at least 10 digits").optional(),
+  email: z.string().email("Invalid email format").optional(),
+  address: z.string().min(5, "Address is required").optional(),
+  cedula: z.string().min(11, "Cédula must be at least 11 digits").optional(),
+  fechaNacimiento: z.string().optional(), // ISO date string
+  genero: z.enum(["masculino", "femenino", "otro", "prefiero-no-decir"]).optional(),
+  provincia: z.string().optional(),
+  municipio: z.string().optional(),
+  sector: z.string().optional(),
+  calle: z.string().optional(),
+  referencia: z.string().optional(),
+});
+
+// Complete profile wizard schema
+export const completeProfileSchema = z.object({
+  // Step 1: Basic data
+  name: z.string().min(1, "Name is required"),
+  cedula: z.string().min(11, "Cédula must be at least 11 digits"),
+  fechaNacimiento: z.string(), // ISO date string
+  genero: z.enum(["masculino", "femenino", "otro", "prefiero-no-decir"]),
+  // Step 2: Address
+  provincia: z.string().min(1, "Province is required"),
+  municipio: z.string().min(1, "Municipality is required"),
+  sector: z.string().min(1, "Sector is required"),
+  calle: z.string().min(1, "Street is required"),
+  referencia: z.string().optional(),
+  address: z.string().min(5, "Complete address is required"),
+  // Step 3: Avatar is handled separately in multipart upload
+});
+
+// Types for new tables
+export type Session = typeof sessions.$inferSelect;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+export type CompleteProfile = z.infer<typeof completeProfileSchema>;
