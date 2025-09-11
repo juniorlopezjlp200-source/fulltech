@@ -403,24 +403,6 @@ export function TopBar() {
 
               </div>
 
-              {/* 🛍️ Tienda y Productos */}
-              <div className="space-y-2">
-                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Tienda</h4>
-                
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={() => { closeMenu(); goHome(); }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
-                    <i className="fas fa-store text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Catálogo</p>
-                    <p className="text-white/60 text-sm">Ver productos</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </button>
-              </div>
 
 
               {/* 📄 Páginas personalizadas */}
@@ -543,24 +525,6 @@ export function TopBar() {
               {/* 🎯 MENÚ PARA USUARIOS NO AUTENTICADOS */}
               
 
-              {/* 🛍️ Navegación principal */}
-              <div className="space-y-2">
-                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Tienda</h4>
-                
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={() => { closeMenu(); goHome(); }}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
-                    <i className="fas fa-store text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Catálogo</p>
-                    <p className="text-white/60 text-sm">Ver productos</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </button>
-              </div>
 
               {/* 📄 Páginas principales y soporte para no autenticados */}
               {groupedPages.main && groupedPages.main.length > 0 && (
