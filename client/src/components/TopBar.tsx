@@ -170,7 +170,7 @@ export function TopBar() {
             title="Compartir App"
             aria-label="Compartir App"
           >
-            <i className="fas fa-share-alt text-slate-900 text-sm md:text-base" />
+            <i className="fas fa-share-alt text-black text-sm md:text-base" />
           </button>
 
           {/* Instalar (Android/Desktop con prompt) */}
@@ -182,7 +182,7 @@ export function TopBar() {
               title="Instalar App"
               aria-label="Instalar App"
             >
-              <i className="fas fa-download text-slate-900 text-sm md:text-base" />
+              <i className="fas fa-download text-black text-sm md:text-base" />
             </button>
           )}
 
@@ -195,7 +195,7 @@ export function TopBar() {
             title="Menú"
             aria-label="Abrir menú"
           >
-            <i className="fas fa-bars text-slate-900 text-sm md:text-base" />
+            <i className="fas fa-bars text-black text-sm md:text-base" />
           </button>
         </div>
       </div>
@@ -211,7 +211,7 @@ export function TopBar() {
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
                 aria-label="Cerrar"
               >
-                <i className="fas fa-times text-slate-800" />
+                <i className="fas fa-times text-black" />
               </button>
             </div>
             <ol className="text-slate-800 space-y-2 text-sm leading-relaxed">
