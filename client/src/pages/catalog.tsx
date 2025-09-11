@@ -389,59 +389,10 @@ export default function Catalog() {
           <WelcomeMessage />
           <UserActivityTracker />
 
-          {/* 🎯 STICKY HEADER PUBLICITARIO */}
-          {showStickyBanner && (
-            <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white text-center py-2 px-4 shadow-lg">
-              <div className="flex items-center justify-between max-w-6xl mx-auto">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <i className="fas fa-gift text-yellow-300"></i>
-                  <span>¡Gana dinero compartiendo FULLTECH! 💰 5% por venta + 10% descuento</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => window.location.href = '/phone-auth'}
-                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors"
-                  >
-                    ¡Registrarse!
-                  </button>
-                  <button 
-                    onClick={() => setShowStickyBanner(false)}
-                    className="text-white/70 hover:text-white transition-colors"
-                  >
-                    <i className="fas fa-times text-xs"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
-          <div id="hero-container" className={`relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 w-full ${showStickyBanner ? 'mt-12' : 'mt-0'}`}>
+          <div id="hero-container" className="relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 w-full">
             <HeroSlider />
 
-            {/* 🎯 HERO BANNER PUBLICITARIO */}
-            <div className="absolute top-4 left-4 right-4 z-20">
-              <div className="bg-gradient-to-r from-green-500/90 to-blue-500/90 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-xl">
-                <div className="text-center text-white">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <i className="fas fa-crown text-yellow-300 text-lg"></i>
-                    <h3 className="text-lg font-bold">¡ÚNETE Y GANA DINERO!</h3>
-                    <i className="fas fa-crown text-yellow-300 text-lg"></i>
-                  </div>
-                  <p className="text-sm mb-3">Regístrate con tu teléfono y obtén:</p>
-                  <div className="flex justify-center gap-4 text-xs font-medium mb-3">
-                    <span>✨ 10% descuento</span>
-                    <span>💰 5% por referido</span>
-                    <span>🎁 Rifas exclusivas</span>
-                  </div>
-                  <button 
-                    onClick={() => window.location.href = '/phone-auth'}
-                    className="bg-white text-blue-600 px-6 py-2 rounded-lg font-bold text-sm hover:bg-blue-50 transition-colors shadow-md"
-                  >
-                    ¡Empezar Ahora!
-                  </button>
-                </div>
-              </div>
-            </div>
 
             {/* Título del slider con botones centrados debajo */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">

@@ -23,7 +23,6 @@ import Contact from "@/pages/Contact";
 import CustomPage from "@/pages/CustomPage";
 import { Footer } from "@/components/Footer";
 import { FixedFooter } from "@/components/FixedFooter";
-import { TemporaryAd } from "@/components/TemporaryAd";
 
 /** Sube al top cuando cambia la ruta */
 function ScrollToTop() {
@@ -64,8 +63,6 @@ function Router() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* 💥 Publicidad Temporal de 3 segundos */}
-      <TemporaryAd />
       
       <div className={`flex-1 ${shouldShowFooter ? "pb-20" : "pb-20"}`}>
         <ScrollToTop />

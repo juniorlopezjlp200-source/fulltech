@@ -356,24 +356,6 @@ export function TopBar() {
                 </button>
               </div>
 
-              {/* 💰 PUBLICIDAD ESTRATÉGICA PARA REFERIDOS */}
-              <div className="bg-gradient-to-r from-green-500/20 to-emerald-600/20 rounded-xl p-4 border border-green-500/30">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
-                    <i className="fas fa-gift text-white text-sm" />
-                  </div>
-                  <h4 className="text-white font-semibold text-sm">¡Gana dinero invitando!</h4>
-                </div>
-                <p className="text-white/80 text-xs mb-3 leading-relaxed">
-                  Comparte tu código <strong className="text-green-400">{customer?.referralCode}</strong> y gana comisiones por cada venta
-                </p>
-                <button 
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-200"
-                  onClick={() => { closeMenu(); window.location.href = '/dashboard'; }}
-                >
-                  Ver mis ganancias
-                </button>
-              </div>
 
               {/* 📄 Páginas principales y soporte */}
               {groupedPages.main && groupedPages.main.length > 0 && (
@@ -519,24 +501,6 @@ export function TopBar() {
             <>
               {/* 🎯 MENÚ PARA USUARIOS NO AUTENTICADOS */}
               
-              {/* 🎉 Publicidad para motivar registro */}
-              <div className="bg-gradient-to-r from-blue-500/20 to-purple-600/20 rounded-xl p-4 border border-blue-500/30 mb-6">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                    <i className="fas fa-star text-white text-sm" />
-                  </div>
-                  <h4 className="text-white font-semibold text-sm">¡Únete a FULLTECH!</h4>
-                </div>
-                <p className="text-white/80 text-xs mb-3 leading-relaxed">
-                  Registrate y empieza a <strong className="text-blue-400">ganar dinero</strong> refiriendo amigos
-                </p>
-                <button 
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-3 rounded-lg text-sm font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
-                  onClick={() => { closeMenu(); window.location.href = '/login'; }}
-                >
-                  Crear cuenta gratis
-                </button>
-              </div>
 
               {/* 🛍️ Navegación principal */}
               <div className="space-y-2">
