@@ -377,6 +377,21 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
+                
+                <button 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
+                  onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/soporte'); })}
+                  onMouseEnter={onMouseEnterPreload('/mi/soporte')}
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center">
+                    <i className="fas fa-headset text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-white font-medium">Soporte</p>
+                    <p className="text-white/60 text-sm">Centro de ayuda</p>
+                  </div>
+                  <i className="fas fa-chevron-right text-white/40" />
+                </button>
 
                 {/* 🔒 Logout Button */}
                 <button 
@@ -389,20 +404,6 @@ export function TopBar() {
                   <div className="flex-1 text-left">
                     <p className="text-white font-medium">Cerrar Sesión</p>
                     <p className="text-white/60 text-sm">Logout seguro</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </button>
-
-                <button 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={closeMenu}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-center">
-                    <i className="fas fa-shopping-cart text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Mi Carrito</p>
-                    <p className="text-white/60 text-sm">Productos seleccionados</p>
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
@@ -428,7 +429,7 @@ export function TopBar() {
               </div>
 
 
-              {/* 📄 Páginas principales y soporte */}
+              {/* 📄 Páginas personalizadas */}
               {groupedPages.main && groupedPages.main.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Información</h4>
@@ -447,31 +448,6 @@ export function TopBar() {
                       <div className="flex-1 text-left">
                         <p className="text-white font-medium">{page.title}</p>
                         <p className="text-white/60 text-sm">Información importante</p>
-                      </div>
-                      <i className="fas fa-chevron-right text-white/40" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {groupedPages.support && groupedPages.support.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Soporte</h4>
-                  {groupedPages.support.map((page) => (
-                    <button
-                      key={page.id}
-                      onClick={() => {
-                        closeMenu();
-                        goToCustomPage(page.slug);
-                      }}
-                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
-                        <i className="fas fa-headset text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-medium">{page.title}</p>
-                        <p className="text-white/60 text-sm">Centro de ayuda</p>
                       </div>
                       <i className="fas fa-chevron-right text-white/40" />
                     </button>
