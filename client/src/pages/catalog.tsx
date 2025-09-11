@@ -191,6 +191,10 @@ export default function Catalog() {
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [registrationData, setRegistrationData] = useState({ name: '', phone: '', address: '' });
+  // 🎯 Estados para publicidad estratégica
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [productsViewed, setProductsViewed] = useState(0);
+  const [showStickyBanner, setShowStickyBanner] = useState(true);
   
   // Referencias y estado para el slider automático de categorías
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -335,6 +339,32 @@ export default function Catalog() {
     }
   }, []);
 
+  // 🎯 Tracking inteligente de productos vistos
+  useEffect(() => {
+    const handleProductView = () => {
+      setProductsViewed(prev => {
+        const newCount = prev + 1;
+        // Mostrar modal después de ver 4 productos
+        if (newCount === 4 && !showRegisterModal) {
+          setTimeout(() => setShowRegisterModal(true), 2000);
+        }
+        return newCount;
+      });
+    };
+
+    // Escuchar clicks en las cards de productos
+    const productCards = document.querySelectorAll('[data-testid^="card-product-"]');
+    productCards.forEach(card => {
+      card.addEventListener('click', handleProductView);
+    });
+
+    return () => {
+      productCards.forEach(card => {
+        card.removeEventListener('click', handleProductView);
+      });
+    };
+  }, [allProducts, showRegisterModal]);
+
   if (isLoading) {
     return (
       <div className="phone-frame">
@@ -359,8 +389,59 @@ export default function Catalog() {
           <WelcomeMessage />
           <UserActivityTracker />
 
-          <div id="hero-container" className="relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 mt-0 w-full">
+          {/* 🎯 STICKY HEADER PUBLICITARIO */}
+          {showStickyBanner && (
+            <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white text-center py-2 px-4 shadow-lg">
+              <div className="flex items-center justify-between max-w-6xl mx-auto">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <i className="fas fa-gift text-yellow-300"></i>
+                  <span>¡Gana dinero compartiendo FULLTECH! 💰 5% por venta + 10% descuento</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => window.location.href = '/phone-auth'}
+                    className="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-md text-xs font-medium transition-colors"
+                  >
+                    ¡Registrarse!
+                  </button>
+                  <button 
+                    onClick={() => setShowStickyBanner(false)}
+                    className="text-white/70 hover:text-white transition-colors"
+                  >
+                    <i className="fas fa-times text-xs"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div id="hero-container" className={`relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 w-full ${showStickyBanner ? 'mt-12' : 'mt-0'}`}>
             <HeroSlider />
+
+            {/* 🎯 HERO BANNER PUBLICITARIO */}
+            <div className="absolute top-4 left-4 right-4 z-20">
+              <div className="bg-gradient-to-r from-green-500/90 to-blue-500/90 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-xl">
+                <div className="text-center text-white">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <i className="fas fa-crown text-yellow-300 text-lg"></i>
+                    <h3 className="text-lg font-bold">¡ÚNETE Y GANA DINERO!</h3>
+                    <i className="fas fa-crown text-yellow-300 text-lg"></i>
+                  </div>
+                  <p className="text-sm mb-3">Regístrate con tu teléfono y obtén:</p>
+                  <div className="flex justify-center gap-4 text-xs font-medium mb-3">
+                    <span>✨ 10% descuento</span>
+                    <span>💰 5% por referido</span>
+                    <span>🎁 Rifas exclusivas</span>
+                  </div>
+                  <button 
+                    onClick={() => window.location.href = '/phone-auth'}
+                    className="bg-white text-blue-600 px-6 py-2 rounded-lg font-bold text-sm hover:bg-blue-50 transition-colors shadow-md"
+                  >
+                    ¡Empezar Ahora!
+                  </button>
+                </div>
+              </div>
+            </div>
 
             {/* Título del slider con botones centrados debajo */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
@@ -507,7 +588,7 @@ export default function Catalog() {
               {/* All Products in Featured Style */}
               <section>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 md:gap-6 lg:gap-8">
-                  {allProducts.map((product) => (
+                  {allProducts.map((product, index) => (
                     <ProductCard 
                     key={product.id} 
                     product={product} 
@@ -818,6 +899,58 @@ export default function Catalog() {
               </div>
             )}
           </footer>
+
+          {/* 🎯 MODAL INTELIGENTE DE REGISTRO */}
+          {showRegisterModal && (
+            <div className="fixed inset-0 bg-black/50 z-[120] flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border-4 border-gradient-to-r from-blue-500 to-purple-500">
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fas fa-crown text-white text-2xl"></i>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    ¡Te gustan nuestros productos! 😍
+                  </h3>
+                  
+                  <p className="text-sm text-gray-600 mb-4">
+                    Registrándote ahora obtienes beneficios exclusivos:
+                  </p>
+                  
+                  <div className="text-left space-y-2 mb-6">
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-percentage text-green-500"></i>
+                      <span className="text-sm font-medium">10% descuento en tu primera compra</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-money-bill-wave text-green-500"></i>
+                      <span className="text-sm font-medium">Gana 5% por cada persona que refieran</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-gift text-green-500"></i>
+                      <span className="text-sm font-medium">Participación automática en rifas</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <button 
+                      onClick={() => window.location.href = '/phone-auth'}
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                    >
+                      ¡Registrarme Ahora!
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowRegisterModal(false)}
+                      className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors"
+                    >
+                      Continuar viendo productos
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

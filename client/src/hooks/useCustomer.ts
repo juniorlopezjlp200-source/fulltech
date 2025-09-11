@@ -13,6 +13,8 @@ export interface Customer {
   referralCode: string;
   authProvider: 'google' | 'phone';
   isPhoneVerified?: boolean;
+  discountEarned?: number;
+  isActive?: boolean;
   createdAt: string;
   lastVisit?: string;
 }
