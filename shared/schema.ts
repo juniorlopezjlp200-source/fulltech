@@ -1,7 +1,14 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, jsonb, timestamp, pgEnum, foreignKey, check, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+
+// 🔧 Proper enum definitions for better type safety and database constraints
+export const authProviderEnum = pgEnum("auth_provider", ["google", "phone"]);
+export const partnerStatusEnum = pgEnum("partner_status", ["active", "inactive", "suspended"]);
+export const affiliateOrderStatusEnum = pgEnum("affiliate_order_status", ["pending", "approved", "rejected"]);
+export const payoutStatusEnum = pgEnum("payout_status", ["pending", "paid", "failed"]);
+export const attributionSourceEnum = pgEnum("attribution_source", ["code", "cookie"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -79,22 +86,42 @@ export const adminLoginSchema = createInsertSchema(admins).pick({
   password: true,
 });
 
-// Customers table (for Google OAuth and customer system)
+// 👥 Customers table (soporta Google OAuth y autenticación con teléfono)
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   googleId: text("google_id").unique(),
-  email: text("email").notNull().unique(),
+  email: text("email").unique(), // ✅ Ahora nullable para cuentas de teléfono
   name: text("name").notNull(),
   picture: text("picture"), // Google profile picture
-  phone: text("phone"),
+  phone: text("phone").unique(), // ✅ Único para autenticación con teléfono
   address: text("address"),
-  referralCode: text("referral_code").notNull().unique(), // Their unique referral code
-  referredBy: varchar("referred_by"), // ID of customer who referred them
+  passwordHash: text("password_hash"), // ✅ Para autenticación con teléfono
+  authProvider: authProviderEnum("auth_provider").notNull().default("google"), // ✅ Tipo de autenticación
+  isPhoneVerified: boolean("is_phone_verified").default(false), // ✅ Verificación de teléfono
+  referralCode: text("referral_code").unique(), // ✅ Ahora nullable (legacy será removido)
+  referredBy: varchar("referred_by"), // ID of customer who referred them  
   discountEarned: integer("discount_earned").default(0), // Discount earned from referrals (in percentage)
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   lastVisit: timestamp("last_visit"),
-});
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  referredByFk: foreignKey({
+    columns: [table.referredBy],
+    foreignColumns: [table.id],
+    name: "fk_customers_referred_by"
+  }),
+  // 🛡️ Authentication Constraints - Ensure proper auth fields based on provider
+  authConstraint: check("chk_customers_auth_integrity", sql`
+    (auth_provider = 'google' AND email IS NOT NULL) OR 
+    (auth_provider = 'phone' AND phone IS NOT NULL AND password_hash IS NOT NULL)
+  `),
+  // 📊 Performance Indexes
+  emailIdx: index("idx_customers_email").on(table.email),
+  phoneIdx: index("idx_customers_phone").on(table.phone),
+  authProviderIdx: index("idx_customers_auth_provider").on(table.authProvider),
+  referredByIdx: index("idx_customers_referred_by").on(table.referredBy),
+}));
 
 // Customer activities table (visits, likes, shares)
 export const customerActivities = pgTable("customer_activities", {
@@ -254,6 +281,191 @@ export const insertFeatureFlagSchema = createInsertSchema(featureFlags).omit({
 
 export type FeatureFlag = typeof featureFlags.$inferSelect;
 export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+
+// 🤝 SISTEMA DE AFILIADOS FULLTECH - Según especificación del usuario
+// Partners/Socios table
+export const partners = pgTable("partners", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  customerId: varchar("customer_id"), // Enlace al customer existente (nullable para socios externos)
+  name: text("name").notNull(),
+  phone: text("phone").notNull(),
+  code: text("code").notNull().unique(), // Código único como FT-7G3X1P
+  status: partnerStatusEnum("status").notNull().default("active"),
+  commissionRate: integer("commission_rate").notNull().default(5), // 5% comisión por defecto
+  balanceActual: integer("balance_actual").notNull().default(0), // Saldo actual en RD$ (centavos)
+  gananciasTotal: integer("ganancias_total").notNull().default(0), // Ganancias totales en RD$ (centavos)
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  customerFk: foreignKey({
+    columns: [table.customerId],
+    foreignColumns: [customers.id],
+    name: "fk_partners_customer_id"
+  }),
+  // 📊 Performance Indexes
+  codeIdx: index("idx_partners_code").on(table.code),
+  statusIdx: index("idx_partners_status").on(table.status),
+  customerIdx: index("idx_partners_customer_id").on(table.customerId),
+}));
+
+// Clicks de afiliados (tracking)
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  partnerId: varchar("partner_id").notNull(),
+  clickId: text("click_id").notNull().unique(), // ID único para el click
+  ip: text("ip"),
+  userAgent: text("user_agent"),
+  landingUrl: text("landing_url").notNull(), // URL donde llegó el referido
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  partnerFk: foreignKey({
+    columns: [table.partnerId],
+    foreignColumns: [partners.id],
+    name: "fk_affiliate_clicks_partner_id"
+  }),
+  // 📊 Performance Indexes
+  partnerIdx: index("idx_affiliate_clicks_partner_id").on(table.partnerId),
+  clickIdx: index("idx_affiliate_clicks_click_id").on(table.clickId),
+}));
+
+// Atribuciones de afiliados (conexión click -> customer)
+export const affiliateAttributions = pgTable("affiliate_attributions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  partnerId: varchar("partner_id").notNull(),
+  customerId: varchar("customer_id"), // Cliente referido (nullable hasta que se registre)
+  clickId: text("click_id").notNull(), // Enlace al click original
+  source: attributionSourceEnum("source").notNull().default("cookie"), // Origen de la atribución
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(), // 30 días de expiración
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  partnerFk: foreignKey({
+    columns: [table.partnerId],
+    foreignColumns: [partners.id],
+    name: "fk_affiliate_attributions_partner_id"
+  }),
+  customerFk: foreignKey({
+    columns: [table.customerId],
+    foreignColumns: [customers.id],
+    name: "fk_affiliate_attributions_customer_id"
+  }),
+  // 🔗 Missing Foreign Key to affiliate_clicks.click_id
+  clickIdFk: foreignKey({
+    columns: [table.clickId],
+    foreignColumns: [affiliateClicks.clickId],
+    name: "fk_affiliate_attributions_click_id"
+  }),
+  // 🚫 Business Rule Constraints - True UNIQUE constraint
+  uniqueClickId: uniqueIndex("uniq_affiliate_attributions_click_id").on(table.clickId),
+  // 📊 Performance Indexes
+  partnerIdx: index("idx_affiliate_attributions_partner_id").on(table.partnerId),
+  customerIdx: index("idx_affiliate_attributions_customer_id").on(table.customerId),
+  expiresIdx: index("idx_affiliate_attributions_expires_at").on(table.expiresAt),
+}));
+
+// Órdenes de afiliados (ventas confirmadas)
+export const affiliateOrders = pgTable("affiliate_orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  partnerId: varchar("partner_id").notNull(),
+  purchaseId: varchar("purchase_id"), // Enlace a customer_purchases (nullable)
+  customerName: text("customer_name").notNull(), // Nombre del cliente que compró
+  amount: integer("amount").notNull(), // Monto total de la venta en RD$ (centavos)
+  commission: integer("commission").notNull(), // Comisión ganada en RD$ (centavos)
+  status: affiliateOrderStatusEnum("status").notNull().default("pending"),
+  approvedAt: timestamp("approved_at"),
+  approvedBy: varchar("approved_by"), // ID del admin que aprobó
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  partnerFk: foreignKey({
+    columns: [table.partnerId],
+    foreignColumns: [partners.id],
+    name: "fk_affiliate_orders_partner_id"
+  }),
+  purchaseFk: foreignKey({
+    columns: [table.purchaseId],
+    foreignColumns: [customerPurchases.id],
+    name: "fk_affiliate_orders_purchase_id"
+  }),
+  approvedByFk: foreignKey({
+    columns: [table.approvedBy],
+    foreignColumns: [admins.id],
+    name: "fk_affiliate_orders_approved_by"
+  }),
+  // 🚫 Business Rule Constraints - Prevent double commissions (True UNIQUE constraint)
+  uniquePurchaseId: uniqueIndex("uniq_affiliate_orders_purchase_id").on(table.purchaseId),
+  // 📊 Performance Indexes
+  partnerIdx: index("idx_affiliate_orders_partner_id").on(table.partnerId),
+  statusIdx: index("idx_affiliate_orders_status").on(table.status),
+  approvedAtIdx: index("idx_affiliate_orders_approved_at").on(table.approvedAt),
+}));
+
+// Pagos a socios
+export const payouts = pgTable("payouts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  partnerId: varchar("partner_id").notNull(),
+  amount: integer("amount").notNull(), // Monto pagado en RD$ (centavos)
+  periodStart: timestamp("period_start"), // Inicio del período del pago
+  periodEnd: timestamp("period_end"), // Fin del período del pago
+  status: payoutStatusEnum("status").notNull().default("pending"),
+  method: text("method"), // Método de pago (transferencia, etc.)
+  reference: text("reference"), // Referencia del pago
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  // 🔗 Foreign Key Relationships
+  partnerFk: foreignKey({
+    columns: [table.partnerId],
+    foreignColumns: [partners.id],
+    name: "fk_payouts_partner_id"
+  }),
+  // 📊 Performance Indexes
+  partnerIdx: index("idx_payouts_partner_id").on(table.partnerId),
+  statusIdx: index("idx_payouts_status").on(table.status),
+  paidAtIdx: index("idx_payouts_paid_at").on(table.paidAt),
+  periodIdx: index("idx_payouts_period").on(table.periodStart, table.periodEnd),
+}));
+
+// Schemas para inserción
+export const insertPartnerSchema = createInsertSchema(partners).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAffiliateClickSchema = createInsertSchema(affiliateClicks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAffiliateAttributionSchema = createInsertSchema(affiliateAttributions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAffiliateOrderSchema = createInsertSchema(affiliateOrders).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPayoutSchema = createInsertSchema(payouts).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type Partner = typeof partners.$inferSelect;
+export type InsertPartner = z.infer<typeof insertPartnerSchema>;
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
+export type InsertAffiliateClick = z.infer<typeof insertAffiliateClickSchema>;
+export type AffiliateAttribution = typeof affiliateAttributions.$inferSelect;
+export type InsertAffiliateAttribution = z.infer<typeof insertAffiliateAttributionSchema>;
+export type AffiliateOrder = typeof affiliateOrders.$inferSelect;
+export type InsertAffiliateOrder = z.infer<typeof insertAffiliateOrderSchema>;
+export type Payout = typeof payouts.$inferSelect;
+export type InsertPayout = z.infer<typeof insertPayoutSchema>;
 
 // Legal Pages
 export const legalPages = pgTable("legal_pages", {
