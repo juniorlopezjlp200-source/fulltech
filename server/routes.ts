@@ -365,13 +365,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireCustomerAuth,
     async (req: any, res) => {
       try {
-        const { productId, quantity, totalPrice, discountApplied } = req.body;
+        const { productId, quantity, discountApplied } = req.body;
+        
+        // 🔒 SEGURIDAD: Validar precio server-side para prevenir inflación de comisiones
+        const product = await storage.getProduct(productId);
+        if (!product) {
+          return res.status(404).json({ error: "Product not found" });
+        }
+        
+        // Calcular precio real desde el servidor
+        const validUnitPrice = product.price;
+        const validTotalPrice = validUnitPrice * quantity;
+        
         const purchase = await storage.createCustomerPurchase({
           customerId: req.user.id,
           productId,
           quantity,
-          unitPrice: totalPrice / quantity,
-          totalPrice,
+          unitPrice: validUnitPrice,
+          totalPrice: validTotalPrice,
           discountApplied: discountApplied || 0,
         });
 
@@ -391,7 +402,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             );
             const referrer = await storage.getCustomer(customer.referredBy);
             if (referrer) {
-              const newDiscount = (referrer.discountEarned || 0) + 5;
+              // 💰 Calcular comisión del 5% sobre el valor REAL de la compra (server-side)
+              const commission = Math.round(validTotalPrice * 0.05); // 5% de la compra real
+              const newDiscountEarned = (referrer.discountEarned || 0) + commission;
+              
+              // Actualizar el descuento ganado del referrer
+              await storage.updateCustomer(customer.referredBy, { discountEarned: newDiscountEarned });
               await storage.updateCustomerLastVisit(customer.referredBy);
             }
             const currentRaffle = await storage.getCurrentMonthlyRaffle();

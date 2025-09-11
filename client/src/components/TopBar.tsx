@@ -165,10 +165,14 @@ export function TopBar() {
         </button>
 
         <div className="flex items-center gap-2 md:gap-3">
-          {/* ✅ Avatar de Usuario Autenticado */}
+          {/* ✅ Avatar de Usuario Autenticado - Clickeable */}
           {isAuthenticated && customer && (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg">
+            <button 
+              onClick={createInstantClickHandler(() => navigateInstantly('/mi/tablero'))}
+              className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+              title="Ir a mi Dashboard"
+            >
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden border-2 border-white shadow-lg hover:scale-105 transition-transform">
                 {customer.picture ? (
                   <img 
                     src={customer.picture} 
@@ -183,7 +187,7 @@ export function TopBar() {
                 <p className="text-slate-900 font-medium text-sm">{customer.name.split(" ")[0]}</p>
                 <p className="text-slate-600 text-xs">{customer.referralCode}</p>
               </div>
-            </div>
+            </button>
           )}
           
           {/* Compartir */}
@@ -291,17 +295,20 @@ export function TopBar() {
         <div className="p-6 space-y-6">
           {isAuthenticated ? (
             <>
-              {/* 👤 Perfil de Usuario */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+              {/* 👤 Perfil de Usuario - Clickeable */}
+              <button 
+                onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/tablero'); })}
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/15 transition-all duration-200 w-full"
+              >
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center hover:scale-105 transition-transform">
                     {customer?.picture ? (
                       <img src={customer.picture} alt={customer.name} className="w-full h-full rounded-full object-cover" />
                     ) : (
                       <i className="fas fa-user text-white text-xl" />
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 text-left">
                     <h3 className="text-white font-semibold text-lg">{customer?.name}</h3>
                     <p className="text-white/70 text-sm">{customer?.email}</p>
                     <div className="flex items-center gap-2 mt-1">
@@ -309,10 +316,11 @@ export function TopBar() {
                         <i className="fas fa-gift mr-1" />
                         {customer?.referralCode}
                       </span>
+                      <i className="fas fa-chevron-right text-white/40 ml-auto" />
                     </div>
                   </div>
                 </div>
-              </div>
+              </button>
 
               {/* 🎯 Navegación Principal */}
               <div className="space-y-2">
@@ -594,65 +602,6 @@ export function TopBar() {
                 </div>
               )}
 
-              {groupedPages.support && groupedPages.support.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Soporte</h4>
-                  {groupedPages.support.map((page) => (
-                    <button
-                      key={page.id}
-                      onClick={() => {
-                        closeMenu();
-                        goToCustomPage(page.slug);
-                      }}
-                      className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center">
-                        <i className="fas fa-headset text-white" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-white font-medium">{page.title}</p>
-                        <p className="text-white/60 text-sm">Centro de ayuda</p>
-                      </div>
-                      <i className="fas fa-chevron-right text-white/40" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* 🛡️ Enlaces importantes para no autenticados */}
-              <div className="space-y-2">
-                <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Servicios</h4>
-                
-                <Link 
-                  href="/garantia" 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={closeMenu}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <i className="fas fa-shield-alt text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Garantía</p>
-                    <p className="text-white/60 text-sm">Protección total</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </Link>
-
-                <Link 
-                  href="/contacto" 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
-                  onClick={closeMenu}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
-                    <i className="fas fa-headset text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="text-white font-medium">Contacto</p>
-                    <p className="text-white/60 text-sm">Atención al cliente</p>
-                  </div>
-                  <i className="fas fa-chevron-right text-white/40" />
-                </Link>
-              </div>
 
               {/* 🔐 Acciones de autenticación */}
               <div className="pt-4 border-t border-white/10 space-y-3">

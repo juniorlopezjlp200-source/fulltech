@@ -474,6 +474,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(customers.id, id));
   }
 
+  async updateCustomer(id: string, updates: Partial<InsertCustomer>): Promise<Customer | undefined> {
+    const [updatedCustomer] = await db.update(customers)
+      .set(updates)
+      .where(eq(customers.id, id))
+      .returning();
+    return updatedCustomer || undefined;
+  }
+
   // ✅ User Profile operations
   async getUserProfile(customerId: string): Promise<UserProfile | undefined> {
     const [profile] = await db.select().from(userProfiles)

@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { TopBar } from "@/components/TopBar";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 interface UserProfile {
   id: string;
@@ -115,6 +117,68 @@ export function MiPerfil() {
     setIsEditing(false);
   };
 
+  // Funciones para subida de avatar
+  const handleGetUploadParameters = async () => {
+    try {
+      const response = await fetch('/api/objects/upload', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Error al obtener parámetros de subida');
+      const data = await response.json();
+      return {
+        method: 'PUT' as const,
+        url: data.uploadURL,
+      };
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo preparar la subida de imagen.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
+  const handleAvatarUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    try {
+      if (result.successful && result.successful.length > 0) {
+        const uploadedFile = result.successful[0];
+        const avatarUrl = uploadedFile.uploadURL;
+        
+        // Actualizar avatar en el backend
+        const response = await fetch('/api/customer/avatar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ avatarUrl }),
+        });
+        
+        if (!response.ok) throw new Error('Error al guardar avatar');
+        const data = await response.json();
+        
+        // Actualizar el estado local
+        setFormData(prev => ({ ...prev, avatar: data.objectPath }));
+        
+        // Refrescar datos del usuario
+        queryClient.invalidateQueries({ queryKey: [`/api/customer/profile`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        
+        toast({
+          title: "¡Avatar actualizado!",
+          description: "Tu foto de perfil ha sido actualizada exitosamente."
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar tu foto de perfil. Inténtalo de nuevo.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (customerLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -178,7 +242,7 @@ export function MiPerfil() {
               <CardTitle className="text-center">Foto de Perfil</CardTitle>
             </CardHeader>
             <CardContent className="text-center">
-              <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-teal-600 flex items-center justify-center overflow-hidden">
+              <div className="w-32 h-32 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-500 to-teal-600 flex items-center justify-center overflow-hidden relative group">
                 {customer.picture || formData.avatar ? (
                   <img 
                     src={customer.picture || formData.avatar} 
@@ -187,6 +251,11 @@ export function MiPerfil() {
                   />
                 ) : (
                   <i className="fas fa-user text-white text-4xl"></i>
+                )}
+                {isEditing && (
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-full">
+                    <i className="fas fa-camera text-white text-2xl"></i>
+                  </div>
                 )}
               </div>
               
@@ -199,15 +268,34 @@ export function MiPerfil() {
               </div>
               
               {isEditing && (
-                <div className="mt-4">
-                  <Label htmlFor="avatar">URL de Avatar</Label>
-                  <Input
-                    id="avatar"
-                    value={formData.avatar}
-                    onChange={(e) => handleInputChange('avatar', e.target.value)}
-                    placeholder="https://ejemplo.com/mi-foto.jpg"
-                    className="mt-1"
-                  />
+                <div className="mt-4 space-y-3">
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={5242880} // 5MB máximo para avatar
+                    onGetUploadParameters={handleGetUploadParameters}
+                    onComplete={handleAvatarUploadComplete}
+                    buttonClassName="w-full bg-green-600 hover:bg-green-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <i className="fas fa-camera"></i>
+                      <span>Subir Nueva Foto</span>
+                    </div>
+                  </ObjectUploader>
+                  
+                  <div className="text-xs text-slate-500 text-center">
+                    Formatos: JPG, PNG, GIF • Máximo 5MB
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="avatar">O ingresa URL de imagen</Label>
+                    <Input
+                      id="avatar"
+                      value={formData.avatar}
+                      onChange={(e) => handleInputChange('avatar', e.target.value)}
+                      placeholder="https://ejemplo.com/mi-foto.jpg"
+                      className="mt-1"
+                    />
+                  </div>
                 </div>
               )}
             </CardContent>
