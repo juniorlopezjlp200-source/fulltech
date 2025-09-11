@@ -311,7 +311,7 @@ export function CustomerDashboard() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">RD${(purchase.totalPrice / 100).toFixed(0)}</p>
+                          <p className="font-bold">RD${purchase.totalPrice}</p>
                           {purchase.discountApplied > 0 && (
                             <p className="text-xs text-green-600">
                               Descuento: {purchase.discountApplied}%

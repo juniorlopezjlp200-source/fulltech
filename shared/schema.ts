@@ -13,14 +13,13 @@ export const products = pgTable("products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   description: text("description").notNull(),
-  price: integer("price").notNull(), // Price in cents
+  price: integer("price").notNull(), // Price in RD$
   category: text("category").notNull(),
   images: jsonb("images").$type<string[]>().notNull().default([]),
   videos: jsonb("videos").$type<string[]>().notNull().default([]),
   inStock: boolean("in_stock").notNull().default(true),
   featured: boolean("featured").notNull().default(false),
   onSale: boolean("on_sale").notNull().default(false),
-  originalPrice: integer("original_price"), // Price before discount in cents
   rating: integer("rating").default(5), // 1-5 stars
   reviewCount: integer("review_count").default(0),
 });
@@ -113,8 +112,8 @@ export const customerPurchases = pgTable("customer_purchases", {
   customerId: varchar("customer_id").notNull(),
   productId: varchar("product_id").notNull(),
   quantity: integer("quantity").notNull().default(1),
-  unitPrice: integer("unit_price").notNull(), // Price per unit in cents
-  totalPrice: integer("total_price").notNull(), // Total price in cents
+  unitPrice: integer("unit_price").notNull(), // Price per unit in RD$
+  totalPrice: integer("total_price").notNull(), // Total price in RD$
   discountApplied: integer("discount_applied").default(0), // Discount percentage applied
   status: text("status").notNull().default("completed"), // 'completed', 'pending', 'cancelled'
   createdAt: timestamp("created_at").defaultNow(),

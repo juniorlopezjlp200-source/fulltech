@@ -133,11 +133,6 @@ const ProductListItem = memo(({
             <span className="text-lg font-bold text-gray-900">
               {formatPrice(product.price)}
             </span>
-            {product.originalPrice && product.originalPrice > product.price && (
-              <span className="text-sm text-gray-500 line-through ml-2">
-                {formatPrice(product.originalPrice)}
-              </span>
-            )}
           </div>
           
           {/* Rating */}

@@ -43,7 +43,6 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
       inStock: product?.inStock ?? true,
       featured: product?.featured ?? false,
       onSale: product?.onSale ?? false,
-      originalPrice: product?.originalPrice || undefined,
       rating: product?.rating || 5,
       reviewCount: product?.reviewCount || 0,
     },
@@ -263,35 +262,14 @@ export function ProductForm({ product, onSuccess, onCancel }: ProductFormProps) 
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Precio (en centavos)</FormLabel>
+                  <FormLabel>Precio (RD$)</FormLabel>
                   <FormControl>
                     <Input 
                       {...field} 
                       type="number"
-                      placeholder="999900"
+                      placeholder="25"
                       onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                       data-testid="input-product-price"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="originalPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Original (opcional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="number"
-                      placeholder="1299900"
-                      onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                      value={field.value || ""}
-                      data-testid="input-product-original-price"
                     />
                   </FormControl>
                   <FormMessage />
