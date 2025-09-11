@@ -35,6 +35,17 @@ export function useCustomer() {
     };
   }>({
     queryKey: ["/api/me"],
+    queryFn: async () => {
+      const response = await fetch("/api/me", {
+        credentials: "include",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
