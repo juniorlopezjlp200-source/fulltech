@@ -5,12 +5,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
+import { useQuery } from "@tanstack/react-query";
+
+interface SiteConfig {
+  id: string;
+  key: string;
+  value: string;
+  description: string;
+  category: string;
+  updatedAt: string;
+}
 
 export function PhoneAuth() {
   const [activeTab, setActiveTab] = useState("register");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Configuraciones del sitio
+  const { data: configs = [] } = useQuery<SiteConfig[]>({
+    queryKey: ["/api/site-configs"],
+  });
+
+  const logoUrl = configs.find(c => c.key === 'logo_url')?.value || 'https://i.postimg.cc/3R2Nzj1g/untitled-0-removebg-preview.png';
+  const siteName = configs.find(c => c.key === 'site_name')?.value || 'FULLTECH';
 
   // Register form state
   const [registerData, setRegisterData] = useState({
@@ -116,30 +134,39 @@ export function PhoneAuth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
-        {/* Header Espectacular */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl border-2 border-white/20 animate-pulse">
-            <i className="fas fa-mobile-alt text-3xl text-black"></i>
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center p-3">
+      <div className="w-full max-w-md">
+        {/* Header Compacto y Profesional */}
+        <div className="text-center mb-4">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl border-2 border-white/30">
+            <img 
+              src={logoUrl} 
+              alt={siteName}
+              className="w-12 h-12 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.nextElementSibling!.style.display = 'block';
+              }}
+            />
+            <i className="fas fa-mobile-alt text-2xl text-blue-600 hidden"></i>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">
-            ¡Únete a FULLTECH!
+          <h1 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-yellow-200 to-orange-200 bg-clip-text text-transparent">
+            ¡Únete a {siteName}!
           </h1>
-          <p className="text-xl text-yellow-100 mb-2">
+          <p className="text-lg text-yellow-100 mb-1">
             🎉 <span className="font-bold">10% de descuento</span> en tu primera compra
           </p>
-          <p className="text-blue-200">Registro rápido con tu teléfono</p>
+          <p className="text-blue-200 text-sm">Registro rápido con tu teléfono</p>
         </div>
 
-        {/* Card Principal con Glass Effect */}
+        {/* Card Principal Compacto */}
         <Card className="bg-white/10 backdrop-blur-sm border-2 border-white/20 shadow-2xl">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-2xl text-white mb-2">
+          <CardHeader className="text-center pb-3">
+            <CardTitle className="text-xl text-white mb-1">
               <i className="fas fa-star text-yellow-300 mr-2"></i>
               Acceso Privilegiado
             </CardTitle>
-            <CardDescription className="text-blue-100">
+            <CardDescription className="text-blue-100 text-sm">
               Únete a miles de clientes satisfechos
             </CardDescription>
           </CardHeader>
@@ -179,8 +206,8 @@ export function PhoneAuth() {
               )}
 
               {/* Tab de Registro */}
-              <TabsContent value="register" className="space-y-4 mt-6">
-                <form onSubmit={handleRegister} className="space-y-4">
+              <TabsContent value="register" className="space-y-3 mt-4">
+                <form onSubmit={handleRegister} className="space-y-3">
                   <div>
                     <Label className="text-white font-medium mb-2 block">
                       <i className="fas fa-user mr-2 text-blue-300"></i>
@@ -256,22 +283,19 @@ export function PhoneAuth() {
                     />
                   </div>
 
-                  <div className="bg-blue-400/20 border border-blue-400/50 rounded-lg p-4 text-center">
-                    <p className="text-white text-sm mb-2">
-                      🎁 <span className="font-bold">Beneficios exclusivos al registrarte:</span>
+                  <div className="bg-blue-400/20 border border-blue-400/50 rounded-lg p-2 text-center">
+                    <p className="text-white text-xs mb-1">
+                      🎁 <span className="font-bold">Beneficios exclusivos:</span>
                     </p>
-                    <ul className="text-blue-100 text-xs space-y-1">
-                      <li>✨ 10% descuento en tu primera compra</li>
-                      <li>🎯 Acceso a ofertas exclusivas</li>
-                      <li>🎪 Participación en rifas mensuales</li>
-                      <li>📱 Notificaciones de nuevos productos</li>
-                    </ul>
+                    <p className="text-blue-100 text-xs">
+                      ✨ 10% descuento • 🎯 Ofertas exclusivas • 🎪 Rifas mensuales
+                    </p>
                   </div>
 
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-2.5 shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     {loading ? (
                       <>
@@ -289,8 +313,8 @@ export function PhoneAuth() {
               </TabsContent>
 
               {/* Tab de Login */}
-              <TabsContent value="login" className="space-y-4 mt-6">
-                <form onSubmit={handleLogin} className="space-y-4">
+              <TabsContent value="login" className="space-y-3 mt-4">
+                <form onSubmit={handleLogin} className="space-y-3">
                   <div>
                     <Label className="text-white font-medium mb-2 block">
                       <i className="fas fa-phone mr-2 text-blue-300"></i>
@@ -321,17 +345,16 @@ export function PhoneAuth() {
                     />
                   </div>
 
-                  <div className="bg-blue-400/20 border border-blue-400/50 rounded-lg p-3 text-center">
-                    <p className="text-blue-100 text-sm">
-                      🔐 <span className="font-semibold">Acceso seguro y rápido</span><br/>
-                      <span className="text-blue-200 text-xs">Tus datos están protegidos con nosotros</span>
+                  <div className="bg-blue-400/20 border border-blue-400/50 rounded-lg p-2 text-center">
+                    <p className="text-blue-100 text-xs">
+                      🔐 <span className="font-semibold">Acceso seguro y rápido</span> • Datos protegidos
                     </p>
                   </div>
 
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white font-bold py-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white font-bold py-2.5 shadow-lg hover:shadow-xl transition-all duration-300"
                   >
                     {loading ? (
                       <>
@@ -349,36 +372,31 @@ export function PhoneAuth() {
               </TabsContent>
             </Tabs>
 
-            {/* Links adicionales */}
-            <div className="mt-6 space-y-3">
-              <div className="text-center">
-                <Button
-                  variant="ghost"
-                  className="text-blue-200 hover:text-white hover:bg-white/10"
-                  onClick={() => window.location.href = '/login'}
-                >
-                  <i className="fab fa-google mr-2"></i>
-                  ¿Prefieres Google OAuth?
-                </Button>
-              </div>
-
-              <div className="text-center">
-                <Button
-                  variant="ghost"
-                  className="text-blue-200 hover:text-white hover:bg-white/10"
-                  onClick={() => window.location.href = '/'}
-                >
-                  <i className="fas fa-arrow-left mr-2"></i>
-                  Volver al Catálogo
-                </Button>
-              </div>
+            {/* Links adicionales compactos */}
+            <div className="mt-4 flex justify-center gap-4">
+              <Button
+                variant="ghost"
+                className="text-blue-200 hover:text-white hover:bg-white/10 text-sm py-2"
+                onClick={() => window.location.href = '/login'}
+              >
+                <i className="fab fa-google mr-1"></i>
+                Google
+              </Button>
+              <Button
+                variant="ghost"
+                className="text-blue-200 hover:text-white hover:bg-white/10 text-sm py-2"
+                onClick={() => window.location.href = '/'}
+              >
+                <i className="fas fa-arrow-left mr-1"></i>
+                Volver
+              </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer motivacional */}
-        <div className="text-center mt-6">
-          <p className="text-blue-200 text-sm">
+        {/* Footer compacto */}
+        <div className="text-center mt-3">
+          <p className="text-blue-200 text-xs">
             <i className="fas fa-shield-alt mr-1 text-green-400"></i>
             Más de <span className="font-bold text-yellow-300">10,000 clientes</span> confían en nosotros
           </p>
