@@ -131,9 +131,9 @@ export function Login() {
             <Button 
               variant="outline"
               onClick={createInstantClickHandler(handleRegisterRedirect)}
-              className="w-full border-white/30 text-white hover:bg-white/10 hover:text-white py-2.5 text-base transition-all duration-100"
+              className="w-full border-white text-black bg-white/90 hover:bg-white hover:text-black py-2.5 text-base transition-all duration-100 font-semibold shadow-lg"
             >
-              <i className="fas fa-user-plus mr-2"></i>
+              <i className="fas fa-user-plus mr-2 text-black"></i>
               Crear Cuenta Nueva
             </Button>
 
