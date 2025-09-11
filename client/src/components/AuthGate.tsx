@@ -12,7 +12,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setLocation("/iniciar-sesion");
+      setLocation("/login");
     }
   }, [isLoading, isAuthenticated, setLocation]);
 

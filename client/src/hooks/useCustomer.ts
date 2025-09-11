@@ -51,12 +51,12 @@ export function useCustomer() {
   });
 
   // Map the response to Customer format for compatibility
-  const customer: Customer | null = authResponse?.authenticated 
+  const customer: Customer | null = authResponse?.authenticated && authResponse.user
     ? {
-        id: authResponse.user!.id,
-        name: authResponse.user!.name,
-        email: authResponse.user!.email,
-        picture: authResponse.user!.avatarUrl,
+        id: authResponse.user.id,
+        name: authResponse.user.name,
+        email: authResponse.user.email || undefined,
+        picture: (authResponse.user as any).avatarUrl || (authResponse.user as any).avatar || undefined,
         referralCode: '', // Will be loaded from profile endpoint if needed
         authProvider: 'google' as const, // Determined from auth method
         isPhoneVerified: false,

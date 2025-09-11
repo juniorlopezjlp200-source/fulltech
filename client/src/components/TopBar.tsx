@@ -208,6 +208,19 @@ export function TopBar() {
             <i className="fas fa-share-alt text-black text-sm md:text-base" />
           </button>
 
+          {/* 📱 BOTÓN INSTALAR PWA - Solo visible cuando se puede instalar */}
+          {canInstall && !isAppInstalled && (
+            <button
+              onClick={handleInstallClick}
+              className="rounded-full p-2 md:p-3 bg-blue-500 hover:bg-blue-600 border border-blue-400 transition-colors animate-pulse"
+              data-testid="button-install-app"
+              title="Instalar App"
+              aria-label="Instalar Aplicación"
+            >
+              <i className="fas fa-download text-white text-sm md:text-base" />
+            </button>
+          )}
+
           {/* Menú */}
           <button
             id="menu-toggle"
