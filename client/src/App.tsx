@@ -22,6 +22,8 @@ import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import CustomPage from "@/pages/CustomPage";
 import { Footer } from "@/components/Footer";
+import { FixedFooter } from "@/components/FixedFooter";
+import { TemporaryAd } from "@/components/TemporaryAd";
 
 /** Sube al top cuando cambia la ruta */
 function ScrollToTop() {
@@ -48,7 +50,7 @@ function Router() {
   }, []);
 
   const isCustomPage = hash?.startsWith("#page=");
-  const shouldShowFooter = location === "/" && !isCustomPage;
+  const shouldShowFooter = false; // Disable original Footer, only show FixedFooter
 
   if (isCustomPage) {
     return (
@@ -62,7 +64,10 @@ function Router() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <div className={`flex-1 ${shouldShowFooter ? "pb-16" : ""}`}>
+      {/* 💥 Publicidad Temporal de 3 segundos */}
+      <TemporaryAd />
+      
+      <div className={`flex-1 ${shouldShowFooter ? "pb-20" : "pb-20"}`}>
         <ScrollToTop />
         <Switch>
           <Route path="/" component={Catalog} />
@@ -84,6 +89,9 @@ function Router() {
       </div>
 
       {shouldShowFooter && <Footer />}
+      
+      {/* 📌 Footer Fijo con Publicidad Central */}
+      <FixedFooter />
     </div>
   );
 }
