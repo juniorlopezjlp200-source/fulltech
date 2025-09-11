@@ -111,6 +111,31 @@ export function TopBar() {
     setDeferredPrompt(null);
   };
 
+  const handleShareClick = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Catálogo FULLTECH",
+          text: "¡Descubre los mejores productos tech en FULLTECH!",
+          url,
+        });
+        return;
+      } catch {}
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("¡Enlace copiado al portapapeles!");
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      alert("¡Enlace copiado al portapapeles!");
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 safe-area-top">
@@ -165,6 +190,16 @@ export function TopBar() {
             </button>
           )}
           
+          {/* Compartir */}
+          <button
+            onClick={handleShareClick}
+            className="rounded-full p-2 md:p-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+            data-testid="button-share-app"
+            title="Compartir App"
+            aria-label="Compartir App"
+          >
+            <i className="fas fa-share-alt text-black text-sm md:text-base" />
+          </button>
 
           {/* Instalar (Android/Desktop con prompt) */}
           {canInstall && !isAppInstalled && (
