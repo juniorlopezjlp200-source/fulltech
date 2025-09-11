@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import {
   insertRaffleParticipantSchema,
   adminLoginSchema,
+  phoneRegisterSchema,
+  phoneLoginSchema,
   insertProductSchema,
   insertHeroSlideSchema,
   insertCustomPageSchema,
@@ -19,6 +21,7 @@ declare module "express-session" {
   interface SessionData {
     adminId?: string;
     adminEmail?: string;
+    customerId?: string;
   }
 }
 
@@ -243,6 +246,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get admin profile error:", error);
       res.status(500).json({ error: "Failed to get admin profile" });
+    }
+  });
+
+  // ---------- Phone Authentication ----------
+  app.post("/api/auth/phone/register", async (req, res) => {
+    try {
+      const { name, phone, address, password } = phoneRegisterSchema.parse(req.body);
+      
+      // Check if phone already exists
+      const existingCustomer = await storage.getCustomerByPhone(phone);
+      if (existingCustomer) {
+        return res.status(400).json({ error: "Phone number already registered" });
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      // Generate referral code
+      const referralCode = `FT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // Create customer
+      const customer = await storage.createCustomer({
+        name,
+        phone,
+        address,
+        passwordHash,
+        authProvider: 'phone',
+        referralCode,
+        isPhoneVerified: false,
+      });
+
+      // Set session (same pattern as admin login)
+      req.session.customerId = customer.id;
+      
+      res.json({
+        success: true,
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          referralCode: customer.referralCode,
+        },
+      });
+    } catch (error) {
+      console.error("Phone register error:", error);
+      res.status(400).json({ error: "Invalid data provided" });
+    }
+  });
+
+  app.post("/api/auth/phone/login", async (req, res) => {
+    try {
+      const { phone, password } = phoneLoginSchema.parse(req.body);
+      
+      const customer = await storage.getCustomerByPhone(phone);
+      if (!customer) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      if (customer.authProvider !== 'phone' || !customer.passwordHash) {
+        return res.status(401).json({ error: "Invalid authentication method" });
+      }
+
+      const passwordMatch = await bcrypt.compare(password, customer.passwordHash);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: "Invalid credentials" });
+      }
+
+      // Update last visit
+      await storage.updateCustomerLastVisit(customer.id);
+      
+      // Set session (same pattern as admin login)
+      req.session.customerId = customer.id;
+
+      res.json({
+        success: true,
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          address: customer.address,
+          referralCode: customer.referralCode,
+          isPhoneVerified: customer.isPhoneVerified,
+        },
+      });
+    } catch (error) {
+      console.error("Phone login error:", error);
+      res.status(400).json({ error: "Invalid data provided" });
     }
   });
 

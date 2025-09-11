@@ -86,6 +86,19 @@ export const adminLoginSchema = createInsertSchema(admins).pick({
   password: true,
 });
 
+// Phone authentication schemas
+export const phoneRegisterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(10, "Phone must be at least 10 digits"),
+  address: z.string().min(5, "Address is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const phoneLoginSchema = z.object({
+  phone: z.string().min(10, "Phone must be at least 10 digits"),
+  password: z.string().min(6, "Password is required"),
+});
+
 // 👥 Customers table (soporta Google OAuth y autenticación con teléfono)
 export const customers = pgTable("customers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -223,6 +236,8 @@ export type User = typeof users.$inferSelect;
 export type Admin = typeof admins.$inferSelect;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type AdminLogin = z.infer<typeof adminLoginSchema>;
+export type PhoneRegister = z.infer<typeof phoneRegisterSchema>;
+export type PhoneLogin = z.infer<typeof phoneLoginSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type HeroSlide = typeof heroSlides.$inferSelect;

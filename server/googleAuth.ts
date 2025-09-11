@@ -90,29 +90,84 @@ export function setupGoogleAuth(app: Express) {
     }
   );
 
+  // Unified logout endpoint for both Google and phone users
   app.get('/api/auth/logout', (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        console.error('Error during logout:', err);
-      }
-      res.redirect('/');
-    });
+    // Handle Google OAuth logout
+    if (req.isAuthenticated()) {
+      req.logout((err) => {
+        if (err) {
+          console.error('Error during Google logout:', err);
+        }
+        // Also destroy session to clear any phone auth data
+        req.session.destroy((sessionErr) => {
+          if (sessionErr) {
+            console.error('Error destroying session:', sessionErr);
+          }
+          res.redirect('/');
+        });
+      });
+    } else {
+      // Handle phone auth logout by destroying session
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+        }
+        res.redirect('/');
+      });
+    }
   });
 
   // Middleware para verificar autenticación de cliente
-  app.get('/api/auth/me', (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json(req.user);
-    } else {
+  app.get('/api/auth/me', async (req, res) => {
+    try {
+      // Check Google OAuth first
+      if (req.isAuthenticated() && req.user) {
+        return res.json(req.user);
+      }
+      
+      // Check phone authentication
+      if (req.session.customerId) {
+        const customer = await storage.getCustomer(req.session.customerId);
+        if (customer) {
+          return res.json(customer);
+        }
+      }
+      
       res.status(401).json({ error: 'Not authenticated' });
+    } catch (error) {
+      console.error('Error in /api/auth/me:', error);
+      res.status(500).json({ error: 'Internal server error' });
     }
   });
 }
 
-// Middleware para proteger rutas de cliente
+// Middleware para proteger rutas de cliente - soporta tanto Google OAuth como autenticación por teléfono
 export function requireCustomerAuth(req: any, res: any, next: any) {
-  if (req.isAuthenticated()) {
+  // Check Google OAuth first
+  if (req.isAuthenticated() && req.user) {
     return next();
   }
+  
+  // Check phone authentication
+  if (req.session && req.session.customerId) {
+    // Load customer data and set it in req.user for consistency
+    storage.getCustomer(req.session.customerId)
+      .then(customer => {
+        if (customer) {
+          req.user = customer;
+          return next();
+        } else {
+          // Customer not found, clear invalid session
+          req.session.customerId = undefined;
+          res.status(401).json({ error: 'Authentication required' });
+        }
+      })
+      .catch(error => {
+        console.error('Error loading customer in requireCustomerAuth:', error);
+        res.status(500).json({ error: 'Authentication error' });
+      });
+    return;
+  }
+  
   res.status(401).json({ error: 'Authentication required' });
 }
