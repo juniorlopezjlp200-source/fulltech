@@ -43,18 +43,18 @@ export function TopBar() {
 
   // ✅ Detectar si estamos en páginas admin
   const isAdminPage = location.startsWith('/admin');
-
+  
   // Hooks de autenticación
   const customerHookResult = useCustomer();
   const adminHookResult = useAdmin();
-
+  
   // Determinar tipo de usuario y datos según la página actual
   const { customer, isAuthenticated, logout } = isAdminPage ? 
     { customer: null, isAuthenticated: false, logout: () => {} } : 
     customerHookResult;
-
+  
   const { admin, isAuthenticated: isAdminAuthenticated } = adminHookResult;
-
+  
   const { groupedPages } = useCustomPages();
   const { goHome, goToCustomPage, navigateInstantly } = useInstantNavigation();
   const { createInstantClickHandler } = useInstantFeedback();
@@ -222,7 +222,7 @@ export function TopBar() {
               <i className="fas fa-download text-black text-sm md:text-base" />
             </button>
           )}
-
+          
           {/* Compartir */}
           <button
             onClick={handleShareClick}
@@ -321,7 +321,7 @@ export function TopBar() {
                   <i className="fas fa-crown mr-2 text-yellow-400"></i>
                   Panel de Administración
                 </h4>
-
+                
                 <button
                   className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 rounded-xl transition-all duration-200 border border-yellow-500/30"
                   onClick={() => {
@@ -400,7 +400,7 @@ export function TopBar() {
               {/* 🎯 Navegación Principal */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Mi Cuenta</h4>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/tablero'); })}
@@ -415,7 +415,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/perfil'); })}
@@ -430,7 +430,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/referir'); })}
@@ -445,7 +445,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/configuracion'); })}
@@ -460,7 +460,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/soporte'); })}
@@ -507,7 +507,7 @@ export function TopBar() {
               {/* 🛡️ Enlaces importantes: Garantía y Contacto */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Servicios</h4>
-
+                
                 <Link 
                   href="/garantia" 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
@@ -542,7 +542,7 @@ export function TopBar() {
               {/* ⚙️ Configuraciones y Preferencias */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Configuración</h4>
-
+                
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
                   onClick={closeMenu}
