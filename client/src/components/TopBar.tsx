@@ -20,17 +20,21 @@ export function TopBar() {
   const [isAppInstalled, setIsAppInstalled] = useState<boolean>(() => {
     return (
       window.matchMedia?.("(display-mode: standalone)")?.matches ||
-      (window.navigator as any).standalone === true
+      (window.navigator as any).standalone === true ||
+      localStorage.getItem("pwa_installed") === "1"
     );
   });
+
+  // Detectar iOS para ocultar botón instalar (no hay beforeinstallprompt)
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   // ---- iOS tip ----
   const [showIosTip, setShowIosTip] = useState<boolean>(() => {
     const ua = navigator.userAgent.toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
+    const isIOSua = /iphone|ipad|ipod/.test(ua);
     const inStandalone = (window.navigator as any).standalone === true;
     const dismissed = localStorage.getItem("ios_install_tip_dismissed") === "1";
-    return isIOS && !inStandalone && !dismissed;
+    return isIOSua && !inStandalone && !dismissed;
   });
   const closeIosTip = () => {
     setShowIosTip(false);
@@ -39,18 +43,18 @@ export function TopBar() {
 
   // ✅ Detectar si estamos en páginas admin
   const isAdminPage = location.startsWith('/admin');
-  
+
   // Hooks de autenticación
   const customerHookResult = useCustomer();
   const adminHookResult = useAdmin();
-  
+
   // Determinar tipo de usuario y datos según la página actual
   const { customer, isAuthenticated, logout } = isAdminPage ? 
     { customer: null, isAuthenticated: false, logout: () => {} } : 
     customerHookResult;
-  
+
   const { admin, isAuthenticated: isAdminAuthenticated } = adminHookResult;
-  
+
   const { groupedPages } = useCustomPages();
   const { goHome, goToCustomPage, navigateInstantly } = useInstantNavigation();
   const { createInstantClickHandler } = useInstantFeedback();
@@ -66,12 +70,15 @@ export function TopBar() {
 
   // ---- PWA listeners ----
   useEffect(() => {
-    // Service Worker ya se registra en index.html, no duplicar
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setCanInstall(true);
+      // solo marcamos instalable si aún no está instalada
+      if (!isAppInstalled) setCanInstall(true);
     };
 
     const handleAppInstalled = () => {
@@ -79,6 +86,8 @@ export function TopBar() {
       setCanInstall(false);
       setDeferredPrompt(null);
       setShowIosTip(false);
+      // recuerda que ya se instaló en este dispositivo
+      localStorage.setItem("pwa_installed", "1");
       localStorage.setItem("ios_install_tip_dismissed", "1");
     };
 
@@ -88,6 +97,7 @@ export function TopBar() {
         setIsAppInstalled(true);
         setCanInstall(false);
         setShowIosTip(false);
+        localStorage.setItem("pwa_installed", "1");
       }
     };
 
@@ -100,17 +110,22 @@ export function TopBar() {
       window.removeEventListener("appinstalled", handleAppInstalled);
       mq?.removeEventListener?.("change", onModeChange);
     };
-  }, []);
+  }, [isAppInstalled]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
-      setShowIosTip(true); // sin prompt (iOS) → mostrar ayuda
+      // sin prompt (iOS / casos raros) → mostrar ayuda
+      setShowIosTip(true);
       return;
     }
+    setCanInstall(false);
     deferredPrompt.prompt();
     try {
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setCanInstall(false);
+      if (outcome !== "accepted") {
+        // si canceló, podemos volver a mostrar el botón
+        setCanInstall(true);
+      }
     } catch {}
     setDeferredPrompt(null);
   };
@@ -194,7 +209,20 @@ export function TopBar() {
               </div>
             </button>
           )}
-          
+
+          {/* Instalar PWA (solo si es instalable, no instalada y no iOS) */}
+          {canInstall && !isAppInstalled && !isIOS && (
+            <button
+              onClick={handleInstallClick}
+              className="rounded-full p-2 md:p-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors"
+              data-testid="button-install-pwa"
+              title="Instalar app"
+              aria-label="Instalar app"
+            >
+              <i className="fas fa-download text-black text-sm md:text-base" />
+            </button>
+          )}
+
           {/* Compartir */}
           <button
             onClick={handleShareClick}
@@ -293,7 +321,7 @@ export function TopBar() {
                   <i className="fas fa-crown mr-2 text-yellow-400"></i>
                   Panel de Administración
                 </h4>
-                
+
                 <button
                   className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 hover:from-yellow-500/30 hover:to-orange-500/30 rounded-xl transition-all duration-200 border border-yellow-500/30"
                   onClick={() => {
@@ -372,7 +400,7 @@ export function TopBar() {
               {/* 🎯 Navegación Principal */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Mi Cuenta</h4>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/tablero'); })}
@@ -387,7 +415,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/perfil'); })}
@@ -402,7 +430,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/referir'); })}
@@ -417,7 +445,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/configuracion'); })}
@@ -432,7 +460,7 @@ export function TopBar() {
                   </div>
                   <i className="fas fa-chevron-right text-white/40" />
                 </button>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-100 border border-white/10" 
                   onClick={createInstantClickHandler(() => { closeMenu(); navigateInstantly('/mi/soporte'); })}
@@ -449,8 +477,6 @@ export function TopBar() {
                 </button>
 
               </div>
-
-
 
               {/* 📄 Páginas personalizadas */}
               {groupedPages.main && groupedPages.main.length > 0 && (
@@ -481,7 +507,7 @@ export function TopBar() {
               {/* 🛡️ Enlaces importantes: Garantía y Contacto */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Servicios</h4>
-                
+
                 <Link 
                   href="/garantia" 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
@@ -499,7 +525,7 @@ export function TopBar() {
 
                 <Link 
                   href="/contacto" 
-                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
+                  className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duración-200 border border-white/10" 
                   onClick={closeMenu}
                 >
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center">
@@ -516,7 +542,7 @@ export function TopBar() {
               {/* ⚙️ Configuraciones y Preferencias */}
               <div className="space-y-2">
                 <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Configuración</h4>
-                
+
                 <button 
                   className="w-full flex items-center gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-all duration-200 border border-white/10" 
                   onClick={closeMenu}
@@ -570,10 +596,6 @@ export function TopBar() {
           ) : (
             <>
               {/* 🎯 MENÚ PARA USUARIOS NO AUTENTICADOS */}
-              
-
-
-              {/* 📄 Páginas principales y soporte para no autenticados */}
               {groupedPages.main && groupedPages.main.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-white/60 text-xs font-semibold uppercase tracking-wider mb-3">Información</h4>
@@ -598,7 +620,6 @@ export function TopBar() {
                   ))}
                 </div>
               )}
-
 
               {/* 🔐 Acciones de autenticación */}
               <div className="pt-4 border-t border-white/10 space-y-3">
