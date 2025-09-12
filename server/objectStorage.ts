@@ -1,18 +1,18 @@
-// objectStorage.ts — S3/MinIO/SeaweedFS compatible (path-style) ✅
+// objectStorage.ts — S3/MinIO/SeaweedFS compatible (path-style) ✅ CORS auto-setup
 import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
-  PutBucketCorsCommand,
   GetBucketCorsCommand,
+  PutBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Response } from "express";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 
-// ---------- Validación de variables ----------
+/** ----------------- Validación de variables ----------------- */
 const REQUIRED = [
   "S3_ENDPOINT",
   "S3_ACCESS_KEY",
@@ -30,11 +30,20 @@ for (const key of REQUIRED) {
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
 const S3_ENDPOINT = (process.env.S3_ENDPOINT || "").replace(/\/+$/, "");
+const APPLY_S3_CORS_ON_BOOT =
+  String(process.env.APPLY_S3_CORS_ON_BOOT || "").toLowerCase() === "true";
+const ALLOWED_ORIGINS = (process.env.S3_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
-// ---------- Cliente S3 ----------
+console.log(`[objectStorage] 📡 Conectando a: ${S3_ENDPOINT}`);
+console.log(`[objectStorage] 🪣 Bucket: ${BUCKET_NAME}`);
+
+/** ----------------- Cliente S3 ----------------- */
 const s3Client = new S3Client({
   endpoint: S3_ENDPOINT || undefined,
-  region: "us-east-1", // genérico para S3-compatibles
+  region: "us-east-1",
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY || "",
     secretAccessKey: process.env.S3_SECRET_KEY || "",
@@ -43,104 +52,7 @@ const s3Client = new S3Client({
   forcePathStyle: true,
 });
 
-console.log(`[objectStorage] 📡 Conectando a: ${S3_ENDPOINT}`);
-console.log(`[objectStorage] 🪣 Bucket: ${BUCKET_NAME}`);
-
-// ---------- Helpers de CORS ----------
-function buildCorsRulesFromEnv() {
-  // Permite configurar orígenes por ENV (coma-separados). Si no hay, usa defaults seguros.
-  const envOrigins = (process.env.S3_ALLOWED_ORIGINS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const allowedOrigins =
-    envOrigins.length > 0
-      ? envOrigins
-      : [
-          "https://fulltechrd.com",
-          "https://www.fulltechrd.com",
-          "https://*.replit.dev",
-          "http://localhost:5173",
-        ];
-
-  return {
-    CORSRules: [
-      {
-        AllowedOrigins: allowedOrigins,
-        AllowedMethods: ["GET", "PUT", "HEAD", "OPTIONS"],
-        AllowedHeaders: ["*"],
-        ExposeHeaders: ["ETag", "x-amz-request-id"],
-        MaxAgeSeconds: 3000,
-      },
-    ],
-  };
-}
-
-/**
- * Aplica CORS al bucket si está vacío o diferente.
- * No lanza error fatal: solo loguea; el server sigue arrancando.
- */
-async function ensureBucketCorsOnBoot() {
-  if (!BUCKET_NAME) {
-    console.warn("[objectStorage] ⚠️ No BUCKET_NAME; skip CORS ensure");
-    return;
-  }
-  const desired = buildCorsRulesFromEnv();
-
-  let needPut = false;
-  try {
-    const current = await s3Client.send(
-      new GetBucketCorsCommand({ Bucket: BUCKET_NAME }),
-    );
-    const same =
-      JSON.stringify(current?.CORSRules || []) ===
-      JSON.stringify(desired.CORSRules);
-    if (same) {
-      console.log("[objectStorage] ✅ CORS OK en bucket");
-      return;
-    }
-    console.log("[objectStorage] ♻️ CORS distinto; se actualizará…");
-    needPut = true;
-  } catch (_e) {
-    // Si el bucket no tiene CORS configurado, GetBucketCors lanza error; lo tratamos como "hay que ponerlo".
-    console.log("[objectStorage] ℹ️ CORS no presente; se configurará ahora");
-    needPut = true;
-  }
-
-  if (needPut) {
-    try {
-      await s3Client.send(
-        new PutBucketCorsCommand({
-          Bucket: BUCKET_NAME,
-          CORSConfiguration: desired,
-        }),
-      );
-      console.log("[objectStorage] ✅ CORS aplicado correctamente");
-    } catch (err) {
-      console.error(
-        "[objectStorage] ❌ Error aplicando CORS (no es fatal):",
-        err,
-      );
-    }
-  }
-}
-
-// Ejecutar al iniciar si la env está habilitada
-(async () => {
-  if (process.env.APPLY_S3_CORS_ON_BOOT === "true") {
-    console.log(
-      "[objectStorage] 🛠  APPLY_S3_CORS_ON_BOOT=true → verificando CORS…",
-    );
-    await ensureBucketCorsOnBoot();
-  } else {
-    console.log(
-      "[objectStorage] ⏭  APPLY_S3_CORS_ON_BOOT no está en 'true' → skip CORS",
-    );
-  }
-})();
-
-// ---------- Utilidades ----------
+/** ----------------- Utilidades ----------------- */
 export class ObjectNotFoundError extends Error {
   constructor(message = "Object not found") {
     super(message);
@@ -157,7 +69,10 @@ function isNotFoundError(err: any): boolean {
   const name = err?.name || err?.Code || err?.code;
   const status = err?.$metadata?.httpStatusCode;
   return (
-    name === "NotFound" || name === "NoSuchKey" || name === "NoSuchBucket" || status === 404
+    name === "NotFound" ||
+    name === "NoSuchKey" ||
+    name === "NoSuchBucket" ||
+    status === 404
   );
 }
 
@@ -210,8 +125,72 @@ function makeObjectKey(opts?: {
   return key;
 }
 
-// ---------- Servicio ----------
+/** ----------------- CORS del Bucket ----------------- */
+async function ensureBucketCors() {
+  if (!APPLY_S3_CORS_ON_BOOT) return;
+
+  try {
+    await s3Client.send(
+      new GetBucketCorsCommand({ Bucket: BUCKET_NAME }),
+    );
+    console.log("[objectStorage] ✅ CORS OK en bucket");
+  } catch (err: any) {
+    const notConfigured =
+      err?.name === "NoSuchCORSConfiguration" ||
+      err?.$metadata?.httpStatusCode === 404;
+    if (!notConfigured) {
+      console.warn(
+        "[objectStorage] ⚠️ No se pudo leer CORS (se intentará aplicar de todos modos):",
+        err?.name || err?.message || err,
+      );
+    } else {
+      console.log("[objectStorage] ℹ️ CORS no presente; se configurará ahora");
+    }
+
+    // Reglas CORS: PUT/GET desde los orígenes permitidos
+    const allowedOrigins =
+      ALLOWED_ORIGINS.length > 0 ? ALLOWED_ORIGINS : ["*"];
+    const corsRule = {
+      AllowedMethods: ["GET", "PUT", "HEAD"],
+      AllowedOrigins: allowedOrigins,
+      AllowedHeaders: ["*"],
+      ExposeHeaders: ["ETag", "Content-Length", "Content-Type"],
+      MaxAgeSeconds: 3600,
+    };
+
+    try {
+      await s3Client.send(
+        new PutBucketCorsCommand({
+          Bucket: BUCKET_NAME,
+          CORSConfiguration: { CORSRules: [corsRule] },
+        }),
+      );
+      console.log(
+        `[objectStorage] ✅ CORS aplicado correctamente (origins: ${allowedOrigins.join(
+          ", ",
+        )})`,
+      );
+    } catch (applyErr: any) {
+      console.error("[objectStorage] ❌ Error aplicando CORS:", applyErr);
+    }
+  }
+}
+
+/** ----------------- Servicio ----------------- */
 export class ObjectStorageService {
+  // Al crear el servicio, intentamos aplicar CORS una sola vez.
+  private static corsAttempted = false;
+
+  constructor() {
+    if (!ObjectStorageService.corsAttempted) {
+      ObjectStorageService.corsAttempted = true;
+      // fire-and-forget
+      ensureBucketCors().catch((e) =>
+        console.warn("[objectStorage] CORS setup async error:", e),
+      );
+    }
+  }
+
   /** HEAD: saber si existe sin traer body */
   private async fileExists(objectKey: string): Promise<boolean> {
     const Key = normalizeKey(objectKey);
@@ -226,10 +205,6 @@ export class ObjectStorageService {
 
   /**
    * Genera una URL firmada (PUT) para subir un archivo.
-   * Usado por:
-   *   - /api/objects/upload-file (server hace el PUT con fetch del buffer)
-   *   - /api/objects/upload (front hace el PUT directo si tienes CORS)
-   *
    * IMPORTANTE: si mandas `contentType`, el cliente debe usar el MISMO header en el PUT.
    */
   async getObjectEntityUploadURL(options?: {
@@ -245,12 +220,11 @@ export class ObjectStorageService {
     const cmd = new PutObjectCommand({
       Bucket: BUCKET_NAME,
       Key,
-      // Si fijas ContentType en la firma, el PUT debe enviar el mismo header.
       ...(options?.contentType ? { ContentType: options.contentType } : {}),
     });
 
-    let uploadUrl = await getSignedUrl(s3Client, cmd, { expiresIn: 900 }); // 15 min
-    uploadUrl = uploadUrl.replace(/&amp;/g, "&"); // evitar HTML encoding
+    let uploadUrl = await getSignedUrl(s3Client, cmd, { expiresIn: 900 });
+    uploadUrl = uploadUrl.replace(/&amp;/g, "&");
 
     console.log(`[objectStorage] 📤 Upload URL generada para: ${Key}`);
     console.log(`[objectStorage] 🔗 URL: ${uploadUrl.substring(0, 120)}...`);
@@ -259,10 +233,16 @@ export class ObjectStorageService {
 
   /**
    * Stream del objeto hacia el response (proxy). Usa cabeceras cacheables.
-   * Rutas: /objects/:objectPath(*) o /uploads/:objectPath(*)
    */
   async downloadObject(objectKey: string, res: Response, cacheTtlSec = 3600) {
     const Key = normalizeKey(objectKey);
+
+    // Cortafuegos: si es un “unknown-<timestamp>” sabemos que no existe.
+    if (/^unknown-\d{13,}$/.test(Key) || Key.includes("/unknown-")) {
+      res.status(404).end(); // silencioso
+      return;
+    }
+
     try {
       const s3Res = await s3Client.send(
         new GetObjectCommand({ Bucket: BUCKET_NAME, Key }),
@@ -271,7 +251,7 @@ export class ObjectStorageService {
       const contentType = s3Res.ContentType || guessContentType(Key);
 
       res.set({
-        "Content-Type": contentType,
+        "Content-Type": String(contentType),
         ...(s3Res.ContentLength
           ? { "Content-Length": String(s3Res.ContentLength) }
           : {}),
@@ -280,7 +260,7 @@ export class ObjectStorageService {
 
       body.pipe(res);
     } catch (err: any) {
-      console.error("[objectStorage] Error downloading file:", err);
+      console.error("[objectStorage] Error downloading file:", err?.name || err);
       if (!res.headersSent) {
         if (isNotFoundError(err)) {
           res.status(404).json({ error: "File not found", key: Key });
@@ -320,23 +300,19 @@ export class ObjectStorageService {
     if (!rawPath) return "";
     const trimmed = rawPath.trim();
 
-    // Si es una URL firmada a nuestro endpoint, parsear
     if (S3_ENDPOINT && trimmed.startsWith(S3_ENDPOINT)) {
       try {
         const url = new URL(trimmed);
-        // path-style: /bucket-name/KEY...
         const parts = url.pathname.replace(/^\/+/, "").split("/");
         if (parts[0] === BUCKET_NAME) {
           return normalizeKey(parts.slice(1).join("/"));
         }
-        // fallback: por si el endpoint ya incluye bucket (raro con forcePathStyle)
         return normalizeKey(parts.join("/"));
       } catch {
         // continuar abajo
       }
     }
 
-    // Si no era URL (o era otra), tratar como key directa
     return normalizeKey(trimmed);
   }
 
@@ -350,7 +326,6 @@ export class ObjectStorageService {
   ): Promise<string> {
     const normalizedPath = this.normalizeObjectEntityPath(rawPath);
     console.log(`[objectStorage] ACL hint for ${normalizedPath}:`, aclPolicy);
-    // Si tu servidor requiere ACL por objeto, aquí podrías usar PutObjectAclCommand
     return normalizedPath;
   }
 
