@@ -1,258 +1,97 @@
-import express, {
-  type Request,
-  type Response,
-  type NextFunction,
-} from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, log } from "./vite";
-import path from "path";
-import { fileURLToPath } from "url";
+import express, { type Express } from "express";
 import fs from "fs";
+import path from "path";
+import { createServer as createViteServer, createLogger } from "vite";
+import { type Server } from "http";
+import viteConfig from "../vite.config";
+import { nanoid } from "nanoid";
 
-/* ----------------------- Paths robustos para contenedores ----------------------- */
-function getProjectRoot(): string {
-  try {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    return path.resolve(__dirname, "..");
-  } catch {
-    console.log("Falling back to process.cwd() for path resolution");
-    return process.cwd();
-  }
-}
+const viteLogger = createLogger();
 
-/* ------------------ Validación mínima de variables de entorno ------------------ */
-function validateEnvironment() {
-  const requiredEnvVars = ["DATABASE_URL"];
-  const missing = requiredEnvVars.filter((name) => !process.env[name]);
-
-  if (missing.length > 0) {
-    console.error(
-      `Missing required environment variables: ${missing.join(", ")}`,
-    );
-    process.exit(1);
-  }
-
-  // No forzar producción por defecto - dejar que sea desarrollo
-}
-validateEnvironment();
-
-/* --------------------------------- App --------------------------------- */
-const app = express();
-
-// si estás detrás de proxy/cdn (Easypanel/Nginx), avisa a Express
-app.set("trust proxy", 1);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-/* --------------------------- Logger simple de API --------------------------- */
-// 🔒 SOLO registrar middleware de logging en desarrollo (NO en producción)
-const isProduction = process.env.NODE_ENV === "production";
-if (!isProduction) {
-  app.use((req, res, next) => {
-    const start = Date.now();
-    const p = req.path;
-    let capturedJsonResponse: any;
-
-    const originalResJson = res.json.bind(res);
-    (res as any).json = (bodyJson: any) => {
-      capturedJsonResponse = bodyJson;
-      return originalResJson(bodyJson);
-    };
-
-    res.on("finish", () => {
-      if (!p.startsWith("/api")) return;
-      const duration = Date.now() - start;
-      let logLine = `${req.method} ${p} ${res.statusCode} in ${duration}ms`;
-      
-      if (capturedJsonResponse) {
-        const short = JSON.stringify(capturedJsonResponse);
-        logLine += ` :: ${short.length > 400 ? short.slice(0, 400) + "…" : short}`;
-      }
-      log(logLine);
-    });
-
-    next();
+export function log(message: string, source = "express") {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
   });
-} else {
-  // 🔒 Logger mínimo en producción (SIN response bodies)
-  app.use((req, res, next) => {
-    const start = Date.now();
-    res.on("finish", () => {
-      if (!req.path.startsWith("/api")) return;
-      const duration = Date.now() - start;
-      log(`${req.method} ${req.path} ${res.statusCode} in ${duration}ms`);
-    });
-    next();
-  });
+
+  console.log(`${formattedTime} [${source}] ${message}`);
 }
 
-/* --------------------------- Apagado elegante --------------------------- */
-let server: any = null;
+export async function setupVite(app: Express, server: Server) {
+  const serverOptions = {
+    middlewareMode: true,
+    hmr: { server },
+    allowedHosts: true as const,
+  };
 
-const gracefulShutdown = (signal: string) => {
-  log(`Received ${signal}. Starting graceful shutdown…`);
-  if (server) {
-    server.close(() => {
-      log("HTTP server closed.");
-      process.exit(0);
-    });
-    setTimeout(() => {
-      log("Could not close connections in time, forcefully shutting down");
-      process.exit(1);
-    }, 10_000);
-  } else {
-    process.exit(0);
-  }
-};
+  // Configurar el root correctamente para el modo middleware
+  const projectRoot = path.resolve(import.meta.dirname, "..");
+  const clientRoot = path.resolve(projectRoot, "client");
 
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught Exception:", error);
-  gracefulShutdown("uncaughtException");
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  gracefulShutdown("unhandledRejection");
-});
-
-/* --------------------------------- Boot --------------------------------- */
-(async () => {
-  try {
-    // Crear servidor HTTP inmediatamente
-    const { createServer } = await import("http");
-    server = createServer(app);
-
-    // Abrir puerto INMEDIATAMENTE para satisfacer el probe de Replit
-    const port = Number.parseInt(process.env.PORT || "5000", 10);
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
-      log(`serving on port ${port}`),
-    );
-
-    server.on("error", (error: any) => {
-      if (error?.code === "EADDRINUSE") {
-        console.error(`Port ${port} is already in use`);
-      } else {
-        console.error("Server error:", error);
-      }
-      process.exit(1);
-    });
-
-    // Endpoint de health inmediato
-    app.get("/health", (_req, res) => {
-      res.json({ status: "ok", timestamp: Date.now() });
-    });
-
-    // registra TODAS las rutas/API después de abrir puerto
-    await registerRoutes(app);
-
-    // middleware global de errores (no tumba el proceso)
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err?.status || err?.statusCode || 500;
-      const payload = {
-        error: "Internal",
-        message: err?.message || "Internal Server Error",
-        code: err?.code ?? "ERR",
-        detail: err?.detail,
-      };
-      console.error("[API ERROR]", { ...payload, stack: err?.stack });
-      if (res.headersSent) return;
-      res.status(status).json(payload);
-    });
-
-    // sólo inicia Vite en desarrollo; en prod sirve dist/public
-    const isProduction = process.env.NODE_ENV === "production";
-
-    console.log(`Environment detection:
-  NODE_ENV: ${process.env.NODE_ENV}
-  app.get("env"): ${app.get("env")}
-  REPLIT_DEV_DOMAIN: ${process.env.REPLIT_DEV_DOMAIN || "not set"}
-  Using production mode: ${isProduction}`);
-
-    if (!isProduction) {
-      console.log("Starting Vite development server…");
-      await setupVite(app, server);
-    } else {
-      console.log("Starting production static file server…");
-      const projectRoot = getProjectRoot();
-      const distPath = path.resolve(projectRoot, "dist", "public");
-      console.log(`Looking for static files in: ${distPath}`);
-
-      if (!fs.existsSync(distPath)) {
-        console.error(`Build directory not found: ${distPath}`);
-        try {
-          const rootContents = fs.readdirSync(projectRoot);
-          console.error(`Project root contents: ${rootContents.join(", ")}`);
-          const distDir = path.resolve(projectRoot, "dist");
-          if (fs.existsSync(distDir)) {
-            const distContents = fs.readdirSync(distDir);
-            console.error(
-              `Dist directory contents: ${distContents.join(", ")}`,
-            );
-          }
-        } catch {
-          console.error("Could not read directory contents");
-        }
-        console.error("Run 'npm run build' before starting in production");
+  const vite = await createViteServer({
+    ...viteConfig,
+    root: clientRoot,
+    configFile: false,
+    resolve: {
+      alias: {
+        "@": path.resolve(clientRoot, "src"),
+        "@shared": path.resolve(projectRoot, "shared"),
+        "@assets": path.resolve(projectRoot, "attached_assets"),
+      },
+    },
+    customLogger: {
+      ...viteLogger,
+      error: (msg, options) => {
+        viteLogger.error(msg, options);
         process.exit(1);
-      }
+      },
+    },
+    server: serverOptions,
+    appType: "custom",
+  });
 
-      console.log(`Successfully found static files at: ${distPath}`);
-      
-      // 🔥 ULTRA AGRESIVO: Headers anti-cache para forzar actualizaciones
-      app.use(express.static(distPath, {
-        setHeaders: (res, filePath) => {
-          // Para archivos JS, CSS y HTML: ULTRA anti-cache
-          if (filePath.match(/\.(js|css|html)$/)) {
-            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-            res.setHeader('Pragma', 'no-cache');
-            res.setHeader('Expires', '0');
-            res.setHeader('Last-Modified', new Date().toUTCString());
-            res.setHeader('ETag', Date.now().toString());
-          }
-          // Para otros archivos (imágenes, etc): cache normal
-          else {
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-          }
-        }
-      }));
+  app.use(vite.middlewares);
+  app.use("*", async (req, res, next) => {
+    const url = req.originalUrl;
 
-      // SPA fallback
-      app.use("*", (_req, res) => {
-        const indexPath = path.resolve(distPath, "index.html");
-        console.log(`Attempting to serve index.html from: ${indexPath}`);
-        if (fs.existsSync(indexPath)) {
-          // Headers ULTRA anti-cache para index.html del fallback
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-          res.setHeader('Pragma', 'no-cache');
-          res.setHeader('Expires', '0');
-          res.setHeader('Last-Modified', new Date().toUTCString());
-          res.setHeader('ETag', Date.now().toString());
-          res.sendFile(indexPath);
-        } else {
-          console.error(`index.html not found at: ${indexPath}`);
-          res
-            .status(404)
-            .send("index.html not found - application not built properly");
-        }
-      });
+    try {
+      const clientTemplate = path.resolve(
+        import.meta.dirname,
+        "..",
+        "client",
+        "index.html",
+      );
+
+      // always reload the index.html file from disk incase it changes
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
+      template = template.replace(
+        `src="/src/main.tsx"`,
+        `src="/src/main.tsx?v=${nanoid()}"`,
+      );
+      const page = await vite.transformIndexHtml(url, template);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+    } catch (e) {
+      vite.ssrFixStacktrace(e as Error);
+      next(e);
     }
-  } catch (error: any) {
-    console.error("Critical error during server startup:", error);
-    console.error("Error stack:", error?.stack || "No stack trace available");
-    if (error instanceof Error) {
-      console.error("Error name:", error.name);
-      console.error("Error message:", error.message);
-    }
-    console.error("Environment details:");
-    console.error("  Working directory:", process.cwd());
-    console.error("  Node version:", process.version);
-    console.error("  Platform:", process.platform);
-    console.error("  Architecture:", process.arch);
-    process.exit(1);
+  });
+}
+
+export function serveStatic(app: Express) {
+  const distPath = path.resolve(import.meta.dirname, "public");
+
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
   }
-})();
+
+  app.use(express.static(distPath));
+
+  // fall through to index.html if the file doesn't exist
+  app.use("*", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  });
+}
