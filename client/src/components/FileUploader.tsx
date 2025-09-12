@@ -1,3 +1,4 @@
+// client/src/components/FileUploader.tsx
 import { useState, useRef } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,224 +12,145 @@ interface FileUploaderProps {
   onUploadComplete: (fileUrl: string) => void;
   maxFileSize?: number;
   accept?: string;
-  fileType?: 'image' | 'video' | 'any';
+  fileType?: "image" | "video" | "any";
   children: ReactNode;
   buttonClassName?: string;
   disabled?: boolean;
-  enableOptimistic?: boolean; // Nueva prop para habilitar preview optimista
+  /** Por defecto AHORA es false para evitar guardar blob: en formularios */
+  enableOptimistic?: boolean;
 }
 
 /**
- * Componente simple de subida de archivos que funciona en móvil y PC.
- * Usa un input de archivo nativo que abre el explorador del dispositivo.
- * Soporta imágenes, videos y otros tipos de archivos multimedia.
+ * Uploader simple compatible móvil/PC.
+ * Nuevo flujo: presigned PUT + finalize para obtener ruta pública /uploads/…
+ * Sin guardar URLs blob: en el estado por defecto (evita 404 y "unknown-*").
  */
 export function FileUploader({
   onUploadComplete,
-  maxFileSize = 10485760, // 10MB por defecto para videos
+  maxFileSize = 10 * 1024 * 1024, // 10MB
   accept = "image/*,video/*",
-  fileType = 'any',
+  fileType = "any",
   children,
   buttonClassName,
   disabled = false,
-  enableOptimistic = true, // Por defecto habilitado
+  enableOptimistic = false, // <- cambiado a false por defecto
 }: FileUploaderProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'optimistic' | 'syncing' | 'synced' | 'failed'>('idle');
-  
-  // Hooks para funcionalidad offline y cache
+  const [uploadStatus, setUploadStatus] = useState<
+    "idle" | "optimistic" | "syncing" | "synced" | "failed"
+  >("idle");
+
   const { isOnline, addOfflineAction } = useOfflineSync();
   const cacheManager = useCacheManager();
 
-  const handleButtonClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+  const handleButtonClick = () => fileInputRef.current?.click();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validar tamaño
+    // Tamaño
     if (file.size > maxFileSize) {
       toast({
         title: "Archivo muy grande",
-        description: `El archivo debe ser menor a ${Math.round(maxFileSize / 1024 / 1024)}MB`,
+        description: `Debe ser menor a ${Math.round(maxFileSize / 1024 / 1024)}MB`,
         variant: "destructive",
       });
       return;
     }
 
-    // Validar tipo según fileType
-    const isValidType = validateFileType(file, fileType);
-    if (!isValidType) {
-      const typeMessage = getTypeMessage(fileType);
+    // Tipo
+    if (!validateFileType(file, fileType)) {
       toast({
         title: "Tipo de archivo inválido",
-        description: typeMessage,
+        description: getTypeMessage(fileType),
         variant: "destructive",
       });
       return;
     }
 
-    // 🚀 OPTIMISTIC UI: Mostrar inmediatamente el preview
+    // Si quisieras preview local temporal SOLO visual (no guardarlo en DB),
+    // podrías usarlo fuera de onUploadComplete. Aquí evitamos pasarlo al formulario.
     if (enableOptimistic) {
-      let localUrl: string | null = null;
-      try {
-        // Crear URL local inmediato para preview
-        localUrl = URL.createObjectURL(file);
-        
-        // Generar ID temporal para tracking
-        const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        // ✅ LLAMAR INMEDIATAMENTE a onUploadComplete con preview
-        setUploadStatus('optimistic');
-        onUploadComplete(localUrl);
-        
-        // Toast inmediato de confirmación
-        toast({
-          title: "¡Archivo listo!",
-          description: "Se está sincronizando en segundo plano...",
-        });
-        
-        // 🔄 Subir en background (sin bloquear UI)
-        uploadInBackground(file, tempId, localUrl);
-        
-      } catch (error) {
-        console.error("Error creating optimistic preview:", error);
-        // Limpiar URL si se creó
-        if (localUrl) {
-          URL.revokeObjectURL(localUrl);
-        }
-        // Fallback al upload normal
-        uploadFileNormally(file);
-      }
-    } else {
-      // Upload normal (sin optimistic UI)
-      uploadFileNormally(file);
+      setUploadStatus("optimistic");
+      toast({
+        title: "Preparando archivo…",
+        description: "Subiendo en segundo plano.",
+      });
     }
+
+    // Subir
+    await uploadFile(file);
   };
 
-  // 🔄 Función para subir en background
-  const uploadInBackground = async (file: File, tempId: string, localUrl: string) => {
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
-    setUploadStatus('syncing');
-    
+    setUploadStatus("syncing");
+
     try {
       if (!isOnline) {
-        // Guardar archivo completo en IndexedDB para uso offline
+        const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
         await cacheManager.saveFileForOfflineUpload(tempId, file);
-        
-        // Encolar acción de upload offline (usando solo addOfflineAction, no duplicar)
-        await addOfflineAction('file-upload', '/api/upload-url', 'POST', {
+        await addOfflineAction("file-upload", "/api/upload-url", "POST", {
           tempId,
           fileName: file.name,
           fileType: file.type,
-          fileSize: file.size
+          fileSize: file.size,
         });
-        
-        setUploadStatus('optimistic'); // Mantener optimistic hasta que se sincronice
-        setIsUploading(false); // ✅ CRÍTICO: Liberar UI cuando esté offline
-        
+
+        setUploadStatus("optimistic"); // queda pendiente hasta reconexión
         toast({
-          title: "Archivo guardado offline",
+          title: "Guardado offline",
           description: "Se subirá automáticamente cuando tengas conexión.",
         });
-        
-        console.log("📡 Sin conexión - archivo guardado para sincronización posterior");
         return;
       }
 
-      // 1. Obtener URL de subida
-      console.log("🔄 [DEBUG] Solicitando URL de upload...");
-      const uploadResponse = await apiRequest("POST", "/api/upload-url");
-      const uploadData = await uploadResponse.json() as { uploadUrl: string; objectPath: string };
-      console.log("✅ [DEBUG] URL obtenida exitosamente:", uploadData.objectPath);
-      
-      // Decodificar HTML entities en la URL
-      const uploadURL = uploadData.uploadUrl.replace(/&amp;/g, '&');
-      console.log("🔗 [DEBUG] URL final para upload:", uploadURL.substring(0, 100) + "...");
+      // 1) URL de subida
+      const resp = await apiRequest("POST", "/api/upload-url");
+      if (!resp.ok) throw new Error("No se pudo obtener la URL de subida");
+      const json = (await resp.json()) as { uploadUrl: string; objectPath: string };
+      const uploadUrl = (json.uploadUrl || "").replace(/&amp;/g, "&");
+      const objectPath = json.objectPath;
+      if (!uploadUrl || !objectPath) throw new Error("uploadUrl/objectPath faltante");
 
-      // 2. Subir archivo a SeaweedFS/S3
-      console.log("📤 [DEBUG] Iniciando upload a SeaweedFS...");
-      const fileUploadResponse = await fetch(uploadURL, {
+      // 2) PUT binario
+      const putResp = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
-        headers: { 'Content-Type': file.type },
+        headers: { "Content-Type": file.type || "application/octet-stream" },
       });
-
-      console.log("📊 [DEBUG] Respuesta SeaweedFS - Status:", fileUploadResponse.status, "OK:", fileUploadResponse.ok);
-
-      if (!fileUploadResponse.ok) {
-        const errorText = await fileUploadResponse.text();
-        console.error("❌ [DEBUG] Error en SeaweedFS:", errorText);
-        throw new Error(`Upload failed: ${fileUploadResponse.status} - ${errorText}`);
+      if (!putResp.ok) {
+        const errText = await safeText(putResp);
+        throw new Error(`PUT failed: ${putResp.status} ${errText}`);
       }
 
-      // 3. Generar URL final
-      const uuid = uploadData.objectPath.replace(/^\/?uploads\//, "");
-      const finalUrl = `/uploads/${uuid}`;
-      
-      // 4. ✅ ACTUALIZAR con URL real (reemplaza el preview)
-      onUploadComplete(finalUrl);
-      setUploadStatus('synced');
-      
-      console.log("✅ Sincronización completada:", finalUrl);
-      
-    } catch (error) {
-      console.error("Error uploading in background:", error);
-      setUploadStatus('failed');
-      
-      // En caso de error, mantener el preview pero mostrar estado de fallo
-      toast({
-        title: "Error al sincronizar",
-        description: "El archivo está disponible localmente. Se reintentará automáticamente.",
-        variant: "destructive",
+      // 3) Finalize (aplica ACL pública y normaliza)
+      const fin = await fetch("/api/upload-finalize", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploaded: [objectPath] }),
       });
-    } finally {
-      setIsUploading(false);
-      // ✅ CRÍTICO: Limpiar URL temporal en todos los casos
-      URL.revokeObjectURL(localUrl);
-    }
-  };
+      if (!fin.ok) throw new Error("No se pudo finalizar la subida");
+      const finJson = await fin.json();
+      const finalized: string[] = finJson.finalizedPaths || [];
+      const finalUrl =
+        finalized[0] ||
+        (objectPath.startsWith("uploads/") ? `/${objectPath}` : `/uploads/${objectPath}`);
 
-  // 📁 Función de upload normal (sin optimistic UI)
-  const uploadFileNormally = async (file: File) => {
-    setIsUploading(true);
-    setUploadStatus('syncing');
-
-    try {
-      const uploadResponse = await apiRequest("POST", "/api/upload-url");
-      const uploadData = await uploadResponse.json() as { uploadUrl: string; objectPath: string };
-      const uploadURL = uploadData.uploadUrl.replace(/&amp;/g, '&');
-
-      const fileUploadResponse = await fetch(uploadURL, {
-        method: "PUT",
-        body: file,
-        headers: { 'Content-Type': file.type },
-      });
-
-      if (!fileUploadResponse.ok) {
-        throw new Error(`Upload failed: ${fileUploadResponse.status}`);
-      }
-
-      const uuid = uploadData.objectPath.replace(/^\/?uploads\//, "");
-      const finalUrl = `/uploads/${uuid}`;
-      
+      // 4) Entregar URL real al formulario (sin blob:)
       onUploadComplete(finalUrl);
-      setUploadStatus('synced');
-      
+      setUploadStatus("synced");
       toast({
         title: "Archivo subido",
         description: getSuccessMessage(fileType),
       });
-
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      setUploadStatus('failed');
+    } catch (err) {
+      console.error("Error uploading:", err);
+      setUploadStatus("failed");
       toast({
         title: "Error al subir",
         description: getErrorMessage(fileType),
@@ -236,86 +158,72 @@ export function FileUploader({
       });
     } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const extractObjectIdFromURL = (uploadURL: string): string => {
-    try {
-      const url = new URL(uploadURL);
-      const pathParts = url.pathname.split('/');
-      // El path es algo como: /bucket-name/folder/uploads/object-id
-      // Tomamos la última parte que es el ID del objeto
-      return pathParts[pathParts.length - 1];
-    } catch {
-      return 'unknown-' + Date.now();
-    }
-  };
-
-  const validateFileType = (file: File, type: 'image' | 'video' | 'any'): boolean => {
+  // Utilidades
+  const validateFileType = (file: File, type: "image" | "video" | "any"): boolean => {
     switch (type) {
-      case 'image':
-        return file.type.startsWith('image/');
-      case 'video':
-        return file.type.startsWith('video/');
-      case 'any':
-        return file.type.startsWith('image/') || file.type.startsWith('video/');
+      case "image":
+        return file.type.startsWith("image/");
+      case "video":
+        return file.type.startsWith("video/");
+      case "any":
+        return file.type.startsWith("image/") || file.type.startsWith("video/");
       default:
         return true;
     }
   };
 
-  const getTypeMessage = (type: 'image' | 'video' | 'any'): string => {
+  const getTypeMessage = (type: "image" | "video" | "any"): string => {
     switch (type) {
-      case 'image':
-        return "Por favor selecciona una imagen (JPG, PNG, GIF, etc.)";
-      case 'video':
-        return "Por favor selecciona un video (MP4, AVI, MOV, etc.)";
-      case 'any':
-        return "Por favor selecciona una imagen o video";
+      case "image":
+        return "Selecciona una imagen (JPG, PNG, GIF, etc.)";
+      case "video":
+        return "Selecciona un video (MP4, AVI, MOV, etc.)";
+      case "any":
+        return "Selecciona una imagen o video";
       default:
-        return "Tipo de archivo no soportado";
+        return "Tipo no soportado";
     }
   };
 
-  const getSuccessMessage = (type: 'image' | 'video' | 'any'): string => {
+  const getSuccessMessage = (type: "image" | "video" | "any"): string => {
     switch (type) {
-      case 'image':
+      case "image":
         return "La imagen se ha subido exitosamente";
-      case 'video':
+      case "video":
         return "El video se ha subido exitosamente";
-      case 'any':
+      case "any":
         return "El archivo se ha subido exitosamente";
       default:
         return "Archivo subido exitosamente";
     }
   };
 
-  const getErrorMessage = (type: 'image' | 'video' | 'any'): string => {
+  const getErrorMessage = (type: "image" | "video" | "any"): string => {
     switch (type) {
-      case 'image':
+      case "image":
         return "No se pudo subir la imagen. Intenta nuevamente.";
-      case 'video':
+      case "video":
         return "No se pudo subir el video. Intenta nuevamente.";
-      case 'any':
+      case "any":
         return "No se pudo subir el archivo. Intenta nuevamente.";
       default:
         return "Error al subir archivo. Intenta nuevamente.";
     }
   };
 
-  // 🎨 Función para obtener el icono según el estado
   const getStatusIcon = () => {
     switch (uploadStatus) {
-      case 'optimistic':
+      case "optimistic":
         return <Clock className="w-4 h-4 text-blue-500" />;
-      case 'syncing':
+      case "syncing":
         return <Clock className="w-4 h-4 text-yellow-500 animate-pulse" />;
-      case 'synced':
+      case "synced":
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       default:
         return null;
@@ -329,7 +237,7 @@ export function FileUploader({
         type="file"
         accept={accept}
         onChange={handleFileSelect}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
         data-testid="file-input-hidden"
       />
       <Button
@@ -342,21 +250,20 @@ export function FileUploader({
         <div className="flex items-center gap-2">
           {isUploading ? (
             <>
-              <i className="fas fa-spinner fa-spin"></i>
-              Subiendo...
+              <i className="fas fa-spinner fa-spin" />
+              Subiendo…
             </>
           ) : (
             children
           )}
-          {/* ✨ Indicador de estado visual */}
-          {uploadStatus !== 'idle' && (
+          {uploadStatus !== "idle" && (
             <div className="flex items-center gap-1">
               {getStatusIcon()}
               <span className="text-xs opacity-75">
-                {uploadStatus === 'optimistic' && 'Listo'}
-                {uploadStatus === 'syncing' && 'Sincronizando...'}
-                {uploadStatus === 'synced' && 'Sincronizado'}
-                {uploadStatus === 'failed' && 'Error'}
+                {uploadStatus === "optimistic" && "Listo"}
+                {uploadStatus === "syncing" && "Sincronizando…"}
+                {uploadStatus === "synced" && "Sincronizado"}
+                {uploadStatus === "failed" && "Error"}
               </span>
             </div>
           )}
@@ -364,4 +271,12 @@ export function FileUploader({
       </Button>
     </div>
   );
+}
+
+async function safeText(r: Response) {
+  try {
+    return await r.text();
+  } catch {
+    return "";
+  }
 }
