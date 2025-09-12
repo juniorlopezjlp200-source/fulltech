@@ -128,7 +128,7 @@ export function FileUploader({
       }
 
       // 3) Finalize (aplica ACL pública y normaliza)
-      const fin = await fetch("/api/upload-finalize", {
+      const fin = await fetch("/api/objects/finalize", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
