@@ -882,40 +882,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ---------- Object Storage ----------
   const objectStorageService = new ObjectStorageService();
 
-  // Generar URL de subida (devuelve también objectPath)
-  app.post("/api/objects/upload", requireAdmin, async (_req, res) => {
-    try {
-      const { uploadUrl, objectPath } =
-        await objectStorageService.getObjectEntityUploadURL();
-      res.json({ method: "PUT", uploadUrl, objectPath });
-    } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
-    }
-  });
+ // Generar URL de subida (devuelve también objectPath)
+app.post("/api/objects/upload", requireAdmin, async (_req, res) => {
+  try {
+    const { uploadUrl, objectPath } =
+      await objectStorageService.getObjectEntityUploadURL();
 
-  // Compatibilidad antigua
-  app.post("/api/upload-url", requireAdmin, async (_req, res) => {
-    try {
-      const { uploadUrl, objectPath } =
-        await objectStorageService.getObjectEntityUploadURL();
-      res.json({ method: "PUT", uploadUrl, objectPath });
-    } catch (error) {
-      console.error("Error getting upload URL (compat):", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
-    }
-  });
+    // 👉 Devolvemos claves nuevas y también legacy
+    res.json({
+      method: "PUT",
+      uploadUrl,            // nueva
+      uploadURL: uploadUrl, // legacy
+      url: uploadUrl,       // legacy
+      objectPath,           // nueva
+      object_path: objectPath, // legacy
+    });
+  } catch (error) {
+    console.error("Error getting upload URL:", error);
+    res.status(500).json({ error: "Failed to get upload URL" });
+  }
+});
 
-  // Finalizar subidas (acepta objectPath o URLs)
-  app.post("/api/objects/finalize", requireAdmin, async (req, res) => {
-    try {
-      const { uploaded } = req.body;
-      if (!uploaded || !Array.isArray(uploaded)) {
-        return res
-          .status(400)
-          .json({ error: "Body must include 'uploaded' array" });
+// Compatibilidad antigua
+app.post("/api/upload-url", requireAdmin, async (_req, res) => {
+  try {
+    const { uploadUrl, objectPath } =
+      await objectStorageService.getObjectEntityUploadURL();
+
+    // 👉 Misma respuesta aquí también
+    res.json({
+      method: "PUT",
+      uploadUrl,
+      uploadURL: uploadUrl,
+      url: uploadUrl,
+      objectPath,
+      object_path: objectPath,
+    });
+  } catch (error) {
+    console.error("Error getting upload URL (compat):", error);
+    res.status(500).json({ error: "Failed to get upload URL" });
+  }
+});
+
+// Finalizar subidas (acepta objectPath o URLs)
+app.post("/api/objects/finalize", requireAdmin, async (req, res) => {
+  try {
+    const { uploaded } = req.body;
+    if (!uploaded || !Array.isArray(uploaded)) {
+      return res
+        .status(400)
+        .json({ error: "Body must include 'uploaded' array" });
+    }
+
+    const finalizedPaths: string[] = [];
+
+    for (const item of uploaded) {
+      try {
+        let key: string | undefined;
+
+        if (typeof item === "object" && item?.objectPath) {
+          key = String(item.objectPath);
+        } else if (typeof item === "string") {
+          key = objectStorageService.normalizeObjectEntityPath(item);
+        }
+
+        if (!key) throw new Error("Could not determine object key");
+
+        key = key.replace(/^\/+/, "");
+        if (!key.startsWith("uploads/")) key = `uploads/${key}`;
+
+        await objectStorageService.trySetObjectEntityAclPolicy(key, {
+          owner: "admin",
+          visibility: "public",
+        });
+
+        finalizedPaths.push(`/${key}`);
+      } catch (err) {
+        console.error("Error finalizing uploaded item:", item, err);
+        if (typeof item === "string") {
+          const tail = item.split("?")[0].split("/").pop();
+          if (tail) finalizedPaths.push(`/uploads/${tail}`);
+        }
       }
+    }
 
+    res.json({ success: true, finalizedPaths });
+  } catch (error) {
+    console.error("Error finalizing uploads:", error);
+    res.status(500).json({ error: "Failed to finalize uploads" });
+  }
+});
       const finalizedPaths: string[] = [];
 
       for (const item of uploaded) {
