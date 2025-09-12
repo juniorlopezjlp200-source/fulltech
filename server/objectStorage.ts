@@ -4,6 +4,8 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  PutBucketCorsCommand,
+  GetBucketCorsCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Response } from "express";
@@ -44,6 +46,100 @@ const s3Client = new S3Client({
 console.log(`[objectStorage] 📡 Conectando a: ${S3_ENDPOINT}`);
 console.log(`[objectStorage] 🪣 Bucket: ${BUCKET_NAME}`);
 
+// ---------- Helpers de CORS ----------
+function buildCorsRulesFromEnv() {
+  // Permite configurar orígenes por ENV (coma-separados). Si no hay, usa defaults seguros.
+  const envOrigins = (process.env.S3_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const allowedOrigins =
+    envOrigins.length > 0
+      ? envOrigins
+      : [
+          "https://fulltechrd.com",
+          "https://www.fulltechrd.com",
+          "https://*.replit.dev",
+          "http://localhost:5173",
+        ];
+
+  return {
+    CORSRules: [
+      {
+        AllowedOrigins: allowedOrigins,
+        AllowedMethods: ["GET", "PUT", "HEAD", "OPTIONS"],
+        AllowedHeaders: ["*"],
+        ExposeHeaders: ["ETag", "x-amz-request-id"],
+        MaxAgeSeconds: 3000,
+      },
+    ],
+  };
+}
+
+/**
+ * Aplica CORS al bucket si está vacío o diferente.
+ * No lanza error fatal: solo loguea; el server sigue arrancando.
+ */
+async function ensureBucketCorsOnBoot() {
+  if (!BUCKET_NAME) {
+    console.warn("[objectStorage] ⚠️ No BUCKET_NAME; skip CORS ensure");
+    return;
+  }
+  const desired = buildCorsRulesFromEnv();
+
+  let needPut = false;
+  try {
+    const current = await s3Client.send(
+      new GetBucketCorsCommand({ Bucket: BUCKET_NAME }),
+    );
+    const same =
+      JSON.stringify(current?.CORSRules || []) ===
+      JSON.stringify(desired.CORSRules);
+    if (same) {
+      console.log("[objectStorage] ✅ CORS OK en bucket");
+      return;
+    }
+    console.log("[objectStorage] ♻️ CORS distinto; se actualizará…");
+    needPut = true;
+  } catch (_e) {
+    // Si el bucket no tiene CORS configurado, GetBucketCors lanza error; lo tratamos como "hay que ponerlo".
+    console.log("[objectStorage] ℹ️ CORS no presente; se configurará ahora");
+    needPut = true;
+  }
+
+  if (needPut) {
+    try {
+      await s3Client.send(
+        new PutBucketCorsCommand({
+          Bucket: BUCKET_NAME,
+          CORSConfiguration: desired,
+        }),
+      );
+      console.log("[objectStorage] ✅ CORS aplicado correctamente");
+    } catch (err) {
+      console.error(
+        "[objectStorage] ❌ Error aplicando CORS (no es fatal):",
+        err,
+      );
+    }
+  }
+}
+
+// Ejecutar al iniciar si la env está habilitada
+(async () => {
+  if (process.env.APPLY_S3_CORS_ON_BOOT === "true") {
+    console.log(
+      "[objectStorage] 🛠  APPLY_S3_CORS_ON_BOOT=true → verificando CORS…",
+    );
+    await ensureBucketCorsOnBoot();
+  } else {
+    console.log(
+      "[objectStorage] ⏭  APPLY_S3_CORS_ON_BOOT no está en 'true' → skip CORS",
+    );
+  }
+})();
+
 // ---------- Utilidades ----------
 export class ObjectNotFoundError extends Error {
   constructor(message = "Object not found") {
@@ -61,10 +157,7 @@ function isNotFoundError(err: any): boolean {
   const name = err?.name || err?.Code || err?.code;
   const status = err?.$metadata?.httpStatusCode;
   return (
-    name === "NotFound" ||
-    name === "NoSuchKey" ||
-    name === "NoSuchBucket" ||
-    status === 404
+    name === "NotFound" || name === "NoSuchKey" || name === "NoSuchBucket" || status === 404
   );
 }
 
