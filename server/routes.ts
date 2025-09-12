@@ -1,3 +1,4 @@
+// server/router.ts
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
@@ -17,7 +18,7 @@ import connectPgSimple from "connect-pg-simple";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupGoogleAuth, requireCustomerAuth } from "./googleAuth";
 
-// Session configuration
+// ---------------- Session types ----------------
 declare module "express-session" {
   interface SessionData {
     adminId?: string;
@@ -26,64 +27,99 @@ declare module "express-session" {
   }
 }
 
-// -------------------- Admin authentication middleware --------------------
-// FIX: priorizar admin si ya existe; sólo bloquear cuando NO hay admin
-//      y sí hay sesión de cliente/Google.
+// ---------------- Admin authentication middleware ----------------
+// Prioriza admin si ya existe; sólo bloquea cuando NO hay admin
+// y hay sesión de cliente/Google o simplemente no hay admin.
 const requireAdmin = async (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  // si ya hay admin, pasa (aunque haya restos de sesión cliente)
-  if (req.session.adminId) return next();
+  if (req.session.adminId) return next(); // ✅ admin activo → OK
 
-  // si NO hay admin y SÍ hay sesión de cliente/Google → bloquear
+  // ❌ no hay admin y sí hay cliente/Google
   if ((req as any).isAuthenticated?.() || req.session.customerId) {
     return res.status(401).json({ error: "Admin authentication required" });
   }
 
-  // no hay admin → bloquear
+  // ❌ no hay admin
   return res.status(401).json({ error: "Admin authentication required" });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // ✅ Configure trust proxy for proper cookie handling behind proxies
-  app.set('trust proxy', 1);
+  // ---------- Infra básica ----------
+  app.set("trust proxy", 1);
 
-  // ✅ Configure persistent session store with Postgres
   const PgSession = connectPgSimple(session);
   const pgSessionStore = new PgSession({
     connectionString: process.env.DATABASE_URL,
-    tableName: 'sessions',
-    createTableIfMissing: true, // Auto-create table if missing
+    tableName: "sessions",
+    createTableIfMissing: true,
   });
 
-  // Configure session middleware with persistent store
   app.use(
     session({
       store: pgSessionStore,
-      secret: process.env.SESSION_SECRET || "your-secret-key-change-in-production",
+      secret:
+        process.env.SESSION_SECRET ||
+        "your-secret-key-change-in-production",
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: process.env.NODE_ENV === 'production', // ✅ HTTPS only in production
-        httpOnly: true, // ✅ Prevent XSS
-        sameSite: 'lax', // ✅ CSRF protection + compatibility (mismo dominio)
-        maxAge: 90 * 24 * 60 * 60 * 1000, // ✅ 90 days
+        secure: process.env.NODE_ENV === "production",
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 90 * 24 * 60 * 60 * 1000,
       },
-      name: 'sid', // ✅ Custom session ID name
+      name: "sid",
     }),
   );
 
-  // --- Health check (diagnóstico)
-  // FIX: endpoint para verificar vida del server sin cache
+  // --- Health check
   app.get("/api/health", (_req, res) => {
-    res.set('Cache-Control', 'no-store');
-    res.json({ ok: true, time: Date.now(), env: process.env.NODE_ENV || 'dev' });
+    res.set("Cache-Control", "no-store");
+    res.json({
+      ok: true,
+      time: Date.now(),
+      env: process.env.NODE_ENV || "dev",
+    });
   });
 
-  // Setup Google OAuth for customers
+  // --- Google OAuth (cliente)
   setupGoogleAuth(app);
+
+  // ---------- Auth helper: quién soy ----------
+  app.get("/api/auth/me", async (req, res) => {
+    try {
+      if (req.session.adminId) {
+        const admin = await storage.getAdminByEmail(req.session.adminEmail!);
+        if (!admin) return res.status(404).json({ error: "Admin not found" });
+        return res.json({
+          role: "admin",
+          id: admin.id,
+          email: admin.email,
+          name: admin.name,
+          lastLogin: admin.lastLogin,
+        });
+      }
+      if (req.session.customerId) {
+        const customer = await storage.getCustomer(req.session.customerId);
+        if (!customer)
+          return res.status(404).json({ error: "Customer not found" });
+        return res.json({
+          role: "customer",
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+        });
+      }
+      return res.status(401).json({ error: "Not authenticated" });
+    } catch (e) {
+      console.error("auth/me error:", e);
+      res.status(500).json({ error: "Internal error" });
+    }
+  });
 
   // ---------- Customer API ----------
   app.get(
@@ -128,24 +164,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Customer profile endpoints
+  // Customer profile
   app.get(
     "/api/customer/profile",
     requireCustomerAuth,
     async (req: any, res) => {
       try {
         let profile = await storage.getUserProfile(req.user.id);
-
-        // Create profile if it doesn't exist
         if (!profile) {
           profile = await storage.createUserProfile({
             customerId: req.user.id,
-            firstName: req.user.name?.split(' ')[0] || '',
-            lastName: req.user.name?.split(' ').slice(1).join(' ') || '',
-            phone: req.user.phone || '',
+            firstName: req.user.name?.split(" ")[0] || "",
+            lastName: req.user.name?.split(" ").slice(1).join(" ") || "",
+            phone: req.user.phone || "",
           });
         }
-
         res.json(profile);
       } catch (error) {
         console.error("Error fetching customer profile:", error);
@@ -160,21 +193,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
       try {
         const profileData = req.body;
-
-        // Check if profile exists
         let profile = await storage.getUserProfile(req.user.id);
-
         if (!profile) {
-          // Create new profile
           profile = await storage.createUserProfile({
             customerId: req.user.id,
             ...profileData,
           });
         } else {
-          // Update existing profile
           profile = await storage.updateUserProfile(req.user.id, profileData);
         }
-
         res.json(profile);
       } catch (error) {
         console.error("Error updating customer profile:", error);
@@ -183,15 +210,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Customer preferences endpoints
+  // Preferences
   app.get(
     "/api/customer/preferences",
     requireCustomerAuth,
     async (req: any, res) => {
       try {
         const profile = await storage.getUserProfile(req.user.id);
-
-        // Extract preferences from profile or return defaults
         const preferences = profile?.preferences || {
           notifications: {
             email: true,
@@ -199,17 +224,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             push: true,
             marketing: false,
             referralUpdates: true,
-            orderUpdates: true
+            orderUpdates: true,
           },
           settings: {
-            language: 'es',
-            currency: 'DOP',
-            theme: 'light',
+            language: "es",
+            currency: "DOP",
+            theme: "light",
             autoLogin: true,
-            dataSharing: false
-          }
+            dataSharing: false,
+          },
         };
-
         res.json(preferences);
       } catch (error) {
         console.error("Error fetching customer preferences:", error);
@@ -224,32 +248,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
       try {
         const { notifications, settings } = req.body;
-
-        // Get or create profile
         let profile = await storage.getUserProfile(req.user.id);
-
         const preferences = {
           notifications: notifications || {},
-          settings: settings || {}
+          settings: settings || {},
         };
-
         if (!profile) {
-          // Create new profile with preferences
           profile = await storage.createUserProfile({
             customerId: req.user.id,
             preferences,
           });
         } else {
-          // Update existing profile preferences
           const updatedPreferences = {
             ...profile.preferences,
-            ...preferences
+            ...preferences,
           };
           profile = await storage.updateUserProfile(req.user.id, {
-            preferences: updatedPreferences
+            preferences: updatedPreferences,
           });
         }
-
         res.json({ success: true, preferences: profile?.preferences });
       } catch (error) {
         console.error("Error updating customer preferences:", error);
@@ -258,13 +275,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Support tickets endpoints
+  // Support tickets (mock)
   app.get(
     "/api/customer/support-tickets",
     requireCustomerAuth,
     async (req: any, res) => {
       try {
-        // Mock
         const tickets = [
           {
             id: "1",
@@ -276,9 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "open",
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-          }
+          },
         ];
-
         res.json(tickets);
       } catch (error) {
         console.error("Error fetching support tickets:", error);
@@ -292,12 +307,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     requireCustomerAuth,
     async (req: any, res) => {
       try {
-        const { type, subject, message, priority = 'normal' } = req.body;
-
+        const { type, subject, message, priority = "normal" } = req.body;
         if (!type || !subject || !message) {
-          return res.status(400).json({ error: "Type, subject, and message are required" });
+          return res
+            .status(400)
+            .json({ error: "Type, subject, and message are required" });
         }
-
         const ticket = {
           id: `ticket_${Date.now()}`,
           customerId: req.user.id,
@@ -312,9 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-
         console.log("📧 New support ticket created:", ticket);
-
         res.json({ success: true, ticket });
       } catch (error) {
         console.error("Error creating support ticket:", error);
@@ -323,6 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Raffle
   app.get("/api/raffle/current", async (_req, res) => {
     try {
       const currentRaffle = await storage.getCurrentMonthlyRaffle();
@@ -359,12 +373,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req: any, res) => {
       try {
         const { productId, quantity, discountApplied } = req.body;
-
         const product = await storage.getProduct(productId);
         if (!product) {
           return res.status(404).json({ error: "Product not found" });
         }
-
         const validUnitPrice = product.price;
         const validTotalPrice = validUnitPrice * quantity;
 
@@ -394,9 +406,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const referrer = await storage.getCustomer(customer.referredBy);
             if (referrer) {
               const commission = Math.round(validTotalPrice * 0.05);
-              const newDiscountEarned = (referrer.discountEarned || 0) + commission;
+              const newDiscountEarned =
+                (referrer.discountEarned || 0) + commission;
 
-              await storage.updateCustomer(customer.referredBy, { discountEarned: newDiscountEarned });
+              await storage.updateCustomer(customer.referredBy, {
+                discountEarned: newDiscountEarned,
+              });
               await storage.updateCustomerLastVisit(customer.referredBy);
             }
             const currentRaffle = await storage.getCurrentMonthlyRaffle();
@@ -433,17 +448,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.updateAdminLastLogin(admin.id);
 
-      // 🔒 Regenerar sesión y LIMPIAR rol anterior
       req.session.regenerate((err: any) => {
         if (err) {
-          console.error('Error regenerating admin session:', err);
-          return res.status(500).json({ error: 'Session error' });
+          console.error("Error regenerating admin session:", err);
+          return res.status(500).json({ error: "Session error" });
         }
 
-        // FIX: limpiar cualquier sesión de cliente/Google
+        // limpiar sesión de cliente/Google
         req.session.customerId = undefined;
         if (typeof (req as any).logout === "function") {
-          try { (req as any).logout(); } catch {}
+          try {
+            (req as any).logout();
+          } catch {}
         }
 
         req.session.adminId = admin.id;
@@ -451,8 +467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         req.session.save((saveErr: any) => {
           if (saveErr) {
-            console.error('Error saving admin session:', saveErr);
-            return res.status(500).json({ error: 'Session save error' });
+            console.error("Error saving admin session:", saveErr);
+            return res.status(500).json({ error: "Session save error" });
           }
 
           res.json({
@@ -481,9 +497,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/me", requireAdmin, async (req, res) => {
     try {
-      res.set('Cache-Control', 'no-store');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
+      res.set("Cache-Control", "no-store");
+      res.set("Pragma", "no-cache");
+      res.set("Expires", "0");
 
       const admin = await storage.getAdminByEmail(req.session.adminEmail!);
       if (!admin) return res.status(404).json({ error: "Admin not found" });
@@ -503,13 +519,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/change-password", requireAdmin, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-
       if (!currentPassword || !newPassword) {
-        return res.status(400).json({ error: "Current password and new password are required" });
+        return res
+          .status(400)
+          .json({ error: "Current password and new password are required" });
       }
-
       if (newPassword.length < 6) {
-        return res.status(400).json({ error: "New password must be at least 6 characters long" });
+        return res
+          .status(400)
+          .json({ error: "New password must be at least 6 characters long" });
       }
 
       const admin = await storage.getAdminByEmail(req.session.adminEmail!);
@@ -517,19 +535,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Admin not found" });
       }
 
-      const passwordMatch = await bcrypt.compare(currentPassword, admin.password);
+      const passwordMatch = await bcrypt.compare(
+        currentPassword,
+        admin.password,
+      );
       if (!passwordMatch) {
         return res.status(401).json({ error: "Current password is incorrect" });
       }
 
       const newPasswordHash = await bcrypt.hash(newPassword, 12);
-
       await storage.updateAdminPassword(admin.id, newPasswordHash);
 
-      res.json({
-        success: true,
-        message: "Password updated successfully"
-      });
+      res.json({ success: true, message: "Password updated successfully" });
     } catch (error) {
       console.error("Change admin password error:", error);
       res.status(500).json({ error: "Failed to change password" });
@@ -539,34 +556,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ---------- Phone Authentication ----------
   app.post("/api/auth/phone/register", async (req, res) => {
     try {
-      const { name, phone, address, password } = phoneRegisterSchema.parse(req.body);
+      const { name, phone, address, password } = phoneRegisterSchema.parse(
+        req.body,
+      );
 
       const existingCustomer = await storage.getCustomerByPhone(phone);
       if (existingCustomer) {
-        return res.status(400).json({ error: "Phone number already registered" });
+        return res
+          .status(400)
+          .json({ error: "Phone number already registered" });
       }
 
       const passwordHash = await bcrypt.hash(password, 12);
-
-      const referralCode = `FT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      const referralCode = `FT-${Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase()}`;
 
       const customer = await storage.createCustomer({
         name,
         phone,
         address,
         passwordHash,
-        authProvider: 'phone',
+        authProvider: "phone",
         referralCode,
         isPhoneVerified: false,
       });
 
       req.session.regenerate((err: any) => {
         if (err) {
-          console.error('Error regenerating customer register session:', err);
-          return res.status(500).json({ error: 'Session error' });
+          console.error(
+            "Error regenerating customer register session:",
+            err,
+          );
+          return res.status(500).json({ error: "Session error" });
         }
 
-        // FIX: limpiar posible sesión de admin previa
+        // limpiar posible sesión de admin
         req.session.adminId = undefined;
         req.session.adminEmail = undefined;
 
@@ -574,8 +600,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         req.session.save((saveErr: any) => {
           if (saveErr) {
-            console.error('Error saving customer register session:', saveErr);
-            return res.status(500).json({ error: 'Session save error' });
+            console.error(
+              "Error saving customer register session:",
+              saveErr,
+            );
+            return res.status(500).json({ error: "Session save error" });
           }
 
           res.json({
@@ -604,12 +633,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!customer) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
-
-      if (customer.authProvider !== 'phone' || !customer.passwordHash) {
+      if (customer.authProvider !== "phone" || !customer.passwordHash) {
         return res.status(401).json({ error: "Invalid authentication method" });
       }
 
-      const passwordMatch = await bcrypt.compare(password, customer.passwordHash);
+      const passwordMatch = await bcrypt.compare(
+        password,
+        customer.passwordHash,
+      );
       if (!passwordMatch) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
@@ -618,11 +649,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.regenerate((err: any) => {
         if (err) {
-          console.error('Error regenerating customer login session:', err);
-          return res.status(500).json({ error: 'Session error' });
+          console.error("Error regenerating customer login session:", err);
+          return res.status(500).json({ error: "Session error" });
         }
 
-        // FIX: limpiar posible sesión de admin previa
+        // limpiar posible sesión de admin
         req.session.adminId = undefined;
         req.session.adminEmail = undefined;
 
@@ -630,8 +661,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         req.session.save((saveErr: any) => {
           if (saveErr) {
-            console.error('Error saving customer login session:', saveErr);
-            return res.status(500).json({ error: 'Session save error' });
+            console.error(
+              "Error saving customer login session:",
+              saveErr,
+            );
+            return res.status(500).json({ error: "Session save error" });
           }
 
           res.json({
@@ -654,19 +688,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ---------- Compat: rutas cortas que reusan phone-auth ----------
-  // FIX: si el front llama /api/auth/login o /api/auth/register, redirige internamente.
   app.post("/api/auth/login", (req, res, next) => {
     (app as any)._router.handle(
-      { ...req, url: "/api/auth/phone/login", originalUrl: "/api/auth/phone/login" },
+      {
+        ...req,
+        url: "/api/auth/phone/login",
+        originalUrl: "/api/auth/phone/login",
+      },
       res,
-      next
+      next,
     );
   });
   app.post("/api/auth/register", (req, res, next) => {
     (app as any)._router.handle(
-      { ...req, url: "/api/auth/phone/register", originalUrl: "/api/auth/phone/register" },
+      {
+        ...req,
+        url: "/api/auth/phone/register",
+        originalUrl: "/api/auth/phone/register",
+      },
       res,
-      next
+      next,
     );
   });
 
@@ -693,13 +734,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ---------- Products (public) ----------
+  // ---------- Products ----------
   app.get("/api/products", async (_req, res) => {
     try {
       const products = await storage.getAllProducts();
       const normalized = products.map((p: any) => {
         if (p?.images && Array.isArray(p.images) && p.images.length > 0) {
-          p.imageUrl = p.images[0].replace(/^\/+/, "").replace(/^uploads\//, "");
+          p.imageUrl = p.images[0]
+            .replace(/^\/+/, "")
+            .replace(/^uploads\//, "");
         } else {
           p.imageUrl = "public/placeholder.png";
         }
@@ -718,7 +761,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!product) return res.status(404).json({ error: "Product not found" });
 
       if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-        (product as any).imageUrl = product.images[0].replace(/^\/+/, "").replace(/^uploads\//, "");
+        (product as any).imageUrl = product.images[0]
+          .replace(/^\/+/, "")
+          .replace(/^uploads\//, "");
       } else {
         (product as any).imageUrl = "public/placeholder.png";
       }
@@ -730,7 +775,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ---------- Products (admin) ----------
+  // Admin products
   app.get("/api/admin/products", requireAdmin, async (_req, res) => {
     try {
       const products = await storage.getAllProducts();
@@ -763,18 +808,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete(
-    "/api/admin/products/:id",
-    requireAdmin,
-    async (req, res, next) => {
-      try {
-        await storage.deleteProduct(req.params.id);
-        return res.status(204).end();
-      } catch (error) {
-        return next(error);
-      }
-    },
-  );
+  app.delete("/api/admin/products/:id", requireAdmin, async (req, res, next) => {
+    try {
+      await storage.deleteProduct(req.params.id);
+      return res.status(204).end();
+    } catch (error) {
+      return next(error);
+    }
+  });
 
   app.delete("/api/products/:id", requireAdmin, async (req, res, next) => {
     try {
@@ -789,7 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/hero-slides", async (_req, res) => {
     try {
       const slides = await storage.getAllHeroSlides();
-    res.json(slides.filter((slide) => slide.active));
+      res.json(slides.filter((slide) => slide.active));
     } catch (error) {
       console.error("Error fetching hero slides:", error);
       res.status(500).json({ error: "Failed to fetch hero slides" });
@@ -841,59 +882,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ---------- Object Storage ----------
   const objectStorageService = new ObjectStorageService();
 
+  // Generar URL de subida (devuelve también objectPath)
   app.post("/api/objects/upload", requireAdmin, async (_req, res) => {
     try {
-      const uploadUrl = await objectStorageService.getObjectEntityUploadURL();
-      res.json({
-        method: 'PUT',
-        url: uploadUrl
-      });
+      const { uploadUrl, objectPath } =
+        await objectStorageService.getObjectEntityUploadURL();
+      res.json({ method: "PUT", uploadUrl, objectPath });
     } catch (error) {
       console.error("Error getting upload URL:", error);
       res.status(500).json({ error: "Failed to get upload URL" });
     }
   });
 
+  // Compatibilidad antigua
+  app.post("/api/upload-url", requireAdmin, async (_req, res) => {
+    try {
+      const { uploadUrl, objectPath } =
+        await objectStorageService.getObjectEntityUploadURL();
+      res.json({ method: "PUT", uploadUrl, objectPath });
+    } catch (error) {
+      console.error("Error getting upload URL (compat):", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  // Finalizar subidas (acepta objectPath o URLs)
   app.post("/api/objects/finalize", requireAdmin, async (req, res) => {
     try {
-      const { uploadedUrls } = req.body;
-      if (!uploadedUrls || !Array.isArray(uploadedUrls)) {
-        return res.status(400).json({ error: "uploadedUrls array is required" });
+      const { uploaded } = req.body;
+      if (!uploaded || !Array.isArray(uploaded)) {
+        return res
+          .status(400)
+          .json({ error: "Body must include 'uploaded' array" });
       }
 
-      const finalizedPaths:string[] = [];
+      const finalizedPaths: string[] = [];
 
-      for (const uploadUrl of uploadedUrls) {
+      for (const item of uploaded) {
         try {
-          const normalizedPath = objectStorageService.normalizeObjectEntityPath(uploadUrl);
+          let key: string | undefined;
 
-          await objectStorageService.trySetObjectEntityAclPolicy(uploadUrl, {
-            owner: 'admin',
-            visibility: 'public'
+          if (typeof item === "object" && item?.objectPath) {
+            key = String(item.objectPath);
+          } else if (typeof item === "string") {
+            key = objectStorageService.normalizeObjectEntityPath(item);
+          }
+
+          if (!key) throw new Error("Could not determine object key");
+
+          key = key.replace(/^\/+/, "");
+          if (!key.startsWith("uploads/")) key = `uploads/${key}`;
+
+          await objectStorageService.trySetObjectEntityAclPolicy(key, {
+            owner: "admin",
+            visibility: "public",
           });
 
-          const finalPath = normalizedPath.startsWith('uploads/')
-            ? `/${normalizedPath}`
-            : `/uploads/${normalizedPath}`;
-
-          finalizedPaths.push(finalPath);
-        } catch (error) {
-          console.error('Error finalizing upload URL:', uploadUrl, error);
-          const fallbackPath = `/uploads/${uploadUrl.split('/').pop()}`;
-          finalizedPaths.push(fallbackPath);
+          finalizedPaths.push(`/${key}`); // <- guardar en DB/front
+        } catch (err) {
+          console.error("Error finalizing uploaded item:", item, err);
+          if (typeof item === "string") {
+            const tail = item.split("?")[0].split("/").pop();
+            if (tail) finalizedPaths.push(`/uploads/${tail}`);
+          }
         }
       }
 
-      res.json({
-        success: true,
-        finalizedPaths
-      });
+      res.json({ success: true, finalizedPaths });
     } catch (error) {
       console.error("Error finalizing uploads:", error);
       res.status(500).json({ error: "Failed to finalize uploads" });
     }
   });
 
+  // Compatibilidad antigua
+  app.post("/api/upload-finalize", requireAdmin, async (req, res, next) => {
+    (app as any)._router.handle(
+      {
+        ...req,
+        url: "/api/objects/finalize",
+        originalUrl: "/api/objects/finalize",
+      },
+      res,
+      next,
+    );
+  });
+
+  // Servir objetos
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectPath = req.params.objectPath;
     try {
@@ -907,19 +982,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Servir imágenes subidas (con normalización)
   app.get("/uploads/:objectPath(*)", async (req, res) => {
     try {
-      const objectStorageService = new ObjectStorageService();
-
       const requested = req.params.objectPath.replace(/^\/+/, "");
-      const fullObjectPath = requested.startsWith("uploads/") ? requested : `uploads/${requested}`;
+      const fullObjectPath = requested.startsWith("uploads/")
+        ? requested
+        : `uploads/${requested}`;
 
       console.log(`[routes] 🖼️ Buscando imagen: ${fullObjectPath}`);
 
-      const file = await objectStorageService.searchPublicObject(fullObjectPath);
+      const file = await objectStorageService.searchPublicObject(
+        fullObjectPath,
+      );
       if (file) {
         console.log(`[routes] ✅ Imagen encontrada: ${file}`);
-        await objectStorageService.downloadObject(file, res);
+        return objectStorageService.downloadObject(file, res);
       } else {
         console.log(`[routes] ❌ Imagen NO encontrada: ${fullObjectPath}`);
         return res.status(404).end();
@@ -928,12 +1006,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error serving uploaded file:", {
         message: error?.message,
         code: error?.code,
-        requested: req.params.objectPath
+        requested: req.params.objectPath,
       });
       return res.status(500).json({ error: "Error serving file" });
     }
   });
 
+  // Archivos públicos
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;
     const objectStorageService = new ObjectStorageService();
@@ -963,8 +1042,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ error: "Error serving image" });
     }
   });
-
-  const httpServer = createServer(app);
 
   // ---------- Site Config ----------
   app.get("/api/site-configs", async (_req, res) => {
@@ -1199,6 +1276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ---------- Migración paths de imágenes ----------
   app.post("/api/admin/migrate-images", requireAdmin, async (_req, res) => {
     try {
       const products = await storage.getAllProducts();
@@ -1207,13 +1285,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const product of products) {
         if (product.images && Array.isArray(product.images)) {
           const needsUpdate = product.images.some((img: string) =>
-            img.startsWith('/uploads/') || img.startsWith('uploads/')
+            img.startsWith("/uploads/") || img.startsWith("uploads/"),
           );
 
           if (needsUpdate) {
             const updatedImages = product.images.map((img: string) => {
-              if (img.startsWith('/uploads/') || img.startsWith('uploads/')) {
-                return 'public/placeholder.png';
+              if (img.startsWith("/uploads/") || img.startsWith("uploads/")) {
+                return "public/placeholder.png";
               }
               return img;
             });
@@ -1227,17 +1305,224 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         message: `Migrated ${updated} products to use new image paths`,
-        updatedProducts: updated
+        updatedProducts: updated,
       });
     } catch (error) {
-      console.error('Error migrating image paths:', error);
-      res.status(500).json({ error: 'Failed to migrate image paths' });
+      console.error("Error migrating image paths:", error);
+      res.status(500).json({ error: "Failed to migrate image paths" });
     }
   });
 
   // ---------- Categories ----------
-  // (tu bloque de categorías queda igual)
+  app.get("/api/categories", async (_req, res) => {
+    try {
+      const categories = await storage.getAllCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      res.status(500).json({ error: "Error al cargar categorías" });
+    }
+  });
 
-  // 📌 IMPORTANTE: devolver el server ya creado (no crear otro)
-  return httpServer; // FIX: antes devolvía createServer(app)
+  app.get("/api/categories/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const category = await storage.getCategory(id);
+      if (!category)
+        return res.status(404).json({ error: "Categoría no encontrada" });
+      res.json(category);
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ error: "Error al cargar categoría" });
+    }
+  });
+
+  app.post("/api/admin/categories", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCategorySchema.parse(req.body);
+      const category = await storage.createCategory(validatedData);
+      res.json(category);
+    } catch (error: any) {
+      console.error("Error creating category:", error);
+      if (error.name === "ZodError") {
+        return res
+          .status(400)
+          .json({ error: "Datos inválidos", details: error.errors });
+      }
+      if (error.code === "23505") {
+        return res
+          .status(400)
+          .json({ error: "Ya existe una categoría con ese slug" });
+      }
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  app.put("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = insertCategorySchema.partial().parse(req.body);
+      const category = await storage.updateCategory(id, validatedData);
+      if (!category)
+        return res.status(404).json({ error: "Categoría no encontrada" });
+      res.json(category);
+    } catch (error: any) {
+      console.error("Error updating category:", error);
+      if (error.name === "ZodError") {
+        return res
+          .status(400)
+          .json({ error: "Datos inválidos", details: error.errors });
+      }
+      if (error.code === "23505") {
+        return res
+          .status(400)
+          .json({ error: "Ya existe una categoría con ese slug" });
+      }
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  app.delete("/api/admin/categories/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteCategory(id);
+      if (success)
+        return res.json({ message: "Categoría eliminada exitosamente" });
+      return res.status(404).json({ error: "Categoría no encontrada" });
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
+    }
+  });
+
+  // ---------- Admin Statistics & Analytics ----------
+  app.get("/api/admin/stats/referrals", requireAdmin, async (_req, res) => {
+    try {
+      const referralStats = await storage.getReferralStatistics();
+      res.json({ success: true, data: referralStats });
+    } catch (error) {
+      console.error("Error fetching referral stats:", error);
+      res.status(500).json({ error: "Failed to fetch referral statistics" });
+    }
+  });
+
+  app.get("/api/admin/customers", requireAdmin, async (req, res) => {
+    try {
+      const { page = 1, limit = 50, search, authProvider, hasReferrals } =
+        req.query;
+
+      const customers = await storage.getCustomersWithStats({
+        page: parseInt(page as string),
+        limit: parseInt(limit as string),
+        search: search as string,
+        authProvider: authProvider as string,
+        hasReferrals: hasReferrals === "true",
+      });
+
+      res.json({ success: true, data: customers });
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      res.status(500).json({ error: "Failed to fetch customers" });
+    }
+  });
+
+  app.get("/api/admin/stats/activity", requireAdmin, async (req, res) => {
+    try {
+      const { period = "7d", customerId } = req.query;
+      const activityStats = await storage.getActivityStatistics({
+        period: period as string,
+        customerId: customerId as string,
+      });
+      res.json({ success: true, data: activityStats });
+    } catch (error) {
+      console.error("Error fetching activity stats:", error);
+      res.status(500).json({ error: "Failed to fetch activity statistics" });
+    }
+  });
+
+  app.get("/api/admin/stats/overview", requireAdmin, async (_req, res) => {
+    try {
+      const overview = await storage.getDashboardOverview();
+      res.json({ success: true, data: overview });
+    } catch (error) {
+      console.error("Error fetching dashboard overview:", error);
+      res.status(500).json({ error: "Failed to fetch dashboard overview" });
+    }
+  });
+
+  app.get("/api/admin/customers/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const customerDetails = await storage.getCustomerFullDetails(id);
+      if (!customerDetails) {
+        return res.status(404).json({ error: "Customer not found" });
+      }
+      res.json({ success: true, data: customerDetails });
+    } catch (error) {
+      console.error("Error fetching customer details:", error);
+      res.status(500).json({ error: "Failed to fetch customer details" });
+    }
+  });
+
+  app.put(
+    "/api/admin/customers/:id/status",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { isActive } = req.body;
+        const updated = await storage.updateCustomerStatus(id, isActive);
+        if (!updated) {
+          return res.status(404).json({ error: "Customer not found" });
+        }
+        res.json({
+          success: true,
+          message: `Customer ${isActive ? "activated" : "deactivated"} successfully`,
+        });
+      } catch (error) {
+        console.error("Error updating customer status:", error);
+        res.status(500).json({ error: "Failed to update customer status" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/customers/:id/referrals",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const referrals = await storage.getCustomerReferrals(id);
+        res.json({ success: true, data: referrals });
+      } catch (error) {
+        console.error("Error fetching customer referrals:", error);
+        res.status(500).json({ error: "Failed to fetch customer referrals" });
+      }
+    },
+  );
+
+  app.get(
+    "/api/admin/customers/:id/activity",
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { page = 1, limit = 20 } = req.query;
+
+        const activities = await storage.getCustomerActivityHistory(id, {
+          page: parseInt(page as string),
+          limit: parseInt(limit as string),
+        });
+
+        res.json({ success: true, data: activities });
+      } catch (error) {
+        console.error("Error fetching customer activity:", error);
+        res.status(500).json({ error: "Failed to fetch customer activity" });
+      }
+    },
+  );
+
+  // ---------- Launch HTTP server ----------
+  const httpServer = createServer(app);
+  return httpServer;
 }
