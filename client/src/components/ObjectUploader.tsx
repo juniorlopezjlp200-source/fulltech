@@ -1,18 +1,27 @@
-import { useState } from "react";
+// client/src/components/ObjectUploader.tsx
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import Uppy from "@uppy/core";
 import { DashboardModal } from "@uppy/react";
 import AwsS3 from "@uppy/aws-s3";
-import type { UploadResult } from "@uppy/core";
+import type { UploadResult, UppyFile } from "@uppy/core";
 import { Button } from "@/components/ui/button";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
-  onGetUploadParameters: () => Promise<{
+  /**
+   * Si lo pasas, se usará en lugar de la integración por defecto.
+   * Debe devolver { method: "PUT", url }.
+   */
+  onGetUploadParameters?: (file: UppyFile) => Promise<{
     method: "PUT";
     url: string;
+    headers?: Record<string, string>;
   }>;
+  /**
+   * Se dispara después de finalizar la subida (ya con ACL pública aplicada).
+   */
   onComplete?: (
     result: UploadResult<Record<string, unknown>, Record<string, unknown>>
   ) => void;
@@ -21,56 +30,97 @@ interface ObjectUploaderProps {
 }
 
 /**
- * A file upload component that renders as a button and provides a modal interface for
- * file management.
- * 
- * Features:
- * - Renders as a customizable button that opens a file upload modal
- * - Provides a modal interface for:
- *   - File selection
- *   - File preview
- *   - Upload progress tracking
- *   - Upload status display
- * 
- * The component uses Uppy under the hood to handle all file upload functionality.
- * All file management features are automatically handled by the Uppy dashboard modal.
- * 
- * @param props - Component props
- * @param props.maxNumberOfFiles - Maximum number of files allowed to be uploaded
- *   (default: 100 - supports folder uploads)
- * @param props.maxFileSize - Maximum file size in bytes (default: 10MB)
- * @param props.onGetUploadParameters - Function to get upload parameters (method and URL).
- *   Typically used to fetch a presigned URL from the backend server for direct-to-S3
- *   uploads.
- * @param props.onComplete - Callback function called when upload is complete. Typically
- *   used to make post-upload API calls to update server state and set object ACL
- *   policies.
- * @param props.buttonClassName - Optional CSS class name for the button
- * @param props.children - Content to be rendered inside the button
+ * Uploader basado en Uppy + presigned PUT.
+ * Flujo:
+ * 1) POST /api/upload-url  -> { uploadUrl, objectPath }
+ * 2) PUT uploadUrl         -> sube el binario
+ * 3) POST /api/upload-finalize { uploaded:[objectPath] } -> devuelve finalizedPaths (/uploads/...)
  */
 export function ObjectUploader({
-  maxNumberOfFiles = 100, // Permitir hasta 100 archivos (carpetas completas)
-  maxFileSize = 10485760, // 10MB por archivo
+  maxNumberOfFiles = 100,
+  maxFileSize = 10 * 1024 * 1024, // 10MB
   onGetUploadParameters,
   onComplete,
   buttonClassName,
   children,
 }: ObjectUploaderProps) {
   const [showModal, setShowModal] = useState(false);
+
+  // Mapa fileId -> objectPath que nos da el backend en /api/upload-url
+  const fileIdToObjectPath = useMemo(() => new Map<string, string>(), []);
+
+  // getUploadParameters por defecto (usa tu backend)
+  const getParamsDefault = async (file: UppyFile) => {
+    const r = await fetch("/api/upload-url", {
+      method: "POST",
+      credentials: "include",
+    });
+    if (!r.ok) throw new Error("No se pudo obtener la URL de subida");
+    const j = await r.json();
+    const uploadUrl: string = j.uploadUrl ?? j.uploadURL ?? j.url;
+    const objectPath: string = j.objectPath ?? j.key ?? j.path;
+    if (!uploadUrl) throw new Error("Respuesta sin uploadUrl");
+    if (!objectPath) throw new Error("Respuesta sin objectPath");
+
+    // Guarda el objectPath para este file
+    fileIdToObjectPath.set(file.id, objectPath);
+
+    return {
+      method: "PUT" as const,
+      url: uploadUrl,
+      headers: {
+        // Content-Type genérico para PUT de binario
+        "Content-Type": "application/octet-stream",
+      },
+    };
+  };
+
   const [uppy] = useState(() =>
     new Uppy({
-      restrictions: {
-        maxNumberOfFiles,
-        maxFileSize,
-      },
+      restrictions: { maxNumberOfFiles, maxFileSize },
       autoProceed: false,
     })
       .use(AwsS3, {
         shouldUseMultipart: false,
-        getUploadParameters: onGetUploadParameters,
+        getUploadParameters: (file: UppyFile) =>
+          onGetUploadParameters ? onGetUploadParameters(file) : getParamsDefault(file),
       })
-      .on("complete", (result) => {
-        onComplete?.(result);
+      .on("complete", async (result) => {
+        try {
+          // Junta los objectPath de todos los archivos subidos con éxito
+          const objectPaths = result.successful
+            .map((f) => fileIdToObjectPath.get(f.id))
+            .filter((v): v is string => Boolean(v));
+
+          if (objectPaths.length > 0) {
+            const fr = await fetch("/api/upload-finalize", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ uploaded: objectPaths }),
+            });
+            if (!fr.ok) throw new Error("No se pudo finalizar la subida");
+            const fj = await fr.json();
+            const finalizedPaths: string[] =
+              fj.finalizedPaths ??
+              objectPaths.map((op) =>
+                op.startsWith("uploads/") ? `/${op}` : `/uploads/${op}`
+              );
+
+            console.log("✅ Subidas finalizadas:", finalizedPaths);
+            // Opcional: muestra un aviso en Uppy
+            try {
+              (uppy as any).info("Archivos listos", "info", 3000);
+            } catch {}
+          }
+        } catch (err) {
+          console.error("Error al finalizar subidas:", err);
+          try {
+            (uppy as any).info("Error al finalizar subidas", "error", 4000);
+          } catch {}
+        } finally {
+          onComplete?.(result);
+        }
       })
   );
 
