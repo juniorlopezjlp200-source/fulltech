@@ -33,18 +33,18 @@ function validateEnvironment() {
     process.exit(1);
   }
 
+  // ✅ Igual que el de arriba: si no viene, por defecto producción
   if (!process.env.NODE_ENV) {
-    process.env.NODE_ENV = "production";
-    // NODE_ENV por defecto: producción
+    process.env.NODE_ENV = "production"; // default hard
   }
 
+  // (opcional) BASE_URL estilo “arriba” — silente en prod
   const baseUrl =
     process.env.BASE_URL ||
     (process.env.REPLIT_DEV_DOMAIN
       ? `https://${process.env.REPLIT_DEV_DOMAIN}`
       : `https://3d2437f9e7f2.replit.app`);
-
-  // OAuth configurado para BASE_URL (modo silencioso en producción)
+  // Puedes usar baseUrl en tu auth/OAuth si aplica.
 }
 validateEnvironment();
 
@@ -58,9 +58,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 /* --------------------------- Logger simple de API --------------------------- */
-// 🔒 SOLO registrar middleware de logging en desarrollo (NO en producción)
-const isProduction = process.env.NODE_ENV === "production";
-if (!isProduction) {
+const isProductionEnv = process.env.NODE_ENV === "production";
+if (!isProductionEnv) {
   app.use((req, res, next) => {
     const start = Date.now();
     const p = req.path;
@@ -87,7 +86,6 @@ if (!isProduction) {
     next();
   });
 } else {
-  // 🔒 Logger mínimo en producción (SIN response bodies)
   app.use((req, res, next) => {
     const start = Date.now();
     res.on("finish", () => {
@@ -134,10 +132,34 @@ process.on("unhandledRejection", (reason, promise) => {
 /* --------------------------------- Boot --------------------------------- */
 (async () => {
   try {
-    // registra TODAS las rutas/API primero
-    server = await registerRoutes(app);
+    // ✅ Crear servidor HTTP inmediatamente (Replit happy path)
+    const { createServer } = await import("http");
+    server = createServer(app);
 
-    // middleware global de errores (no tumba el proceso)
+    // ✅ Abrir puerto de una (probe OK)
+    const port = Number.parseInt(process.env.PORT || "5000", 10);
+    server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
+      log(`serving on port ${port}`),
+    );
+
+    server.on("error", (error: any) => {
+      if (error?.code === "EADDRINUSE") {
+        console.error(`Port ${port} is already in use`);
+      } else {
+        console.error("Server error:", error);
+      }
+      process.exit(1);
+    });
+
+    // ✅ Healthcheck inmediato
+    app.get("/health", (_req, res) => {
+      res.json({ status: "ok", timestamp: Date.now() });
+    });
+
+    // registra TODAS las rutas/API después de abrir puerto
+    await registerRoutes(app);
+
+    // middleware global de errores
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err?.status || err?.statusCode || 500;
       const payload = {
@@ -151,7 +173,7 @@ process.on("unhandledRejection", (reason, promise) => {
       res.status(status).json(payload);
     });
 
-    // sólo inicia Vite en desarrollo; en prod sirve dist/public
+    // ✅ Detección de producción igual de estricta que “arriba”
     const isProduction =
       process.env.NODE_ENV === "production" ||
       !process.env.REPLIT_DEV_DOMAIN ||
@@ -197,16 +219,13 @@ process.on("unhandledRejection", (reason, promise) => {
       // 🔥 ULTRA AGRESIVO: Headers anti-cache para forzar actualizaciones
       app.use(express.static(distPath, {
         setHeaders: (res, filePath) => {
-          // Para archivos JS, CSS y HTML: ULTRA anti-cache
           if (filePath.match(/\.(js|css|html)$/)) {
             res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
             res.setHeader('Last-Modified', new Date().toUTCString());
             res.setHeader('ETag', Date.now().toString());
-          }
-          // Para otros archivos (imágenes, etc): cache normal
-          else {
+          } else {
             res.setHeader('Cache-Control', 'public, max-age=3600');
           }
         }
@@ -217,7 +236,6 @@ process.on("unhandledRejection", (reason, promise) => {
         const indexPath = path.resolve(distPath, "index.html");
         console.log(`Attempting to serve index.html from: ${indexPath}`);
         if (fs.existsSync(indexPath)) {
-          // Headers ULTRA anti-cache para index.html del fallback
           res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
           res.setHeader('Pragma', 'no-cache');
           res.setHeader('Expires', '0');
@@ -232,21 +250,6 @@ process.on("unhandledRejection", (reason, promise) => {
         }
       });
     }
-
-    // PORT obligatorio (5000 por defecto)
-    const port = Number.parseInt(process.env.PORT || "5000", 10);
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
-      log(`serving on port ${port}`),
-    );
-
-    server.on("error", (error: any) => {
-      if (error?.code === "EADDRINUSE") {
-        console.error(`Port ${port} is already in use`);
-      } else {
-        console.error("Server error:", error);
-      }
-      process.exit(1);
-    });
   } catch (error: any) {
     console.error("Critical error during server startup:", error);
     console.error("Error stack:", error?.stack || "No stack trace available");
