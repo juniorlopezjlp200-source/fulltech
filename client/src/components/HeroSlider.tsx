@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { type HeroSlide } from "@shared/schema";
 
-const heroImages = [
+const fallbackImages = [
   {
     src: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
     alt: "Electronics store showcase"
@@ -19,13 +21,24 @@ export function HeroSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
 
+  const { data: heroSlides = [] } = useQuery({
+    queryKey: ["/api/hero-slides"],
+    retry: false,
+  });
+
+  const activeSlides = (heroSlides as HeroSlide[])
+    .filter(slide => slide.active)
+    .sort((a, b) => a.order - b.order);
+
+  const slides = activeSlides.length > 0 ? activeSlides : fallbackImages;
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [slides.length]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -41,9 +54,9 @@ export function HeroSlider() {
 
     if (Math.abs(deltaX) > 50) {
       if (deltaX > 0) {
-        setCurrentSlide((prev) => (prev + 1) % heroImages.length);
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
       } else {
-        setCurrentSlide((prev) => prev === 0 ? heroImages.length - 1 : prev - 1);
+        setCurrentSlide((prev) => prev === 0 ? slides.length - 1 : prev - 1);
       }
     }
   };
@@ -56,11 +69,11 @@ export function HeroSlider() {
       onTouchEnd={handleTouchEnd}
       data-testid="hero-slider"
     >
-      {heroImages.map((image, index) => (
+      {slides.map((slide, index) => (
         <img
           key={index}
-          src={image.src}
-          alt={image.alt}
+          src={activeSlides.length > 0 ? slide.imageUrl : slide.src}
+          alt={activeSlides.length > 0 ? slide.title : slide.alt}
           className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${
             index === currentSlide ? 'opacity-100' : 'opacity-0'
           }`}
@@ -70,7 +83,7 @@ export function HeroSlider() {
       
       {/* Slider Indicators */}
       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-        {heroImages.map((_, index) => (
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
