@@ -33,18 +33,7 @@ function validateEnvironment() {
     process.exit(1);
   }
 
-  if (!process.env.NODE_ENV) {
-    process.env.NODE_ENV = "production";
-    // NODE_ENV por defecto: producción
-  }
-
-  const baseUrl =
-    process.env.BASE_URL ||
-    (process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : `https://3d2437f9e7f2.replit.app`);
-
-  // OAuth configurado para BASE_URL (modo silencioso en producción)
+  // No forzar producción por defecto - dejar que sea desarrollo
 }
 validateEnvironment();
 
@@ -134,8 +123,32 @@ process.on("unhandledRejection", (reason, promise) => {
 /* --------------------------------- Boot --------------------------------- */
 (async () => {
   try {
-    // registra TODAS las rutas/API primero
-    server = await registerRoutes(app);
+    // Crear servidor HTTP inmediatamente
+    const { createServer } = await import("http");
+    server = createServer(app);
+
+    // Abrir puerto INMEDIATAMENTE para satisfacer el probe de Replit
+    const port = Number.parseInt(process.env.PORT || "5000", 10);
+    server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
+      log(`serving on port ${port}`),
+    );
+
+    server.on("error", (error: any) => {
+      if (error?.code === "EADDRINUSE") {
+        console.error(`Port ${port} is already in use`);
+      } else {
+        console.error("Server error:", error);
+      }
+      process.exit(1);
+    });
+
+    // Endpoint de health inmediato
+    app.get("/health", (_req, res) => {
+      res.json({ status: "ok", timestamp: Date.now() });
+    });
+
+    // registra TODAS las rutas/API después de abrir puerto
+    await registerRoutes(app);
 
     // middleware global de errores (no tumba el proceso)
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -152,11 +165,7 @@ process.on("unhandledRejection", (reason, promise) => {
     });
 
     // sólo inicia Vite en desarrollo; en prod sirve dist/public
-    const isProduction =
-      process.env.NODE_ENV === "production" ||
-      !process.env.REPLIT_DEV_DOMAIN ||
-      process.env.EASYPANEL === "true" ||
-      app.get("env") === "production";
+    const isProduction = process.env.NODE_ENV === "production";
 
     console.log(`Environment detection:
   NODE_ENV: ${process.env.NODE_ENV}
@@ -232,21 +241,6 @@ process.on("unhandledRejection", (reason, promise) => {
         }
       });
     }
-
-    // PORT obligatorio (5000 por defecto)
-    const port = Number.parseInt(process.env.PORT || "5000", 10);
-    server.listen({ port, host: "0.0.0.0", reusePort: true }, () =>
-      log(`serving on port ${port}`),
-    );
-
-    server.on("error", (error: any) => {
-      if (error?.code === "EADDRINUSE") {
-        console.error(`Port ${port} is already in use`);
-      } else {
-        console.error("Server error:", error);
-      }
-      process.exit(1);
-    });
   } catch (error: any) {
     console.error("Critical error during server startup:", error);
     console.error("Error stack:", error?.stack || "No stack trace available");
