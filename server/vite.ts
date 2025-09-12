@@ -26,9 +26,21 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // Configurar el root correctamente para el modo middleware
+  const projectRoot = path.resolve(import.meta.dirname, "..");
+  const clientRoot = path.resolve(projectRoot, "client");
+
   const vite = await createViteServer({
     ...viteConfig,
+    root: clientRoot,
     configFile: false,
+    resolve: {
+      alias: {
+        "@": path.resolve(clientRoot, "src"),
+        "@shared": path.resolve(projectRoot, "shared"),
+        "@assets": path.resolve(projectRoot, "attached_assets"),
+      },
+    },
     customLogger: {
       ...viteLogger,
       error: (msg, options) => {
