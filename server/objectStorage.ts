@@ -1,4 +1,4 @@
-// objectStorage.ts — versión para S3 propio del usuario
+// objectStorage.ts — S3/MinIO/SeaweedFS compatible (path-style) ✅
 import {
   S3Client,
   PutObjectCommand,
@@ -10,8 +10,14 @@ import { Response } from "express";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 
-// Verificar que todas las variables S3 estén configuradas
-const REQUIRED = ["S3_ENDPOINT", "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_BUCKET_NAME"] as const;
+// ---------- Validación de variables ----------
+const REQUIRED = [
+  "S3_ENDPOINT",
+  "S3_ACCESS_KEY",
+  "S3_SECRET_KEY",
+  "S3_BUCKET_NAME",
+] as const;
+
 for (const key of REQUIRED) {
   if (!process.env[key]) {
     console.error(`[objectStorage] ❌ Falta env ${key}. Revisa tus Secrets.`);
@@ -20,23 +26,25 @@ for (const key of REQUIRED) {
   }
 }
 
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
+const S3_ENDPOINT = (process.env.S3_ENDPOINT || "").replace(/\/+$/, "");
+
+// ---------- Cliente S3 ----------
 const s3Client = new S3Client({
-  endpoint: process.env.S3_ENDPOINT,
-  region: "us-east-1",            // genérico; algunos S3 compatibles no lo usan
+  endpoint: S3_ENDPOINT || undefined,
+  region: "us-east-1", // genérico para S3-compatibles
   credentials: {
     accessKeyId: process.env.S3_ACCESS_KEY || "",
     secretAccessKey: process.env.S3_SECRET_KEY || "",
   },
-  forcePathStyle: true,           // 🔑 necesario para MinIO/SeaweedFS
+  // MUY IMPORTANTE para MinIO/SeaweedFS cuando no usas estilo virtual-host:
+  forcePathStyle: true,
 });
 
-// Log de configuración para debugging
-console.log(`[objectStorage] 📡 Conectando a: ${process.env.S3_ENDPOINT}`);
-console.log(`[objectStorage] 🪣 Bucket: ${process.env.S3_BUCKET_NAME}`);
+console.log(`[objectStorage] 📡 Conectando a: ${S3_ENDPOINT}`);
+console.log(`[objectStorage] 🪣 Bucket: ${BUCKET_NAME}`);
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME || "";
-
-/** Error semántico cuando el objeto no existe */
+// ---------- Utilidades ----------
 export class ObjectNotFoundError extends Error {
   constructor(message = "Object not found") {
     super(message);
@@ -45,12 +53,10 @@ export class ObjectNotFoundError extends Error {
   }
 }
 
-/** Normaliza keys: sin barras iniciales, sin espacios raros */
 function normalizeKey(key: string): string {
-  return (key || "").replace(/^\/+/, "").trim();
+  return decodeURIComponent((key || "").replace(/^\/+/, "").trim());
 }
 
-/** Detección amplia de "no existe" para S3, MinIO y Seaweed */
 function isNotFoundError(err: any): boolean {
   const name = err?.name || err?.Code || err?.code;
   const status = err?.$metadata?.httpStatusCode;
@@ -62,27 +68,58 @@ function isNotFoundError(err: any): boolean {
   );
 }
 
-/** Inferencia muy básica de content-type por extensión (sin deps) */
 function guessContentType(key: string): string {
   const ext = key.split(".").pop()?.toLowerCase();
   switch (ext) {
-    case "png": return "image/png";
+    case "png":
+      return "image/png";
     case "jpg":
-    case "jpeg": return "image/jpeg";
-    case "gif": return "image/gif";
-    case "webp": return "image/webp";
-    case "svg": return "image/svg+xml";
-    case "mp4": return "video/mp4";
-    case "webm": return "video/webm";
-    case "json": return "application/json";
-    case "txt": return "text/plain; charset=utf-8";
-    case "pdf": return "application/pdf";
-    default: return "application/octet-stream";
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    case "webp":
+      return "image/webp";
+    case "svg":
+      return "image/svg+xml";
+    case "mp4":
+      return "video/mp4";
+    case "webm":
+      return "video/webm";
+    case "json":
+      return "application/json";
+    case "txt":
+      return "text/plain; charset=utf-8";
+    case "pdf":
+      return "application/pdf";
+    default:
+      return "application/octet-stream";
   }
 }
 
+function safeExtFromFilename(filename?: string): string {
+  if (!filename) return "";
+  const m = filename.toLowerCase().match(/\.[a-z0-9]+$/);
+  return m ? m[0] : "";
+}
+
+function makeObjectKey(opts?: {
+  filename?: string;
+  prefix?: string; // por si quieres cambiar "uploads"
+}): string {
+  const prefix = (opts?.prefix || "uploads").replace(/^\/+|\/+$/g, "");
+  const ext = safeExtFromFilename(opts?.filename);
+  const now = new Date();
+  const yyyy = now.getUTCFullYear();
+  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(now.getUTCDate()).padStart(2, "0");
+  const key = `${prefix}/${yyyy}/${mm}/${dd}/${randomUUID()}${ext}`;
+  return key;
+}
+
+// ---------- Servicio ----------
 export class ObjectStorageService {
-  /** HEAD para saber si existe (sin traer el body) */
+  /** HEAD: saber si existe sin traer body */
   private async fileExists(objectKey: string): Promise<boolean> {
     const Key = normalizeKey(objectKey);
     try {
@@ -95,48 +132,62 @@ export class ObjectStorageService {
   }
 
   /**
-   * Devuelve URL firmada para subir desde el front y la key a guardar.
-   * Guarda SIEMPRE el `objectPath` en BD (ej: `uploads/uuid`).
+   * Genera una URL firmada (PUT) para subir un archivo.
+   * Usado por:
+   *   - /api/objects/upload-file (server hace el PUT con fetch del buffer)
+   *   - /api/objects/upload (front hace el PUT directo si tienes CORS)
+   *
+   * IMPORTANTE: si mandas `contentType`, el cliente debe usar el MISMO header en el PUT.
    */
-  async getObjectEntityUploadURL(): Promise<{ uploadUrl: string; objectPath: string }> {
-    const objectPath = `uploads/${randomUUID()}`; // sin extensión; opcional si quieres forzar .png/.jpg
-    let uploadUrl = await getSignedUrl(
-      s3Client,
-      new PutObjectCommand({ Bucket: BUCKET_NAME, Key: objectPath }),
-      { expiresIn: 900 } // 15 min
-    );
-    
-    // 🔧 Importante: asegurar que no hay HTML encoding en la URL
-    uploadUrl = uploadUrl.replace(/&amp;/g, '&');
-    
-    console.log(`[objectStorage] 📤 Upload URL generada para: ${objectPath}`);
-    console.log(`[objectStorage] 🔗 URL: ${uploadUrl.substring(0, 100)}...`);
-    
-    return { uploadUrl, objectPath };
+  async getObjectEntityUploadURL(options?: {
+    filename?: string;
+    contentType?: string;
+    prefix?: string;
+  }): Promise<string> {
+    const Key = makeObjectKey({
+      filename: options?.filename,
+      prefix: options?.prefix,
+    });
+
+    const cmd = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key,
+      // Si fijas ContentType en la firma, el PUT debe enviar el mismo header.
+      ...(options?.contentType ? { ContentType: options.contentType } : {}),
+    });
+
+    let uploadUrl = await getSignedUrl(s3Client, cmd, { expiresIn: 900 }); // 15 min
+    uploadUrl = uploadUrl.replace(/&amp;/g, "&"); // evitar HTML encoding
+
+    console.log(`[objectStorage] 📤 Upload URL generada para: ${Key}`);
+    console.log(`[objectStorage] 🔗 URL: ${uploadUrl.substring(0, 120)}...`);
+    return uploadUrl;
   }
 
   /**
    * Stream del objeto hacia el response (proxy). Usa cabeceras cacheables.
-   * Llama: GET /uploads/:objectPath(*) -> downloadObject(objectPath, res)
+   * Rutas: /objects/:objectPath(*) o /uploads/:objectPath(*)
    */
   async downloadObject(objectKey: string, res: Response, cacheTtlSec = 3600) {
     const Key = normalizeKey(objectKey);
     try {
-      const s3Res = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET_NAME, Key }));
+      const s3Res = await s3Client.send(
+        new GetObjectCommand({ Bucket: BUCKET_NAME, Key }),
+      );
       const body = s3Res.Body as Readable;
-
-      // content-type de S3 o inferido por extensión
       const contentType = s3Res.ContentType || guessContentType(Key);
 
       res.set({
         "Content-Type": contentType,
-        ...(s3Res.ContentLength ? { "Content-Length": String(s3Res.ContentLength) } : {}),
+        ...(s3Res.ContentLength
+          ? { "Content-Length": String(s3Res.ContentLength) }
+          : {}),
         "Cache-Control": `public, max-age=${cacheTtlSec}`,
       });
 
       body.pipe(res);
     } catch (err: any) {
-      console.error("Error downloading file:", err);
+      console.error("[objectStorage] Error downloading file:", err);
       if (!res.headersSent) {
         if (isNotFoundError(err)) {
           res.status(404).json({ error: "File not found", key: Key });
@@ -147,7 +198,7 @@ export class ObjectStorageService {
     }
   }
 
-  /** Devuelve el stream del objeto (para usos internos si lo necesitas) */
+  /** Obtener stream del objeto (uso interno si hiciera falta) */
   async getObjectEntityFile(objectPath: string): Promise<Readable> {
     const Key = normalizeKey(objectPath);
     if (!Key) throw new ObjectNotFoundError("Object path is empty");
@@ -155,64 +206,67 @@ export class ObjectStorageService {
     const exists = await this.fileExists(Key);
     if (!exists) throw new ObjectNotFoundError(`Object "${Key}" not found`);
 
-    const res = await s3Client.send(new GetObjectCommand({ Bucket: BUCKET_NAME, Key }));
+    const res = await s3Client.send(
+      new GetObjectCommand({ Bucket: BUCKET_NAME, Key }),
+    );
     return res.Body as Readable;
   }
 
-  /** Buscar un objeto público desde las rutas de búsqueda */
+  /** Buscar un objeto "público" por path/key */
   async searchPublicObject(filePath: string): Promise<string | null> {
-    // Para S3 propio, buscar directamente en el bucket
     const Key = normalizeKey(filePath);
     const exists = await this.fileExists(Key);
     return exists ? Key : null;
   }
 
-  /** Normalizar path de entidad de objeto */
+  /**
+   * Normaliza una URL firmada o un path crudo a la key del objeto dentro del bucket.
+   * Soporta path-style presigned: https://endpoint/bucket/key...
+   */
   normalizeObjectEntityPath(rawPath: string): string {
-    // Si es una URL firmada de S3, extraer el path
-    if (rawPath.includes(process.env.S3_ENDPOINT || "")) {
+    if (!rawPath) return "";
+    const trimmed = rawPath.trim();
+
+    // Si es una URL firmada a nuestro endpoint, parsear
+    if (S3_ENDPOINT && trimmed.startsWith(S3_ENDPOINT)) {
       try {
-        const url = new URL(rawPath);
-        // Extraer el path después del bucket
-        const pathParts = url.pathname.split('/');
-        if (pathParts.length > 2) {
-          return pathParts.slice(2).join('/'); // Remover /bucket-name/ 
+        const url = new URL(trimmed);
+        // path-style: /bucket-name/KEY...
+        const parts = url.pathname.replace(/^\/+/, "").split("/");
+        if (parts[0] === BUCKET_NAME) {
+          return normalizeKey(parts.slice(1).join("/"));
         }
-      } catch (e) {
-        console.warn('Error parsing S3 URL:', rawPath);
+        // fallback: por si el endpoint ya incluye bucket (raro con forcePathStyle)
+        return normalizeKey(parts.join("/"));
+      } catch {
+        // continuar abajo
       }
     }
-    
-    // Normalizar path directo
-    return normalizeKey(rawPath);
+
+    // Si no era URL (o era otra), tratar como key directa
+    return normalizeKey(trimmed);
   }
 
-  /** Configurar ACL/metadatos para el objeto (simplificado para S3) */
+  /**
+   * (Opcional) Aplicar ACL/política. En la mayoría de S3-compatibles modernos
+   * la visibilidad se maneja por Bucket Policy; aquí sólo registramos.
+   */
   async trySetObjectEntityAclPolicy(
     rawPath: string,
-    aclPolicy: { owner: string; visibility: "public" | "private" }
+    aclPolicy: { owner: string; visibility: "public" | "private" },
   ): Promise<string> {
     const normalizedPath = this.normalizeObjectEntityPath(rawPath);
-    
-    // Para S3, podríamos configurar ACL aquí si es necesario
-    // Por ahora retornamos el path normalizado
-    console.log(`Setting ACL for ${normalizedPath}:`, aclPolicy);
-    
+    console.log(`[objectStorage] ACL hint for ${normalizedPath}:`, aclPolicy);
+    // Si tu servidor requiere ACL por objeto, aquí podrías usar PutObjectAclCommand
     return normalizedPath;
   }
 
-  /** Verificar acceso a objeto (simplificado) */
-  async canAccessObjectEntity({
-    userId,
-    objectFile,
-    requestedPermission,
-  }: {
+  /** Verificación de acceso (placeholder) */
+  async canAccessObjectEntity(_args: {
     userId?: string;
     objectFile: any;
     requestedPermission?: string;
   }): Promise<boolean> {
-    // Para S3 propio, por ahora permitir acceso público a todos los archivos
-    // Puedes implementar lógica más compleja aquí si necesitas
     return true;
   }
 }
