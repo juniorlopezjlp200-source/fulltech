@@ -9,11 +9,19 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover"
     />
 
-    <title>FULLTECH - Tecnología y herramientas | Equipos y soluciones tecnológicas</title>
+    <title>FULLTECH — Tecnología y herramientas | Equipos y soluciones</title>
+    <link rel="canonical" href="https://fulltechcrd.com/" />
+    <meta name="robots" content="index,follow" />
+
+    <!-- App / SEO base -->
     <meta name="application-name" content="FULLTECH" />
     <meta name="keywords" content="FULLTECH, tecnología, herramientas, equipos tecnológicos, soluciones tecnológicas, smartphones, laptops, accesorios, tecnología profesional" />
+    <meta
+      name="description"
+      content="FULLTECH — Tecnología y herramientas profesionales. Descubre equipos, soluciones y servicios de instalación con la mejor calidad y precios."
+    />
 
-    <!-- PWA Manifest & Theme (coinciden con manifest.json) -->
+    <!-- PWA Manifest & Theme -->
     <meta name="theme-color" content="#3B82F6" />
     <link rel="manifest" href="/manifest.json" />
 
@@ -21,26 +29,34 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FULLTECH" />
-    <!-- Usa tus iconos locales -->
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
 
-    <!-- SEO -->
-    <meta
-      name="description"
-      content="FULLTECH - Tecnología y herramientas profesionales. Descubre equipos tecnológicos de última generación, soluciones innovadoras y herramientas especializadas con la mejor calidad y precios competitivos."
-    />
-    <meta property="og:title" content="FULLTECH - Tecnología y herramientas | Soluciones tecnológicas profesionales" />
-    <meta
-      property="og:description"
-      content="FULLTECH ofrece tecnología y herramientas profesionales de última generación. Equipos especializados, soluciones innovadoras y herramientas tecnológicas con la mejor calidad del mercado."
-    />
-    <!-- Puedes cambiar esta imagen por una portada tuya si quieres -->
-    <meta
-      property="og:image"
-      content="/icon-512x512.png"
-    />
+    <!-- Favicon / Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512x512.png" />
+    <meta name="msapplication-TileImage" content="/icon-192x192.png" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+
+    <!-- Open Graph (WhatsApp, Facebook, Telegram, iMessage) -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fulltechcrd.com/" />
+    <meta property="og:site_name" content="FULLTECH" />
+    <meta property="og:locale" content="es_LA" />
+    <meta property="og:title" content="FULLTECH — Tecnología y herramientas | Soluciones profesionales" />
+    <meta property="og:description" content="Explora nuestro catálogo de tecnología y servicios de instalación profesional." />
+    <!-- Usa tu logo actual como fallback. Si luego tienes una portada 1200x630, cámbialo por esa URL absoluta -->
+    <meta property="og:image" content="https://fulltechcrd.com/icon-512x512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://fulltechcrd.com/" />
+    <meta name="twitter:title" content="FULLTECH — Tecnología y herramientas | Soluciones profesionales" />
+    <meta name="twitter:description" content="Explora nuestro catálogo de tecnología y servicios de instalación profesional." />
+    <meta name="twitter:image" content="https://fulltechcrd.com/icon-512x512.png" />
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -50,7 +66,7 @@
       rel="stylesheet"
     />
 
-    <!-- Font Awesome -->
+    <!-- Font Awesome (opcional) -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -59,25 +75,19 @@
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="//images.unsplash.com" />
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-
-    <!-- Favicon optimizado para SEO -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192x192.png" />
   </head>
   <body>
     <div id="root"></div>
 
-    <!-- Service Worker: intenta /sw.js; si falla usa /sw-minimal.js -->
+    <!-- Service Worker: registra el minimal para evitar cache agresiva -->
     <script>
       (function () {
         if (!('serviceWorker' in navigator)) return;
 
         async function registerSW() {
           try {
-            // Usar el Service Worker simple para evitar problemas de cache
             const reg = await navigator.serviceWorker.register('/sw-minimal.js');
             console.log('[SW] registered /sw-minimal.js', reg.scope);
-            
             navigator.serviceWorker.ready
               .then((r) => console.log('[SW] ready:', r.scope))
               .catch(() => {});
@@ -98,6 +108,7 @@
     <script
       type="text/javascript"
       src="https://replit.com/public/js/replit-dev-banner.js"
+      async
     ></script>
   </body>
 </html>
