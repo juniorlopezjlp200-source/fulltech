@@ -63,7 +63,7 @@ export function HeroSlider() {
           <img
             key={i}
             src={url}
-            alt={alt}                              {/* <- sin title */}
+            alt={alt}                            
             className={`absolute w-full h-full object-cover object-[center_40%] transition-opacity duration-1000 ${
               i === currentSlide ? "opacity-100" : "opacity-0"
             }`}
