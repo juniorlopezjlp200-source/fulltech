@@ -1,5 +1,5 @@
 // Service Worker para FULLTECH - Cache Inteligente y Sincronización
-const CACHE_NAME = 'fulltech-v1.0.5';
+const CACHE_NAME = 'fulltech-v1.0.6';
 const STATIC_CACHE = 'fulltech-static-v1.0.6';
 const DYNAMIC_CACHE = 'fulltech-dynamic-v1.0.6';
 const IMAGE_CACHE = 'fulltech-images-v1.0.6';
