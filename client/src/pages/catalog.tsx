@@ -19,7 +19,7 @@ const sampleProducts: Product[] = [
     id: "1",
     name: "iPhone 15 Pro",
     description: "Último modelo con chip A17 Pro",
-    price: 99900, // $999.00 in cents
+    price: 99900,
     category: "moviles",
     images: [
       "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -38,8 +38,8 @@ const sampleProducts: Product[] = [
     id: "2",
     name: "MacBook Pro M3",
     description: "Chip M3 Pro, 18GB RAM",
-    price: 249900, // $2499.00 in cents
-    category: "hogar", // Computers can be categorized under home technology
+    price: 249900,
+    category: "hogar",
     images: [
       "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
       "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -57,7 +57,7 @@ const sampleProducts: Product[] = [
     id: "3",
     name: "AirPods Pro (2ª gen)",
     description: "Cancelación activa de ruido",
-    price: 24900, // $249.00 in cents
+    price: 24900,
     category: "audio",
     images: [
       "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -76,7 +76,7 @@ const sampleProducts: Product[] = [
     id: "4",
     name: "Teclado Mecánico RGB",
     description: "Switches Cherry MX Blue",
-    price: 8900, // $89.00 in cents
+    price: 8900,
     category: "gaming",
     images: [
       "https://images.unsplash.com/photo-1541140532154-b024d705b90a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -95,7 +95,7 @@ const sampleProducts: Product[] = [
     id: "5",
     name: "Mouse Gaming Pro",
     description: "12000 DPI, RGB personalizable",
-    price: 6500, // $65.00 in cents
+    price: 6500,
     category: "gaming",
     images: [
       "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -114,7 +114,7 @@ const sampleProducts: Product[] = [
     id: "6",
     name: "Tablet Android 12\"",
     description: "8GB RAM, 256GB almacenamiento",
-    price: 39900, // $399.00 in cents
+    price: 39900,
     category: "tablets",
     images: [
       "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -133,7 +133,7 @@ const sampleProducts: Product[] = [
     id: "7",
     name: "Audífonos Inalámbricos",
     description: "Cancelación de ruido, 30h batería",
-    price: 17900, // $179.00 in cents
+    price: 17900,
     category: "audio",
     images: [
       "https://images.unsplash.com/photo-1583394838336-acd977736f90?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -152,7 +152,7 @@ const sampleProducts: Product[] = [
     id: "8",
     name: "Apple Watch Series 9",
     description: "GPS + Cellular, 45mm",
-    price: 42900, // $429.00 in cents
+    price: 42900,
     category: "wearables",
     images: [
       "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=400",
@@ -180,7 +180,6 @@ const categoryIcons: Record<string, string> = {
   "reacondicionados": "fas fa-recycle",
 };
 
-
 export default function Catalog() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -191,16 +190,14 @@ export default function Catalog() {
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [registrationData, setRegistrationData] = useState({ name: '', phone: '', address: '' });
-  // 🎯 Estados para publicidad estratégica
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [productsViewed, setProductsViewed] = useState(0);
   const [showStickyBanner, setShowStickyBanner] = useState(true);
-  
+
   // Referencias y estado para el slider automático de categorías
   const categoryScrollRef = useRef<HTMLDivElement>(null);
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
@@ -219,60 +216,50 @@ export default function Catalog() {
     queryKey: ["/api/products"],
   });
 
-  // Filter products based on search, category, offers, and stock
+  // Filter products
   const filteredProducts = realProducts.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Handle category matching - product.category can be either slug, ID, or name
     const matchesCategory = selectedCategory === "all" || (() => {
-      // Find the category that matches the product.category (could be ID, slug, or name)
-      const productCategoryData = categoriesData.find(cat => 
-        cat.id === product.category || 
+      const productCategoryData = categoriesData.find(cat =>
+        cat.id === product.category ||
         cat.slug === product.category ||
         cat.name.toLowerCase() === product.category.toLowerCase()
       );
-
-      // Match if product category matches selected category (by slug)
       return productCategoryData && productCategoryData.slug === selectedCategory;
     })();
 
     const matchesOffers = showOnlyOffers ? product.onSale : true;
-    const isInStock = product.inStock; // Solo mostrar productos disponibles
+    const isInStock = product.inStock;
 
     return matchesSearch && matchesCategory && matchesOffers && isInStock;
   });
 
-  // Show all filtered products in featured style
   const allProducts = filteredProducts;
 
   useEffect(() => {
-    // Set loading based on actual data loading
     setIsLoading(isProductsLoading || isCategoriesLoading);
   }, [isProductsLoading, isCategoriesLoading]);
 
-  // Auto-scroll ultra suave y continuo para categorías
+  // Auto-scroll ultra suave de categorías
   useEffect(() => {
     let animationId: number;
     let lastTime = 0;
-    const scrollSpeed = 30; // píxeles por segundo
-    
+    const scrollSpeed = 30; // px/s
+
     const animate = (currentTime: number) => {
       if (!categoryScrollRef.current || !isAutoScrolling) return;
-      
+
       const container = categoryScrollRef.current;
       const deltaTime = currentTime - lastTime;
       lastTime = currentTime;
-      
-      // Calcular el desplazamiento basado en tiempo para movimiento consistente
+
       const scrollAmount = (scrollSpeed * deltaTime) / 1000;
-      
-      // Obtener el ancho de una sección de categorías (la mitad del contenido)
       const originalWidth = container.scrollWidth / 2;
-      
-      // Mover el scroll de forma robusta con módulo para evitar overshoot
+
       container.scrollLeft = (container.scrollLeft + scrollAmount) % originalWidth;
-      
+
       animationId = requestAnimationFrame(animate);
     };
 
@@ -282,10 +269,7 @@ export default function Catalog() {
     }
 
     return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
-      // Limpiar timeout si existe
+      if (animationId) cancelAnimationFrame(animationId);
       if (wheelResumeTimeoutRef.current) {
         clearTimeout(wheelResumeTimeoutRef.current);
         wheelResumeTimeoutRef.current = null;
@@ -293,58 +277,44 @@ export default function Catalog() {
     };
   }, [isAutoScrolling]);
 
-  // Funciones mejoradas para pausar/reanudar scroll
   const pauseAutoScroll = () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
       setIsAutoScrolling(false);
-      // Limpiar timer existente si hay uno
       if (wheelResumeTimeoutRef.current) {
         clearTimeout(wheelResumeTimeoutRef.current);
         wheelResumeTimeoutRef.current = null;
       }
     }
   };
-  
+
   const resumeAutoScroll = () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
-      // Limpiar timer existente
-      if (wheelResumeTimeoutRef.current) {
-        clearTimeout(wheelResumeTimeoutRef.current);
-      }
+      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
       wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 300);
     }
   };
 
-  // Función especial para wheel que reanuda automáticamente
   const pauseAutoScrollOnWheel = () => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!prefersReducedMotion) {
       setIsAutoScrolling(false);
-      // Limpiar timer existente
-      if (wheelResumeTimeoutRef.current) {
-        clearTimeout(wheelResumeTimeoutRef.current);
-      }
-      // Reanudar después de 600ms de inactividad del wheel
+      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
       wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 600);
     }
   };
 
-  // Verificar preferencias de movimiento reducido al cargar
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-      setIsAutoScrolling(false);
-    }
+    if (prefersReducedMotion) setIsAutoScrolling(false);
   }, []);
 
-  // 🎯 Tracking inteligente de productos vistos
+  // Tracking de productos vistos
   useEffect(() => {
     const handleProductView = () => {
       setProductsViewed(prev => {
         const newCount = prev + 1;
-        // Mostrar modal después de ver 4 productos
         if (newCount === 4 && !showRegisterModal) {
           setTimeout(() => setShowRegisterModal(true), 2000);
         }
@@ -352,7 +322,6 @@ export default function Catalog() {
       });
     };
 
-    // Escuchar clicks en las cards de productos
     const productCards = document.querySelectorAll('[data-testid^="card-product-"]');
     productCards.forEach(card => {
       card.addEventListener('click', handleProductView);
@@ -383,24 +352,20 @@ export default function Catalog() {
   return (
     <div className="w-full min-h-screen bg-background">
       <div className="w-full min-h-screen">
-
         <div className="w-full min-h-screen">
           <TopBar />
           <WelcomeMessage />
           <UserActivityTracker />
 
-
           <div id="hero-container" className="relative h-[420px] sm:h-[480px] lg:h-[580px] xl:h-[680px] bg-gray-300 w-full">
-            <HeroSlider />
+            <Suspense fallback={null}>
+              <HeroSlider />
+            </Suspense>
 
-
-            {/* Título del slider con botones centrados debajo */}
+            {/* Overlay de controles (sin título) */}
             <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
-              <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold drop-shadow-lg mb-6">Tecnología de Vanguardia</h2>
-              
               {/* Botón de búsqueda y filtros All/Ofertas */}
               <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto z-30 relative mt-4">
-                {/* Botón de búsqueda - primero */}
                 <button
                   onClick={() => setIsSearchOpen(!isSearchOpen)}
                   className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
@@ -413,9 +378,7 @@ export default function Catalog() {
                   aria-expanded={isSearchOpen}
                   data-testid="search-toggle-button"
                 >
-                  <i className={`fas text-xs transition-transform duration-200 ${
-                    isSearchOpen ? 'fa-times' : 'fa-search'
-                  }`}></i>
+                  <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? 'fa-times' : 'fa-search'}`}></i>
                 </button>
 
                 <button
@@ -472,19 +435,18 @@ export default function Catalog() {
                 </div>
               )}
 
-              {/* Categorías flotantes - slider horizontal elegante */}
+              {/* Categorías flotantes - slider horizontal */}
               <div className="pointer-events-auto z-40 relative mt-3">
-                {/* Gradientes laterales para indicar scroll */}
+                {/* Gradientes laterales */}
                 <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
                 <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
                 
                 <div 
                   ref={categoryScrollRef}
-                  className="flex gap-4 overflow-x-auto pb-3 pt-1 px-4 scrollbar-hide" 
+                  className="flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none"
                   style={{ 
-                    scrollbarWidth: 'none', 
+                    scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
-                    scrollSnapType: 'none', // Deshabilitado para scroll suave continuo
                     WebkitOverflowScrolling: 'touch'
                   }}
                   onMouseEnter={pauseAutoScroll}
@@ -495,23 +457,20 @@ export default function Catalog() {
                   onPointerEnter={pauseAutoScroll}
                   onPointerLeave={resumeAutoScroll}
                 >
-                  {/* Duplicamos las categorías para loop infinito */}
+                  {/* Duplicamos para loop infinito */}
                   {[...categories, ...categories].map((category, index) => {
                     const isDuplicate = index >= categories.length;
                     return (
                       <button
                         key={`${category.id}-${index}`}
                         onClick={() => setSelectedCategory(category.id)}
-                        className={`px-6 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-500 ease-out hover:scale-110 hover:-translate-y-1 flex-shrink-0 shadow-lg backdrop-blur-md border transform-gpu ${
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex-shrink-0 shadow-md backdrop-blur-md border snap-start ${
                           selectedCategory === category.id
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl shadow-blue-500/25 border-white/20 scale-105'
-                            : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-xl hover:shadow-black/10 border-white/30'
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border-white/20'
+                            : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-lg border-white/30'
                         }`}
-                        style={{ 
-                          minWidth: 'fit-content'
-                        }}
+                        style={{ minWidth: 'fit-content' }}
                         data-testid={`filter-${category.id}-${index}`}
-                        // Hacer elementos duplicados no focusables para accesibilidad
                         tabIndex={isDuplicate ? -1 : 0}
                         aria-hidden={isDuplicate}
                         role={isDuplicate ? "presentation" : "button"}
@@ -536,44 +495,45 @@ export default function Catalog() {
 
           <main className="w-full px-4 md:px-8 lg:px-12 xl:px-16 py-6 pb-20 md:pb-6 space-y-6">
             <div className="max-w-[1600px] mx-auto">
-              {/* All Products in Featured Style */}
               <section>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
-                  {allProducts.map((product, index) => (
-                    <ProductCard 
-                    key={product.id} 
-                    product={product} 
-                    layout="grid"
-                    isHomePage={true}
-                    data-testid={`card-product-${product.id}`}
-                  />
-                ))}
-              </div>
-
-              {/* Final profesional del catálogo */}
-              <div className="mt-12 text-center py-8 bg-gradient-to-t from-white via-gray-50 to-transparent rounded-t-3xl">
-                <div className="max-w-md mx-auto space-y-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
-                    <i className="fas fa-check text-white text-xl"></i>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-800">¡Has visto todo nuestro catálogo!</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Estos son todos nuestros productos disponibles. Si no encontraste lo que buscas, contáctanos por WhatsApp.
-                  </p>
-                  <button 
-                    onClick={() => {
-                      const message = `Quiero más información sobre productos específicos.`;
-                      const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
-                      window.open(whatsappUrl, '_blank');
-                    }}
-                    className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto shadow-md"
-                  >
-                    <i className="fab fa-whatsapp"></i>
-                    Consultar más productos
-                  </button>
+                  {allProducts.map((product) => (
+                    <Suspense key={product.id} fallback={null}>
+                      <ProductCard 
+                        key={product.id} 
+                        product={product} 
+                        layout="grid"
+                        isHomePage={true}
+                        data-testid={`card-product-${product.id}`}
+                      />
+                    </Suspense>
+                  ))}
                 </div>
-              </div>
-            </section>
+
+                {/* Final profesional del catálogo */}
+                <div className="mt-12 text-center py-8 bg-gradient-to-t from-white via-gray-50 to-transparent rounded-t-3xl">
+                  <div className="max-w-md mx-auto space-y-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
+                      <i className="fas fa-check text-white text-xl"></i>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800">¡Has visto todo nuestro catálogo!</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      Estos son todos nuestros productos disponibles. Si no encontraste lo que buscas, contáctanos por WhatsApp.
+                    </p>
+                    <button 
+                      onClick={() => {
+                        const message = `Quiero más información sobre productos específicos.`;
+                        const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                      }}
+                      className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto shadow-md"
+                    >
+                      <i className="fab fa-whatsapp"></i>
+                      Consultar más productos
+                    </button>
+                  </div>
+                </div>
+              </section>
             </div>
           </main>
 
@@ -592,13 +552,9 @@ export default function Catalog() {
           </button>
 
           {/* Expandable Footer */}
-          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${
-            isFooterExpanded ? 'h-96' : 'h-14'
-          }`}>
-            {/* Expanded Content */}
+          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${isFooterExpanded ? 'h-96' : 'h-14'}`}>
             {isFooterExpanded && (
               <div className="p-4 h-full overflow-y-auto">
-                {/* Customer Registration Modal */}
                 {showRegistrationForm && (
                   <div className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
                     <div className="bg-white rounded-xl p-6 max-w-md w-full">
@@ -672,16 +628,14 @@ export default function Catalog() {
                     </div>
                   </div>
                 )}
+
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border border-yellow-200">
                   <div className="flex items-start gap-4">
-                    {/* Raffle Image */}
                     <div className="flex-shrink-0">
                       <img 
                         src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200"
                         alt="Rifa FULLTECH"
-                        className={`rounded-lg cursor-pointer transition-all duration-300 ${
-                          isRaffleImageExpanded ? 'fixed inset-4 z-[100] w-auto h-auto object-contain' : 'w-20 h-16 object-cover'
-                        }`}
+                        className={`rounded-lg cursor-pointer transition-all duration-300 ${isRaffleImageExpanded ? 'fixed inset-4 z-[100] w-auto h-auto object-contain' : 'w-20 h-16 object-cover'}`}
                         onClick={() => setIsRaffleImageExpanded(!isRaffleImageExpanded)}
                         data-testid="raffle-image"
                       />
@@ -693,7 +647,6 @@ export default function Catalog() {
                       )}
                     </div>
 
-                    {/* Raffle Content */}
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-orange-800 mb-2 flex items-center gap-2">
                         <i className="fas fa-gift text-yellow-500"></i>
@@ -723,7 +676,6 @@ export default function Catalog() {
 
                 {/* Store Location & Social Media Section */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Store Location */}
                   <div className="bg-white/50 rounded-lg p-4">
                     <h4 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
                       <i className="fas fa-map-marker-alt text-red-500"></i>
@@ -741,7 +693,6 @@ export default function Catalog() {
                     </a>
                   </div>
 
-                  {/* Embedded Map */}
                   <div className="bg-white/50 rounded-lg p-2">
                     <iframe
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.019284298956!2d-122.4194!3d37.7749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzfCsDQ2JzI5LjYiTiAxMjLCsDI1JzA5LjgiVw!5e0!3m2!1sen!2sus!4v1620000000000!5m2!1sen!2sus"
@@ -762,7 +713,7 @@ export default function Catalog() {
                   <p className="text-xs text-muted-foreground mb-2">Síguenos en redes sociales</p>
                   <div className="flex justify-center gap-4">
                     <a 
-                      href="https://instagram.com/fulltech" 
+                      href="https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
@@ -771,7 +722,7 @@ export default function Catalog() {
                       <i className="fab fa-instagram text-white"></i>
                     </a>
                     <a 
-                      href="https://facebook.com/fulltech" 
+                      href="https://web.facebook.com/fulltechs" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
@@ -784,59 +735,52 @@ export default function Catalog() {
               </div>
             )}
 
-            {/* Collapsed Footer - Only show when NOT expanded */}
             {!isFooterExpanded && (
               <div 
                 className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => setIsFooterExpanded(true)}
                 data-testid="footer-toggle"
               >
-              {/* Social Media Icons */}
-              <div className="flex items-center gap-3">
-                <a 
-                  href="https://instagram.com/fulltech" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                  data-testid="footer-instagram"
-                  title="Síguenos en Instagram"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <i className="fab fa-instagram text-white text-sm"></i>
-                </a>
-                <a 
-                  href="https://facebook.com/fulltech" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                  data-testid="footer-facebook"
-                  title="Síguenos en Facebook"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <i className="fab fa-facebook-f text-white text-sm"></i>
-                </a>
-              </div>
-
-              {/* Center - Rifa */}
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse-subtle">
-                  <i className="fas fa-gift text-white text-xs"></i>
+                <div className="flex items-center gap-3">
+                  <a 
+                    href="https://instagram.com/fulltech" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    data-testid="footer-instagram"
+                    title="Síguenos en Instagram"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <i className="fab fa-instagram text-white text-sm"></i>
+                  </a>
+                  <a 
+                    href="https://facebook.com/fulltech" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                    data-testid="footer-facebook"
+                    title="Síguenos en Facebook"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <i className="fab fa-facebook-f text-white text-sm"></i>
+                  </a>
                 </div>
-                <span className="text-xs font-medium text-foreground">Rifa Participa</span>
-                <i className={`fas text-xs text-muted-foreground transition-transform ${
-                  isFooterExpanded ? 'fa-chevron-down' : 'fa-chevron-up'
-                }`}></i>
-              </div>
 
-              {/* Right - Copyright */}
-              <div className="text-right">
-                <div className="text-xs font-semibold text-foreground">FULLTECH</div>
-                <div className="text-[10px] text-muted-foreground">SRL © 2024</div>
-              </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-pulse-subtle">
+                    <i className="fas fa-gift text-white text-xs"></i>
+                  </div>
+                  <span className="text-xs font-medium text-foreground">Rifa Participa</span>
+                  <i className={`fas text-xs text-muted-foreground transition-transform ${isFooterExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}`}></i>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-foreground">FULLTECH</div>
+                  <div className="text-[10px] text-muted-foreground">SRL © 2024</div>
+                </div>
               </div>
             )}
 
-            {/* Collapse Button - Only show when expanded */}
             {isFooterExpanded && (
               <div className="absolute top-2 right-2">
                 <button 
@@ -851,7 +795,7 @@ export default function Catalog() {
             )}
           </footer>
 
-          {/* 🎯 MODAL INTELIGENTE DE REGISTRO */}
+          {/* Modal de registro */}
           {showRegisterModal && (
             <div className="fixed inset-0 bg-black/50 z-[120] flex items-center justify-center p-4">
               <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border-4 border-gradient-to-r from-blue-500 to-purple-500">
@@ -859,15 +803,8 @@ export default function Catalog() {
                   <div className="w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i className="fas fa-crown text-white text-2xl"></i>
                   </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    ¡Te gustan nuestros productos! 😍
-                  </h3>
-                  
-                  <p className="text-sm text-gray-600 mb-4">
-                    Registrándote ahora obtienes beneficios exclusivos:
-                  </p>
-                  
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">¡Te gustan nuestros productos! 😍</h3>
+                  <p className="text-sm text-gray-600 mb-4">Registrándote ahora obtienes beneficios exclusivos:</p>
                   <div className="text-left space-y-2 mb-6">
                     <div className="flex items-center gap-2">
                       <i className="fas fa-percentage text-green-500"></i>
@@ -882,7 +819,6 @@ export default function Catalog() {
                       <span className="text-sm font-medium">Participación automática en rifas</span>
                     </div>
                   </div>
-                  
                   <div className="space-y-3">
                     <button 
                       onClick={() => window.location.href = '/phone-auth'}
@@ -890,7 +826,6 @@ export default function Catalog() {
                     >
                       ¡Registrarme Ahora!
                     </button>
-                    
                     <button 
                       onClick={() => setShowRegisterModal(false)}
                       className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors"
