@@ -34,7 +34,7 @@ export function FixedFooter() {
   };
 
   const handleInstagramClick = () => {
-    window.open('https://www.instagram.com/fulltechrd/', '_blank');
+    window.open('https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh/', '_blank');
   };
 
   const toggleExpansion = () => {
