@@ -4,16 +4,16 @@ import { type HeroSlide } from "@shared/schema";
 
 const fallbackImages = [
   {
-    src: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-    alt: "Electronics store showcase"
+    src: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75",
+    alt: "Hero 1"
   },
   {
-    src: "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-    alt: "Modern tech workspace"
+    src: "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75",
+    alt: "Hero 2"
   },
   {
-    src: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600",
-    alt: "Mobile devices collection"
+    src: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=75",
+    alt: "Hero 3"
   }
 ];
 
@@ -27,70 +27,70 @@ export function HeroSlider() {
   });
 
   const activeSlides = (heroSlides as HeroSlide[])
-    .filter(slide => slide.active)
+    .filter((s) => s.active)
     .sort((a, b) => a.order - b.order);
 
   const slides = activeSlides.length > 0 ? activeSlides : fallbackImages;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    const id = setInterval(() => {
+      setCurrentSlide((p) => (p + 1) % slides.length);
     }, 5000);
-
-    return () => clearInterval(interval);
+    return () => clearInterval(id);
   }, [slides.length]);
 
-  const goToSlide = (index: number) => {
-    setCurrentSlide(index);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  };
-
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX);
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const touchEnd = e.changedTouches[0].clientX;
-    const deltaX = touchStart - touchEnd;
-
-    if (Math.abs(deltaX) > 50) {
-      if (deltaX > 0) {
-        setCurrentSlide((prev) => (prev + 1) % slides.length);
-      } else {
-        setCurrentSlide((prev) => prev === 0 ? slides.length - 1 : prev - 1);
-      }
+    const dx = touchStart - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) {
+      setCurrentSlide((p) => (dx > 0 ? (p + 1) % slides.length : (p === 0 ? slides.length - 1 : p - 1)));
     }
   };
 
   return (
-    <div 
-      id="hero-slider" 
+    <div
+      id="hero-slider"
       className="absolute inset-0 w-full h-full overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       data-testid="hero-slider"
     >
-      {slides.map((slide, index) => (
-        <img
-          key={index}
-          src={activeSlides.length > 0 ? slide.imageUrl : slide.src}
-          alt={activeSlides.length > 0 ? slide.title : slide.alt}
-          className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${
-            index === currentSlide ? 'opacity-100' : 'opacity-0'
-          }`}
-          data-testid={`slide-${index}`}
-        />
-      ))}
-      
-      {/* Slider Indicators */}
-      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-        {slides.map((_, index) => (
+      {slides.map((slide: any, i) => {
+        const url = activeSlides.length ? slide.imageUrl : slide.src;
+        const alt = activeSlides.length ? "Hero slide" : slide.alt || "Hero slide";
+
+        return (
+          <img
+            key={i}
+            src={url}
+            alt={alt}                              {/* <- sin title */}
+            className={`absolute w-full h-full object-cover object-[center_40%] transition-opacity duration-1000 ${
+              i === currentSlide ? "opacity-100" : "opacity-0"
+            }`}
+            loading={i === 0 ? "eager" : "lazy"}
+            decoding="async"
+            sizes="100vw"
+            srcSet={`
+              ${url} 640w,
+              ${url} 1024w,
+              ${url} 1920w
+            `}
+            data-testid={`slide-${i}`}
+          />
+        );
+      })}
+
+      {/* Dots */}
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {slides.map((_, i) => (
           <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 shadow-lg ${
-              index === currentSlide ? 'bg-white scale-125' : 'bg-white/60'
-            } hover:bg-white hover:scale-110`}
-            data-testid={`dot-${index}`}
+            key={i}
+            onClick={() => setCurrentSlide(i)}
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 shadow ${
+              i === currentSlide ? "bg-white scale-110" : "bg-white/60"
+            }`}
+            aria-label={`Ir al slide ${i + 1}`}
+            data-testid={`dot-${i}`}
           />
         ))}
       </div>
