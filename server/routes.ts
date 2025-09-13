@@ -18,6 +18,12 @@ import connectPgSimple from "connect-pg-simple";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { setupGoogleAuth, requireCustomerAuth } from "./googleAuth";
 
+/* ====== ADICIÓN: SDK S3 para presign directo ====== */
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v4 as uuid } from "uuid";
+/* ================================================== */
+
 // ---------------- Session types ----------------
 declare module "express-session" {
   interface SessionData {
@@ -986,6 +992,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
   });
 
+  /* ====== ADICIÓN: PRESIGN S3 UNIVERSAL ======
+     Público para evitar 401 → si quieres, cambia a requireAdmin */
+  const s3 = new S3Client({
+    region: process.env.S3_REGION || "us-east-1",
+    endpoint: process.env.S3_ENDPOINT,
+    credentials: {
+      accessKeyId: process.env.S3_ACCESS_KEY!,
+      secretAccessKey: process.env.S3_SECRET_KEY!,
+    },
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+  });
+  const BUCKET = process.env.S3_BUCKET_NAME!;
+
+  app.post("/api/uploads/presign", async (req, res) => {
+    try {
+      const { filename, contentType } = req.body || {};
+      if (!filename || !contentType) {
+        return res.status(400).json({ error: "filename y contentType requeridos" });
+      }
+
+      const ext = filename.includes(".") ? filename.split(".").pop() : "bin";
+      const key = `uploads/${new Date().toISOString().slice(0,10)}/${uuid()}.${ext}`;
+
+      const cmd = new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        ContentType: contentType || "application/octet-stream",
+      });
+
+      const uploadUrl = await getSignedUrl(s3, cmd, { expiresIn: 60 * 5 });
+
+      const base = (process.env.S3_ENDPOINT || "").replace(/\/$/, "");
+      const fileUrl = `${base}/${BUCKET}/${key}`;
+
+      return res.json({ uploadUrl, key, fileUrl });
+    } catch (e: any) {
+      console.error("PRESIGN_ERROR:", e);
+      return res.status(500).json({ error: "presign_failed", detail: String(e?.message || e) });
+    }
+  });
+  /* ====== /ADICIÓN ====== */
+
   // Servir objetos
   app.get("/objects/:objectPath(*)", async (req, res) => {
     const objectPath = req.params.objectPath;
@@ -1417,7 +1465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/stats/referrals", requireAdmin, async (_req, res) => {
     try {
       const referralStats = await storage.getReferralStatistics();
-      res.json({ success: true, data: referralStats });
+    res.json({ success: true, data: referralStats });
     } catch (error) {
       console.error("Error fetching referral stats:", error);
       res.status(500).json({ error: "Failed to fetch referral statistics" });
