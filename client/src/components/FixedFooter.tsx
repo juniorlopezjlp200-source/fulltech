@@ -30,11 +30,11 @@ export function FixedFooter() {
   });
 
   const handleFacebookClick = () => {
-    window.open('https://facebook.com/fulltechrd', '_blank');
+    window.open('https://web.facebook.com/fulltechs', '_blank');
   };
 
   const handleInstagramClick = () => {
-    window.open('https://instagram.com/fulltechrd', '_blank');
+    window.open('https://www.instagram.com/fulltechrd/', '_blank');
   };
 
   const toggleExpansion = () => {
