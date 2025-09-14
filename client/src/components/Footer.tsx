@@ -4,15 +4,13 @@ import { getConfigValue, useConfigLoader } from '@/lib/config';
 
 export function Footer() {
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  // Load configurations
   useConfigLoader();
 
   return (
     <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4">
         <div className="py-3">
-          {/* En móvil: Una sola línea compacta y delicada */}
+          {/* Móvil */}
           <div className="block md:hidden">
             <div className="flex items-center justify-between text-xs py-1">
               <div className="flex items-center gap-2">
@@ -64,19 +62,15 @@ export function Footer() {
                   <i className="fas fa-shield-alt text-green-600 text-sm shadow-sm"></i>
                   <i className="fas fa-truck text-blue-600 text-sm shadow-sm"></i>
                 </span>
-                <button 
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="ml-1"
-                >
+                <button onClick={() => setIsExpanded(!isExpanded)} className="ml-1">
                   <i className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground`}></i>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* En desktop: Dos líneas como antes */}
+          {/* Desktop */}
           <div className="hidden md:block">
-            {/* Primera línea: Logo, servicios y flecha */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
                 <Link href="/" className="flex items-center gap-2">
@@ -101,15 +95,12 @@ export function Footer() {
                     24/7
                   </span>
                 </div>
-                <button 
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
+                <button onClick={() => setIsExpanded(!isExpanded)}>
                   <i className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground transition-transform`}></i>
                 </button>
               </div>
             </div>
 
-            {/* Segunda línea: Rifas, Redes Sociales y Copyright */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
                 {/* Rifas */}
@@ -120,7 +111,6 @@ export function Footer() {
                     iPhone 15 Pro
                   </span>
                 </div>
-                
                 {/* Redes sociales */}
                 <div className="flex items-center gap-2">
                   <span className="text-muted-foreground text-xs font-medium animate-pulse">Síguenos</span>
@@ -156,8 +146,6 @@ export function Footer() {
                   )}
                 </div>
               </div>
-              
-              {/* Copyright */}
               <div className="text-muted-foreground">
                 © {new Date().getFullYear()} {getConfigValue('site_name', 'FULLTECH')}. Todos los derechos reservados.
               </div>
@@ -166,12 +154,16 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Footer expandido - solo visible cuando se hace click */}
+      {/* Footer expandido */}
       {isExpanded && (
         <div className="border-t border-border bg-card max-h-96 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* 1. PROGRAMA DE REFERIDOS - LO MÁS IMPORTANTE AL FRENTE */}
-            <div className="bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-yellow-950 dark:to-orange-900 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800 shadow-lg hover:shadow-xl transition-all mb-8">
+
+            {/* 1) PROGRAMA DE REFERIDOS — envuelto para poder ocultarlo */}
+            <div
+              data-feature="referrals"
+              className="has-referrals-gap bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-yellow-950 dark:to-orange-900 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800 shadow-lg hover:shadow-xl transition-all mb-8"
+            >
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-4 flex items-center justify-center gap-2">
                   <i className="fas fa-gift text-3xl animate-bounce"></i>
@@ -183,7 +175,7 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 2. REDES SOCIALES - IMPORTANTE PARA MARKETING */}
+            {/* 2) REDES SOCIALES */}
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all mb-8">
               <h3 className="text-xl font-bold text-center text-foreground mb-6">Síguenos en Redes Sociales</h3>
               <div className="flex justify-center items-center gap-6">
@@ -220,54 +212,24 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 3. COMPRAS Y SERVICIOS - IMPORTANTE PARA USUARIOS */}
+            {/* 3) COMPRAS Y SERVICIOS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              {/* Compras */}
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all">
                 <h3 className="font-semibold text-foreground mb-4 text-center">🛒 Compras</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <Link href="/" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Catálogo
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/offers" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Ofertas
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/new-arrivals" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Nuevos Productos
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/brands" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Marcas
-                    </Link>
-                  </li>
+                  <li><Link href="/" className="text-muted-foreground hover:text-primary transition-colors block text-center">Catálogo</Link></li>
+                  <li><Link href="/offers" className="text-muted-foreground hover:text-primary transition-colors block text-center">Ofertas</Link></li>
+                  <li><Link href="/new-arrivals" className="text-muted-foreground hover:text-primary transition-colors block text-center">Nuevos Productos</Link></li>
+                  <li><Link href="/brands" className="text-muted-foreground hover:text-primary transition-colors block text-center">Marcas</Link></li>
                 </ul>
               </div>
 
-              {/* Servicios */}
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all">
                 <h3 className="font-semibold text-foreground mb-4 text-center">🔧 Servicios</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <Link href="/garantia" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Garantía
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/reembolsos" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Reembolsos
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Soporte Técnico
-                    </Link>
-                  </li>
+                  <li><Link href="/garantia" className="text-muted-foreground hover:text-primary transition-colors block text-center">Garantía</Link></li>
+                  <li><Link href="/reembolsos" className="text-muted-foreground hover:text-primary transition-colors block text-center">Reembolsos</Link></li>
+                  <li><Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors block text-center">Soporte Técnico</Link></li>
                   <li>
                     <a 
                       href={`https://wa.me/${getConfigValue('contact_whatsapp', '15551234567')}?text=Hola%20${getConfigValue('site_name', 'FULLTECH')},%20necesito%20ayuda`}
@@ -282,36 +244,18 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 4. AL FINAL - INFORMACIÓN LEGAL Y CONTACTO (LADO A LADO) */}
+            {/* 4) Legal + Contacto */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Legal e Información */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-border">
                 <h3 className="font-semibold text-foreground mb-4 text-center">📋 Información Legal</h3>
                 <ul className="space-y-2 text-sm">
-                  <li>
-                    <Link href="/sobre-nosotros" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Sobre Nosotros
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/privacidad" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Política de Privacidad
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/terminos" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Términos y Condiciones
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors block text-center">
-                      Contacto
-                    </Link>
-                  </li>
+                  <li><Link href="/sobre-nosotros" className="text-muted-foreground hover:text-primary transition-colors block text-center">Sobre Nosotros</Link></li>
+                  <li><Link href="/privacidad" className="text-muted-foreground hover:text-primary transition-colors block text-center">Política de Privacidad</Link></li>
+                  <li><Link href="/terminos" className="text-muted-foreground hover:text-primary transition-colors block text-center">Términos y Condiciones</Link></li>
+                  <li><Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors block text-center">Contacto</Link></li>
                 </ul>
               </div>
 
-              {/* Contacto */}
               <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-6 border border-border">
                 <h3 className="font-semibold text-foreground mb-4 text-center">📞 Contacto</h3>
                 <div className="space-y-2 text-sm text-muted-foreground text-center">
@@ -324,10 +268,7 @@ export function Footer() {
                   {getConfigValue('contact_email') && (
                     <div className="flex items-center justify-center gap-2">
                       <i className="fas fa-envelope text-primary"></i>
-                      <a 
-                        href={`mailto:${getConfigValue('contact_email')}`}
-                        className="hover:text-primary transition-colors"
-                      >
+                      <a href={`mailto:${getConfigValue('contact_email')}`} className="hover:text-primary transition-colors">
                         {getConfigValue('contact_email')}
                       </a>
                     </div>
@@ -348,7 +289,7 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 5. MAPA DE UBICACIÓN */}
+            {/* 5) Mapa */}
             <div className="border-t border-border mt-8 pt-8">
               <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all mb-8">
                 <h3 className="text-xl font-bold text-center text-foreground mb-6 flex items-center justify-center gap-2">
@@ -374,22 +315,12 @@ export function Footer() {
                   <div className="flex justify-center items-center gap-4">
                     <span className="text-muted-foreground text-sm">Síguenos en redes sociales:</span>
                     {getConfigValue('social_instagram') && (
-                      <a 
-                        href={getConfigValue('social_instagram')} 
-                        className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={getConfigValue('social_instagram')} className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg" target="_blank" rel="noopener noreferrer">
                         <i className="fab fa-instagram text-sm"></i>
                       </a>
                     )}
                     {getConfigValue('social_facebook') && (
-                      <a 
-                        href={getConfigValue('social_facebook')} 
-                        className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <a href={getConfigValue('social_facebook')} className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg" target="_blank" rel="noopener noreferrer">
                         <i className="fab fa-facebook-f text-sm"></i>
                       </a>
                     )}
@@ -398,12 +329,11 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 6. DIRECTORIO COMPLETO DE PÁGINAS Y SERVICIOS */}
+            {/* 6) Directorio */}
             <div className="border-t border-border pt-8">
               <h3 className="text-xl font-bold text-center text-foreground mb-8">Directorio Completo</h3>
-              
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                {/* Catálogo de Productos */}
+                {/* Catálogo */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <i className="fas fa-mobile-alt text-primary"></i>
@@ -418,7 +348,7 @@ export function Footer() {
                   </ul>
                 </div>
 
-                {/* Servicios al Cliente */}
+                {/* Servicios */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <i className="fas fa-headset text-primary"></i>
@@ -433,7 +363,7 @@ export function Footer() {
                   </ul>
                 </div>
 
-                {/* Información Empresarial */}
+                {/* Empresa */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <i className="fas fa-building text-primary"></i>
@@ -448,7 +378,7 @@ export function Footer() {
                   </ul>
                 </div>
 
-                {/* Información Legal */}
+                {/* Legal */}
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
                     <i className="fas fa-gavel text-primary"></i>
@@ -465,7 +395,7 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Bottom section */}
+            {/* Bottom */}
             <div className="border-t border-border mt-8 pt-6">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="text-sm text-muted-foreground">
@@ -487,6 +417,7 @@ export function Footer() {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       )}
