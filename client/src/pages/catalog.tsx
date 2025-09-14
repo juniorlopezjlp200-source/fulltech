@@ -170,14 +170,14 @@ const sampleProducts: Product[] = [
 ];
 
 const categoryIcons: Record<string, string> = {
-  "moviles": "fas fa-mobile-alt",
-  "accesorios": "fas fa-charging-station",
-  "audio": "fas fa-headphones",
-  "gaming": "fas fa-gamepad",
-  "tablets": "fas fa-tablet-alt",
-  "wearables": "fas fa-clock",
-  "hogar": "fas fa-home",
-  "reacondicionados": "fas fa-recycle",
+  moviles: "fas fa-mobile-alt",
+  accesorios: "fas fa-charging-station",
+  audio: "fas fa-headphones",
+  gaming: "fas fa-gamepad",
+  tablets: "fas fa-tablet-alt",
+  wearables: "fas fa-clock",
+  hogar: "fas fa-home",
+  reacondicionados: "fas fa-recycle",
 };
 
 export default function Catalog() {
@@ -189,29 +189,22 @@ export default function Catalog() {
   const [isFooterExpanded, setIsFooterExpanded] = useState(false);
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [registrationData, setRegistrationData] = useState({ name: '', phone: '', address: '' });
+  const [registrationData, setRegistrationData] = useState({ name: "", phone: "", address: "" });
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [productsViewed, setProductsViewed] = useState(0);
   const [showStickyBanner, setShowStickyBanner] = useState(true);
-
-  // ✅ QUITAMOS refs y autoscroll manual (ya no se necesita)
-  // const categoryScrollRef = useRef<HTMLDivElement>(null);
-  // const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  // const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  // Transform categories to include icons + "Todos"
-  const categories = [{ id: "all", name: "Todos", icon: "fas fa-th" }].concat(
-    categoriesData.map(category => ({
-      id: category.slug,
-      name: category.name,
-      icon: categoryIcons[category.slug] || "fas fa-tag"
-    }))
-  );
+  // ✅ Solo categorías reales (SIN "Todos")
+  const categories = categoriesData.map((category) => ({
+    id: category.slug,
+    name: category.name,
+    icon: categoryIcons[category.slug] || "fas fa-tag",
+  }));
 
   // Fetch real products from API
   const { data: realProducts = [], isLoading: isProductsLoading } = useQuery<Product[]>({
@@ -220,17 +213,21 @@ export default function Catalog() {
 
   // Filter products
   const filteredProducts = realProducts.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesCategory = selectedCategory === "all" || (() => {
-      const productCategoryData = categoriesData.find(cat =>
-        cat.id === product.category ||
-        cat.slug === product.category ||
-        cat.name.toLowerCase() === product.category.toLowerCase()
-      );
-      return productCategoryData && productCategoryData.slug === selectedCategory;
-    })();
+    const matchesCategory =
+      selectedCategory === "all" ||
+      (() => {
+        const productCategoryData = categoriesData.find(
+          (cat) =>
+            cat.id === product.category ||
+            cat.slug === product.category ||
+            cat.name.toLowerCase() === product.category.toLowerCase(),
+        );
+        return productCategoryData && productCategoryData.slug === selectedCategory;
+      })();
 
     const matchesOffers = showOnlyOffers ? product.onSale : true;
     const isInStock = product.inStock;
@@ -244,10 +241,10 @@ export default function Catalog() {
     setIsLoading(isProductsLoading || isCategoriesLoading);
   }, [isProductsLoading, isCategoriesLoading]);
 
-  // Tracking de productos vistos (lo dejo igual)
+  // Tracking de productos vistos
   useEffect(() => {
     const handleProductView = () => {
-      setProductsViewed(prev => {
+      setProductsViewed((prev) => {
         const newCount = prev + 1;
         if (newCount === 4 && !showRegisterModal) {
           setTimeout(() => setShowRegisterModal(true), 2000);
@@ -257,13 +254,13 @@ export default function Catalog() {
     };
 
     const productCards = document.querySelectorAll('[data-testid^="card-product-"]');
-    productCards.forEach(card => {
-      card.addEventListener('click', handleProductView);
+    productCards.forEach((card) => {
+      card.addEventListener("click", handleProductView);
     });
 
     return () => {
-      productCards.forEach(card => {
-        card.removeEventListener('click', handleProductView);
+      productCards.forEach((card) => {
+        card.removeEventListener("click", handleProductView);
       });
     };
   }, [allProducts, showRegisterModal]);
@@ -296,94 +293,104 @@ export default function Catalog() {
               <HeroSlider />
             </Suspense>
 
-            {/* Overlay de controles (sin título) */}
-           <div className="absolute inset-0 flex flex-col justify-end items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none pb-16 sm:pb-20 lg:pb-24">
-              {/* Botón de búsqueda y filtros All/Ofertas */}
-              <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto z-30 relative mt-4">
-                <button
-                  onClick={() => setIsSearchOpen(!isSearchOpen)}
-                  className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                    isSearchOpen 
-                      ? 'bg-primary text-white shadow-md scale-105' 
-                      : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
-                  }`}
-                  title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
-                  aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
-                  aria-expanded={isSearchOpen}
-                  data-testid="search-toggle-button"
-                >
-                  <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? 'fa-times' : 'fa-search'}`}></i>
-                </button>
+            {/* Overlay de controles */}
+            <div className="absolute inset-0 flex flex-col justify-between items-center text-white text-center z-10 pointer-events-none">
+              {/* --- BARRA CENTRAL: Buscar / All / Ofertas --- */}
+              <div className="mt-[14vh] sm:mt-[16vh] lg:mt-[18vh] w-full flex justify-center">
+                <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto shadow-lg">
+                  <button
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
+                    className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+                      isSearchOpen ? "bg-primary text-white shadow-md scale-105" : "bg-white/15 text-white/70 hover:bg-white/25 hover:text-white"
+                    }`}
+                    title={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
+                    aria-label={isSearchOpen ? "Cerrar búsqueda" : "Abrir búsqueda"}
+                    aria-expanded={isSearchOpen}
+                    data-testid="search-toggle-button"
+                  >
+                    <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? "fa-times" : "fa-search"}`}></i>
+                  </button>
 
-                <button
-                  onClick={() => { 
-                    setSelectedCategory('all'); 
-                    setShowOnlyOffers(false); 
-                  }}
-                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${!showOnlyOffers && selectedCategory === 'all'
-                    ? 'bg-white text-blue-600 shadow-md scale-105' 
-                    : 'bg-white/15 text-white/70 hover:bg-white/25 hover:text-white'
-                  }`}
-                  data-testid="button-filter-all"
-                  title="Todos los productos"
-                  aria-pressed={!showOnlyOffers && selectedCategory === 'all'}
-                  aria-label="Mostrar todos los productos"
-                >
-                  <i className="fas fa-th-large text-xs"></i>
-                  <span>All</span>
-                </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory("all");
+                      setShowOnlyOffers(false);
+                    }}
+                    className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+                      !showOnlyOffers && selectedCategory === "all"
+                        ? "bg-white text-blue-600 shadow-md scale-105"
+                        : "bg-white/15 text-white/70 hover:bg-white/25 hover:text-white"
+                    }`}
+                    data-testid="button-filter-all"
+                    title="Todos los productos"
+                    aria-pressed={!showOnlyOffers && selectedCategory === "all"}
+                    aria-label="Mostrar todos los productos"
+                  >
+                    <i className="fas fa-th-large text-xs"></i>
+                    <span>All</span>
+                  </button>
 
-                <button
-                  onClick={() => setShowOnlyOffers(true)}
-                  className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${showOnlyOffers 
-                    ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
-                    : 'bg-white/15 text-red-300 hover:bg-red-500/25 hover:text-red-200'
-                  }`}
-                  data-testid="button-filter-offers"
-                  title="Solo ofertas"
-                  aria-pressed={showOnlyOffers}
-                  aria-label="Mostrar solo ofertas"
-                >
-                  <i className="fas fa-fire text-xs animate-shake"></i>
-                  <span>Ofertas</span>
-                </button>
+                  <button
+                    onClick={() => setShowOnlyOffers(true)}
+                    className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+                      showOnlyOffers ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105" : "bg-white/15 text-red-300 hover:bg-red-500/25 hover:text-red-200"
+                    }`}
+                    data-testid="button-filter-offers"
+                    title="Solo ofertas"
+                    aria-pressed={showOnlyOffers}
+                    aria-label="Mostrar solo ofertas"
+                  >
+                    <i className="fas fa-fire text-xs animate-shake"></i>
+                    <span>Ofertas</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Barra de búsqueda expandible */}
+              {/* --- INPUT DE BÚSQUEDA desplegable debajo del bloque central --- */}
               {isSearchOpen && (
-                <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto z-30 relative mt-2 max-w-sm mx-auto">
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                      <i className="fas fa-search text-white/60 text-sm"></i>
+                <div className="w-full flex justify-center pointer-events-auto">
+                  <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 z-30 relative mt-2 max-w-sm mx-auto shadow-lg">
+                    <div className="relative">
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                        <i className="fas fa-search text-white/60 text-sm"></i>
+                      </div>
+                      <input
+                        type="search"
+                        placeholder="Buscar productos..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
+                        data-testid="input-search"
+                        autoFocus
+                      />
                     </div>
-                    <input 
-                      type="search" 
-                      placeholder="Buscar productos..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
-                      data-testid="input-search"
-                      autoFocus
-                    />
                   </div>
                 </div>
               )}
 
-              {/* ✅ CATEGORÍAS — ahora con CategoryFilters (sin autoscroll custom) */}
-              <div className="pointer-events-auto z-40 relative mt-3 w-full px-2">
-                <Suspense fallback={null}>
-                  <CategoryFilters
-                    categories={categories}
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={(id) => setSelectedCategory(id)}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
-                  />
-                </Suspense>
+              {/* --- CATEGORÍAS AL PIE DEL SLIDER, FULL WIDTH --- */}
+              <div className="w-full pointer-events-auto pb-4 px-0">
+                <div className="relative w-full">
+                  {/* máscaras laterales */}
+                  <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-black/40 to-transparent z-10 rounded-l-2xl"></div>
+                  <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-black/40 to-transparent z-10 rounded-r-2xl"></div>
+
+                  <div className="mx-auto w-full px-2">
+                    <Suspense fallback={null}>
+                      <CategoryFilters
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        onCategoryChange={(id) => setSelectedCategory(id)}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                      />
+                    </Suspense>
+                  </div>
+                </div>
 
                 {/* Indicador de deslizamiento */}
                 <div className="flex justify-center mt-1">
-                  <div className="flex items-center gap-1 text-white/60 text-xs">
+                  <div className="flex items-center gap-1 text-white/70 text-xs">
                     <i className="fas fa-chevron-left animate-pulse"></i>
                     <span>Desliza para ver más</span>
                     <i className="fas fa-chevron-right animate-pulse"></i>
@@ -399,9 +406,9 @@ export default function Catalog() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
                   {allProducts.map((product) => (
                     <Suspense key={product.id} fallback={null}>
-                      <ProductCard 
-                        key={product.id} 
-                        product={product} 
+                      <ProductCard
+                        key={product.id}
+                        product={product}
                         layout="grid"
                         isHomePage={true}
                         data-testid={`card-product-${product.id}`}
@@ -420,11 +427,11 @@ export default function Catalog() {
                     <p className="text-gray-600 text-sm leading-relaxed">
                       Estos son todos nuestros productos disponibles. Si no encontraste lo que buscas, contáctanos por WhatsApp.
                     </p>
-                    <button 
+                    <button
                       onClick={() => {
                         const message = `Quiero más información sobre productos específicos.`;
                         const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
-                        window.open(whatsappUrl, '_blank');
+                        window.open(whatsappUrl, "_blank");
                       }}
                       className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto shadow-md"
                     >
@@ -438,11 +445,11 @@ export default function Catalog() {
           </main>
 
           {/* Floating WhatsApp Button */}
-          <button 
+          <button
             onClick={() => {
               const message = `Quiero más información`;
               const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
-              window.open(whatsappUrl, '_blank');
+              window.open(whatsappUrl, "_blank");
             }}
             className="fixed bottom-16 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center animate-pulse-ring"
             data-testid="floating-whatsapp-button"
@@ -452,7 +459,7 @@ export default function Catalog() {
           </button>
 
           {/* Expandable Footer */}
-          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${isFooterExpanded ? 'h-96' : 'h-14'}`}>
+          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${isFooterExpanded ? "h-96" : "h-14"}`}>
             {isFooterExpanded && (
               <div className="p-4 h-full overflow-y-auto">
                 {showRegistrationForm && (
@@ -460,7 +467,7 @@ export default function Catalog() {
                     <div className="bg-white rounded-xl p-6 max-w-md w-full">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-800">¡Únete a FULLTECH!</h3>
-                        <button 
+                        <button
                           onClick={() => setShowRegistrationForm(false)}
                           className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                         >
@@ -474,12 +481,8 @@ export default function Catalog() {
                         </div>
 
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
-                            Registro Rápido y Seguro
-                          </h4>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Con tu cuenta de Google obtienes automáticamente:
-                          </p>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-2">Registro Rápido y Seguro</h4>
+                          <p className="text-sm text-gray-600 mb-4">Con tu cuenta de Google obtienes automáticamente:</p>
 
                           <div className="text-left space-y-2 mb-6">
                             <div className="flex items-center gap-2">
@@ -502,10 +505,10 @@ export default function Catalog() {
                         </div>
 
                         <div className="space-y-3">
-                          <button 
+                          <button
                             onClick={() => {
                               setShowRegistrationForm(false);
-                              window.location.href = '/login';
+                              window.location.href = "/login";
                             }}
                             className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition-colors flex items-center justify-center gap-2"
                           >
@@ -513,7 +516,7 @@ export default function Catalog() {
                             Continuar con Google
                           </button>
 
-                          <button 
+                          <button
                             onClick={() => setShowRegistrationForm(false)}
                             className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                           >
@@ -521,9 +524,7 @@ export default function Catalog() {
                           </button>
                         </div>
 
-                        <p className="text-xs text-gray-500">
-                          Registro 100% seguro • No spam • Política de privacidad respetada
-                        </p>
+                        <p className="text-xs text-gray-500">Registro 100% seguro • No spam • Política de privacidad respetada</p>
                       </div>
                     </div>
                   </div>
@@ -532,19 +533,14 @@ export default function Catalog() {
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border border-yellow-200">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
-                      <img 
+                      <img
                         src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200"
                         alt="Rifa FULLTECH"
-                        className={`rounded-lg cursor-pointer transition-all duration-300 ${isRaffleImageExpanded ? 'fixed inset-4 z-[100] w-auto h-auto object-contain' : 'w-20 h-16 object-cover'}`}
+                        className={`rounded-lg cursor-pointer transition-all duration-300 ${isRaffleImageExpanded ? "fixed inset-4 z-[100] w-auto h-auto object-contain" : "w-20 h-16 object-cover"}`}
                         onClick={() => setIsRaffleImageExpanded(!isRaffleImageExpanded)}
                         data-testid="raffle-image"
                       />
-                      {isRaffleImageExpanded && (
-                        <div 
-                          className="fixed inset-0 bg-black/80 z-[99]"
-                          onClick={() => setIsRaffleImageExpanded(false)}
-                        />
-                      )}
+                      {isRaffleImageExpanded && <div className="fixed inset-0 bg-black/80 z-[99]" onClick={() => setIsRaffleImageExpanded(false)} />}
                     </div>
 
                     <div className="flex-1">
@@ -556,17 +552,14 @@ export default function Catalog() {
                         Crea tu cuenta, comparte tu enlace de referencia y gana 5% de descuento por cada amigo que compre. Además, participas automáticamente en rifas mensuales.
                       </p>
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => setShowRegistrationForm(true)}
                           className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition-colors flex items-center gap-2"
                         >
                           <i className="fab fa-google"></i>
                           Registrarme Ahora
                         </button>
-                        <button 
-                          onClick={() => window.location.href = '/login'}
-                          className="bg-white/50 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/70 transition-colors"
-                        >
+                        <button onClick={() => (window.location.href = "/login")} className="bg-white/50 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/70 transition-colors">
                           Ya tengo cuenta
                         </button>
                       </div>
@@ -582,7 +575,7 @@ export default function Catalog() {
                       Nuestra Tienda
                     </h4>
                     <p className="text-xs text-gray-600 mb-3">Visítanos en nuestra ubicación física</p>
-                    <a 
+                    <a
                       href="https://maps.app.goo.gl/SN1tkW5RHHJ4ikRw6"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -612,18 +605,18 @@ export default function Catalog() {
                 <div className="text-center mt-4">
                   <p className="text-xs text-muted-foreground mb-2">Síguenos en redes sociales</p>
                   <div className="flex justify-center gap-4">
-                    <a 
-                      href="https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh" 
-                      target="_blank" 
+                    <a
+                      href="https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                       data-testid="footer-instagram-expanded"
                     >
                       <i className="fab fa-instagram text-white"></i>
                     </a>
-                    <a 
-                      href="https://web.facebook.com/fulltechs" 
-                      target="_blank" 
+                    <a
+                      href="https://web.facebook.com/fulltechs"
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                       data-testid="footer-facebook-expanded"
@@ -636,15 +629,11 @@ export default function Catalog() {
             )}
 
             {!isFooterExpanded && (
-              <div 
-                className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setIsFooterExpanded(true)}
-                data-testid="footer-toggle"
-              >
+              <div className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setIsFooterExpanded(true)} data-testid="footer-toggle">
                 <div className="flex items-center gap-3">
-                  <a 
-                    href="https://instagram.com/fulltech" 
-                    target="_blank" 
+                  <a
+                    href="https://instagram.com/fulltech"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     data-testid="footer-instagram"
@@ -653,9 +642,9 @@ export default function Catalog() {
                   >
                     <i className="fab fa-instagram text-white text-sm"></i>
                   </a>
-                  <a 
-                    href="https://facebook.com/fulltech" 
-                    target="_blank" 
+                  <a
+                    href="https://facebook.com/fulltech"
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     data-testid="footer-facebook"
@@ -671,7 +660,7 @@ export default function Catalog() {
                     <i className="fas fa-gift text-white text-xs"></i>
                   </div>
                   <span className="text-xs font-medium text-foreground">Rifa Participa</span>
-                  <i className={`fas text-xs text-muted-foreground transition-transform ${isFooterExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}`}></i>
+                  <i className={`fas text-xs text-muted-foreground transition-transform ${isFooterExpanded ? "fa-chevron-down" : "fa-chevron-up"}`}></i>
                 </div>
 
                 <div className="text-right">
@@ -683,7 +672,7 @@ export default function Catalog() {
 
             {isFooterExpanded && (
               <div className="absolute top-2 right-2">
-                <button 
+                <button
                   onClick={() => setIsFooterExpanded(false)}
                   className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg"
                   data-testid="footer-collapse"
@@ -720,16 +709,10 @@ export default function Catalog() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <button 
-                      onClick={() => window.location.href = '/phone-auth'}
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
-                    >
+                    <button onClick={() => (window.location.href = "/phone-auth")} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg">
                       ¡Registrarme Ahora!
                     </button>
-                    <button 
-                      onClick={() => setShowRegisterModal(false)}
-                      className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors"
-                    >
+                    <button onClick={() => setShowRegisterModal(false)} className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors">
                       Continuar viendo productos
                     </button>
                   </div>
