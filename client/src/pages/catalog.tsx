@@ -368,140 +368,155 @@ export default function Catalog() {
 
             {/* ===== FT: HERO OVERLAY START (Buscar/All/Ofertas centrado + Categorías abajo) ===== */}
             <div className="absolute inset-0 z-20">
+  {/* === CONTROLES (ajustados: muy cerca de las categorías) === */}
+  {/* AJUSTE PRINCIPAL: mueve este bloque acercándolo/alejándolo de las categorías
+     - Cambia bottom-[92px] para ajustar el espacio en móvil
+     - Ejemplos: bottom-[80px] (más cerca) | bottom-[110px] (más separado)
+  */}
+  <div
+    className="
+      absolute left-1/2 bottom-[92px] sm:bottom-[100px] md:top-1/2 md:bottom-auto
+      -translate-x-1/2 md:-translate-y-1/2
+      pointer-events-none w-full max-w-[640px] px-3
+    "
+  >
+    <div className="flex justify-center">
+      <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto shadow-md">
+        <button
+          onClick={() => setIsSearchOpen(!isSearchOpen)}
+          className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+            isSearchOpen
+              ? "bg-primary text-white shadow-md scale-105"
+              : "bg-white/15 text-white/80 hover:bg-white/25 hover:text-white"
+          }`}
+          title={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
+          aria-label={isSearchOpen ? "Cerrar búsqueda" : "Abrir búsqueda"}
+          aria-expanded={isSearchOpen}
+          data-testid="search-toggle-button"
+        >
+          <i
+            className={`fas text-xs transition-transform duration-200 ${
+              isSearchOpen ? "fa-times" : "fa-search"
+            }`}
+          ></i>
+        </button>
 
-              {/* === CONTROLES (más abajo en móvil) === */}
-              <div
-                className="
-                  absolute left-1/2 top-[62%] sm:top-[60%] md:top-1/2
-                  -translate-x-1/2 md:-translate-y-1/2
-                  pointer-events-none w-full max-w-[640px] px-3
-                "
-              >
-                <div className="flex justify-center">
-                  <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto shadow-md">
-                    <button
-                      onClick={() => setIsSearchOpen(!isSearchOpen)}
-                      className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        isSearchOpen 
-                          ? 'bg-primary text-white shadow-md scale-105' 
-                          : 'bg-white/15 text-white/80 hover:bg-white/25 hover:text-white'
-                      }`}
-                      title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
-                      aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
-                      aria-expanded={isSearchOpen}
-                      data-testid="search-toggle-button"
-                    >
-                      <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? 'fa-times' : 'fa-search'}`}></i>
-                    </button>
+        <button
+          onClick={() => {
+            setSelectedCategory("all");
+            setShowOnlyOffers(false);
+          }}
+          className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+            !showOnlyOffers && selectedCategory === "all"
+              ? "bg-white text-blue-600 shadow-md scale-105"
+              : "bg-white/15 text-white/80 hover:bg-white/25 hover:text-white"
+          }`}
+          data-testid="button-filter-all"
+          title="Todos los productos"
+          aria-pressed={!showOnlyOffers && selectedCategory === "all"}
+          aria-label="Mostrar todos los productos"
+        >
+          <i className="fas fa-th-large text-xs"></i>
+          <span>All</span>
+        </button>
 
-                    <button
-                      onClick={() => { setSelectedCategory('all'); setShowOnlyOffers(false); }}
-                      className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        !showOnlyOffers && selectedCategory === 'all'
-                          ? 'bg-white text-blue-600 shadow-md scale-105' 
-                          : 'bg-white/15 text-white/80 hover:bg-white/25 hover:text-white'
-                      }`}
-                      data-testid="button-filter-all"
-                      title="Todos los productos"
-                      aria-pressed={!showOnlyOffers && selectedCategory === 'all'}
-                      aria-label="Mostrar todos los productos"
-                    >
-                      <i className="fas fa-th-large text-xs"></i>
-                      <span>All</span>
-                    </button>
+        <button
+          onClick={() => setShowOnlyOffers(true)}
+          className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+            showOnlyOffers
+              ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105"
+              : "bg-white/15 text-red-200 hover:bg-red-500/25 hover:text-red-100"
+          }`}
+          data-testid="button-filter-offers"
+          title="Solo ofertas"
+          aria-pressed={showOnlyOffers}
+          aria-label="Mostrar solo ofertas"
+        >
+          <i className="fas fa-fire text-xs animate-shake"></i>
+          <span>Ofertas</span>
+        </button>
+      </div>
+    </div>
 
-                    <button
-                      onClick={() => setShowOnlyOffers(true)}
-                      className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        showOnlyOffers 
-                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
-                          : 'bg-white/15 text-red-200 hover:bg-red-500/25 hover:text-red-100'
-                      }`}
-                      data-testid="button-filter-offers"
-                      title="Solo ofertas"
-                      aria-pressed={showOnlyOffers}
-                      aria-label="Mostrar solo ofertas"
-                    >
-                      <i className="fas fa-fire text-xs animate-shake"></i>
-                      <span>Ofertas</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Barra de búsqueda (debajo del grupo y centrada) */}
-                {isSearchOpen && (
-                  <div className="pointer-events-none mt-3 flex justify-center">
-                    <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto w-full max-w-[520px] shadow">
-                      <div className="relative">
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                          <i className="fas fa-search text-white/70 text-sm"></i>
-                        </div>
-                        <input 
-                          type="search" 
-                          placeholder="Buscar productos..." 
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
-                          data-testid="input-search"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* === CATEGORÍAS (bien abajo y edge-to-edge en móvil) === */}
-              <div className="pointer-events-none absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full">
-                {/* Gradientes laterales */}
-                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
-                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
-
-                <div 
-                  ref={categoryScrollRef}
-                  className="pointer-events-auto flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none w-screen md:w-[min(100%,1280px)] mx-auto"
-                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
-                  onMouseEnter={pauseAutoScroll}
-                  onMouseLeave={resumeAutoScroll}
-                  onTouchStart={pauseAutoScroll}
-                  onTouchEnd={resumeAutoScroll}
-                  onWheel={pauseAutoScrollOnWheel}
-                  onPointerEnter={pauseAutoScroll}
-                  onPointerLeave={resumeAutoScroll}
-                >
-                  {[...categories, ...categories].map((category, index) => {
-                    const isDuplicate = index >= categories.length;
-                    return (
-                      <button
-                        key={`${category.id}-${index}`}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex-shrink-0 shadow-md backdrop-blur-md border snap-start ${
-                          selectedCategory === category.id
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border-white/20'
-                            : 'bg-white/90 text-gray-800 hover:bg-white hover:shadow-lg border-white/40'
-                        }`}
-                        style={{ minWidth: 'fit-content' }}
-                        data-testid={`filter-${category.id}-${index}`}
-                        tabIndex={isDuplicate ? -1 : 0}
-                        aria-hidden={isDuplicate}
-                        role={isDuplicate ? 'presentation' : 'button'}
-                      >
-                        <span className="relative z-10">{category.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Indicador de deslizamiento */}
-                <div className="flex justify-center mt-1">
-                  <div className="flex items-center gap-1 text-white/70 text-xs">
-                    <i className="fas fa-chevron-left animate-pulse"></i>
-                    <span>Desliza para ver más</span>
-                    <i className="fas fa-chevron-right animate-pulse"></i>
-                  </div>
-                </div>
-              </div>
+    {/* Barra de búsqueda (debajo del grupo y centrada) */}
+    {isSearchOpen && (
+      <div className="pointer-events-none mt-3 flex justify-center">
+        <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto w-full max-w-[520px] shadow">
+          <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+              <i className="fas fa-search text-white/70 text-sm"></i>
             </div>
+            <input
+              type="search"
+              placeholder="Buscar productos..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
+              data-testid="input-search"
+              autoFocus
+            />
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+
+  {/* === CATEGORÍAS (bien abajo y edge-to-edge en móvil) === */}
+  <div className="pointer-events-none absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full">
+    {/* Gradientes laterales */}
+    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
+    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
+
+    <div
+      ref={categoryScrollRef}
+      className="pointer-events-auto flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none w-screen md:w-[min(100%,1280px)] mx-auto"
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+      }}
+      onMouseEnter={pauseAutoScroll}
+      onMouseLeave={resumeAutoScroll}
+      onTouchStart={pauseAutoScroll}
+      onTouchEnd={resumeAutoScroll}
+      onWheel={pauseAutoScrollOnWheel}
+      onPointerEnter={pauseAutoScroll}
+      onPointerLeave={resumeAutoScroll}
+    >
+      {[...categories, ...categories].map((category, index) => {
+        const isDuplicate = index >= categories.length;
+        return (
+          <button
+            key={`${category.id}-${index}`}
+            onClick={() => setSelectedCategory(category.id)}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex-shrink-0 shadow-md backdrop-blur-md border snap-start ${
+              selectedCategory === category.id
+                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border-white/20"
+                : "bg-white/90 text-gray-800 hover:bg-white hover:shadow-lg border-white/40"
+            }`}
+            style={{ minWidth: "fit-content" }}
+            data-testid={`filter-${category.id}-${index}`}
+            tabIndex={isDuplicate ? -1 : 0}
+            aria-hidden={isDuplicate}
+            role={isDuplicate ? "presentation" : "button"}
+          >
+            <span className="relative z-10">{category.name}</span>
+          </button>
+        );
+      })}
+    </div>
+
+    {/* Indicador de deslizamiento */}
+    <div className="flex justify-center mt-1">
+      <div className="flex items-center gap-1 text-white/70 text-xs">
+        <i className="fas fa-chevron-left animate-pulse"></i>
+        <span>Desliza para ver más</span>
+        <i className="fas fa-chevron-right animate-pulse"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
             {/* ===== FT: HERO OVERLAY END ===== */}
           </div>
 
