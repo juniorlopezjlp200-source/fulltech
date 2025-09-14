@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, lazy, Suspense, useRef } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { TopBar } from "@/components/TopBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
@@ -194,22 +194,24 @@ export default function Catalog() {
   const [productsViewed, setProductsViewed] = useState(0);
   const [showStickyBanner, setShowStickyBanner] = useState(true);
 
-  // Referencias y estado para el slider automático de categorías
-  const categoryScrollRef = useRef<HTMLDivElement>(null);
-  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // ✅ QUITAMOS refs y autoscroll manual (ya no se necesita)
+  // const categoryScrollRef = useRef<HTMLDivElement>(null);
+  // const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  // const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  // Transform categories to include icons
-  const categories = categoriesData.map(category => ({
-    id: category.slug,
-    name: category.name,
-    icon: categoryIcons[category.slug] || "fas fa-tag"
-  }));
+  // Transform categories to include icons + "Todos"
+  const categories = [{ id: "all", name: "Todos", icon: "fas fa-th" }].concat(
+    categoriesData.map(category => ({
+      id: category.slug,
+      name: category.name,
+      icon: categoryIcons[category.slug] || "fas fa-tag"
+    }))
+  );
 
   // Fetch real products from API
   const { data: realProducts = [], isLoading: isProductsLoading } = useQuery<Product[]>({
@@ -242,75 +244,7 @@ export default function Catalog() {
     setIsLoading(isProductsLoading || isCategoriesLoading);
   }, [isProductsLoading, isCategoriesLoading]);
 
-  // Auto-scroll ultra suave de categorías
-  useEffect(() => {
-    let animationId: number;
-    let lastTime = 0;
-    const scrollSpeed = 30; // px/s
-
-    const animate = (currentTime: number) => {
-      if (!categoryScrollRef.current || !isAutoScrolling) return;
-
-      const container = categoryScrollRef.current;
-      const deltaTime = currentTime - lastTime;
-      lastTime = currentTime;
-
-      const scrollAmount = (scrollSpeed * deltaTime) / 1000;
-      const originalWidth = container.scrollWidth / 2;
-
-      container.scrollLeft = (container.scrollLeft + scrollAmount) % originalWidth;
-
-      animationId = requestAnimationFrame(animate);
-    };
-
-    if (isAutoScrolling) {
-      lastTime = performance.now();
-      animationId = requestAnimationFrame(animate);
-    }
-
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-      if (wheelResumeTimeoutRef.current) {
-        clearTimeout(wheelResumeTimeoutRef.current);
-        wheelResumeTimeoutRef.current = null;
-      }
-    };
-  }, [isAutoScrolling]);
-
-  const pauseAutoScroll = () => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!prefersReducedMotion) {
-      setIsAutoScrolling(false);
-      if (wheelResumeTimeoutRef.current) {
-        clearTimeout(wheelResumeTimeoutRef.current);
-        wheelResumeTimeoutRef.current = null;
-      }
-    }
-  };
-
-  const resumeAutoScroll = () => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!prefersReducedMotion) {
-      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
-      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 300);
-    }
-  };
-
-  const pauseAutoScrollOnWheel = () => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!prefersReducedMotion) {
-      setIsAutoScrolling(false);
-      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
-      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 600);
-    }
-  };
-
-  useEffect(() => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) setIsAutoScrolling(false);
-  }, []);
-
-  // Tracking de productos vistos
+  // Tracking de productos vistos (lo dejo igual)
   useEffect(() => {
     const handleProductView = () => {
       setProductsViewed(prev => {
@@ -435,52 +369,18 @@ export default function Catalog() {
                 </div>
               )}
 
-              {/* Categorías flotantes - slider horizontal */}
-              <div className="pointer-events-auto z-40 relative mt-3">
-                {/* Gradientes laterales */}
-                <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
-                <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
-                
-                <div 
-                  ref={categoryScrollRef}
-                  className="flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none"
-                  style={{ 
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch'
-                  }}
-                  onMouseEnter={pauseAutoScroll}
-                  onMouseLeave={resumeAutoScroll}
-                  onTouchStart={pauseAutoScroll}
-                  onTouchEnd={resumeAutoScroll}
-                  onWheel={pauseAutoScrollOnWheel}
-                  onPointerEnter={pauseAutoScroll}
-                  onPointerLeave={resumeAutoScroll}
-                >
-                  {/* Duplicamos para loop infinito */}
-                  {[...categories, ...categories].map((category, index) => {
-                    const isDuplicate = index >= categories.length;
-                    return (
-                      <button
-                        key={`${category.id}-${index}`}
-                        onClick={() => setSelectedCategory(category.id)}
-                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex-shrink-0 shadow-md backdrop-blur-md border snap-start ${
-                          selectedCategory === category.id
-                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border-white/20'
-                            : 'bg-white/90 text-gray-700 hover:bg-white hover:shadow-lg border-white/30'
-                        }`}
-                        style={{ minWidth: 'fit-content' }}
-                        data-testid={`filter-${category.id}-${index}`}
-                        tabIndex={isDuplicate ? -1 : 0}
-                        aria-hidden={isDuplicate}
-                        role={isDuplicate ? "presentation" : "button"}
-                      >
-                        <span className="relative z-10">{category.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                
+              {/* ✅ CATEGORÍAS — ahora con CategoryFilters (sin autoscroll custom) */}
+              <div className="pointer-events-auto z-40 relative mt-3 w-full px-2">
+                <Suspense fallback={null}>
+                  <CategoryFilters
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={(id) => setSelectedCategory(id)}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                  />
+                </Suspense>
+
                 {/* Indicador de deslizamiento */}
                 <div className="flex justify-center mt-1">
                   <div className="flex items-center gap-1 text-white/60 text-xs">
