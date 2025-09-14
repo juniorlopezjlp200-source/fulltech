@@ -1,6 +1,9 @@
 // server/router.ts
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
+/* ====== ADICIÓN ====== */
+import express from "express";
+/* ===================== */
 import { storage } from "./storage";
 import {
   insertRaffleParticipantSchema,
@@ -52,9 +55,25 @@ const requireAdmin = async (
   return res.status(401).json({ error: "Admin authentication required" });
 };
 
+/* ====== ADICIÓN: util slugify simple ====== */
+function slugify(input: string): string {
+  return String(input || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "");
+}
+/* ========================================== */
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // ---------- Infra básica ----------
   app.set("trust proxy", 1);
+
+  /* ====== ADICIÓN: body parsers para req.body ====== */
+  app.use(express.json({ limit: "10mb" }));
+  app.use(express.urlencoded({ extended: true }));
+  /* ================================================ */
 
   const PgSession = connectPgSimple(session);
   const pgSessionStore = new PgSession({
@@ -1146,7 +1165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { key } = req.params;
       const config = await storage.updateSiteConfig(key, req.body);
-      if (!config) return res.status(404).json({ error: "Config not found" });
+    if (!config) return res.status(404).json({ error: "Config not found" });
       res.json(config);
     } catch (error) {
       console.error("Error updating site config:", error);
@@ -1383,7 +1402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/categories", async (_req, res) => {
     try {
       const categories = await storage.getAllCategories();
-      res.json(categories);
+      // ✅ Normalizamos a { id, name, slug } (lo que espera el frontend)
+      const normalized = categories.map((c: any) => {
+        const id = c.id ?? c.slug ?? slugify(c.name || "");
+        const name = c.name ?? String(c.slug || id).replace(/-/g, " ");
+        const slug = c.slug ?? slugify(name);
+        return { id, name, slug };
+      });
+      res.json(normalized);
     } catch (error) {
       console.error("Error fetching categories:", error);
       res.status(500).json({ error: "Error al cargar categorías" });
@@ -1396,7 +1422,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.getCategory(id);
       if (!category)
         return res.status(404).json({ error: "Categoría no encontrada" });
-      res.json(category);
+      // también normalizamos aquí por consistencia
+      const normalized = {
+        id: category.id ?? category.slug ?? slugify(category.name || ""),
+        name: category.name ?? String(category.slug || "").replace(/-/g, " "),
+        slug: category.slug ?? slugify(category.name || ""),
+      };
+      res.json(normalized);
     } catch (error) {
       console.error("Error fetching category:", error);
       res.status(500).json({ error: "Error al cargar categoría" });
