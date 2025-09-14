@@ -367,15 +367,13 @@ export default function Catalog() {
             </Suspense>
 
             {/* ===== FT: HERO OVERLAY START (Buscar/All/Ofertas centrado + Categorías abajo) ===== */}
-            <div className="absolute inset-0 z-20">
-  {/* === CONTROLES (ajustados: muy cerca de las categorías) === */}
-  {/* AJUSTE PRINCIPAL: mueve este bloque acercándolo/alejándolo de las categorías
-     - Cambia bottom-[92px] para ajustar el espacio en móvil
-     - Ejemplos: bottom-[80px] (más cerca) | bottom-[110px] (más separado)
+          <div className="absolute inset-0 z-20">
+  {/* === CONTROLES (ligeramente más arriba para que no pegue con categorías) ===
+      AJUSTE CLAVE: cambia bottom-[108px] y sm:bottom-[116px] para subir/bajar el grupo
   */}
   <div
     className="
-      absolute left-1/2 bottom-[92px] sm:bottom-[100px] md:top-1/2 md:bottom-auto
+      absolute left-1/2 bottom-[108px] sm:bottom-[116px] md:top-1/2 md:bottom-auto
       -translate-x-1/2 md:-translate-y-1/2
       pointer-events-none w-full max-w-[640px] px-3
     "
@@ -394,18 +392,11 @@ export default function Catalog() {
           aria-expanded={isSearchOpen}
           data-testid="search-toggle-button"
         >
-          <i
-            className={`fas text-xs transition-transform duration-200 ${
-              isSearchOpen ? "fa-times" : "fa-search"
-            }`}
-          ></i>
+          <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? "fa-times" : "fa-search"}`} />
         </button>
 
         <button
-          onClick={() => {
-            setSelectedCategory("all");
-            setShowOnlyOffers(false);
-          }}
+          onClick={() => { setSelectedCategory("all"); setShowOnlyOffers(false); }}
           className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
             !showOnlyOffers && selectedCategory === "all"
               ? "bg-white text-blue-600 shadow-md scale-105"
@@ -416,7 +407,7 @@ export default function Catalog() {
           aria-pressed={!showOnlyOffers && selectedCategory === "all"}
           aria-label="Mostrar todos los productos"
         >
-          <i className="fas fa-th-large text-xs"></i>
+          <i className="fas fa-th-large text-xs" />
           <span>All</span>
         </button>
 
@@ -432,19 +423,19 @@ export default function Catalog() {
           aria-pressed={showOnlyOffers}
           aria-label="Mostrar solo ofertas"
         >
-          <i className="fas fa-fire text-xs animate-shake"></i>
+          <i className="fas fa-fire text-xs animate-shake" />
           <span>Ofertas</span>
         </button>
       </div>
     </div>
 
-    {/* Barra de búsqueda (debajo del grupo y centrada) */}
+    {/* Barra de búsqueda */}
     {isSearchOpen && (
       <div className="pointer-events-none mt-3 flex justify-center">
         <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto w-full max-w-[520px] shadow">
           <div className="relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2">
-              <i className="fas fa-search text-white/70 text-sm"></i>
+              <i className="fas fa-search text-white/70 text-sm" />
             </div>
             <input
               type="search"
@@ -461,20 +452,15 @@ export default function Catalog() {
     )}
   </div>
 
-  {/* === CATEGORÍAS (bien abajo y edge-to-edge en móvil) === */}
+  {/* === CATEGORÍAS (edge-to-edge móvil) === */}
   <div className="pointer-events-none absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full">
-    {/* Gradientes laterales */}
-    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
-    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
+    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none" />
+    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none" />
 
     <div
       ref={categoryScrollRef}
       className="pointer-events-auto flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none w-screen md:w-[min(100%,1280px)] mx-auto"
-      style={{
-        scrollbarWidth: "none",
-        msOverflowStyle: "none",
-        WebkitOverflowScrolling: "touch",
-      }}
+      style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
       onMouseEnter={pauseAutoScroll}
       onMouseLeave={resumeAutoScroll}
       onTouchStart={pauseAutoScroll}
@@ -506,12 +492,11 @@ export default function Catalog() {
       })}
     </div>
 
-    {/* Indicador de deslizamiento */}
     <div className="flex justify-center mt-1">
       <div className="flex items-center gap-1 text-white/70 text-xs">
-        <i className="fas fa-chevron-left animate-pulse"></i>
+        <i className="fas fa-chevron-left animate-pulse" />
         <span>Desliza para ver más</span>
-        <i className="fas fa-chevron-right animate-pulse"></i>
+        <i className="fas fa-chevron-right animate-pulse" />
       </div>
     </div>
   </div>
