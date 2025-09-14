@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense, useRef } from "react";
 import { TopBar } from "@/components/TopBar";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { useOptimizedProducts } from "@/hooks/useOptimizedProducts";
@@ -13,7 +13,7 @@ const ProductCard = lazy(() => import("@/components/ProductCard").then(m => ({ d
 import type { Product, Category } from "@shared/schema";
 import { useQuery } from "@tanstack/react-query";
 
-// Sample products data with multiple images and videos (no se usan cuando hay API real, pero se dejan como fallback)
+// Sample products data con imágenes/videos (fallback demo)
 const sampleProducts: Product[] = [
   {
     id: "1",
@@ -189,21 +189,26 @@ export default function Catalog() {
   const [isFooterExpanded, setIsFooterExpanded] = useState(false);
   const [isRaffleImageExpanded, setIsRaffleImageExpanded] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
-  const [registrationData, setRegistrationData] = useState({ name: "", phone: "", address: "" });
+  const [registrationData, setRegistrationData] = useState({ name: '', phone: '', address: '' });
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [productsViewed, setProductsViewed] = useState(0);
   const [showStickyBanner, setShowStickyBanner] = useState(true);
+
+  // Referencias y estado para el slider automático de categorías
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+  const wheelResumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch categories from API
   const { data: categoriesData = [], isLoading: isCategoriesLoading } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
 
-  // Solo categorías reales (sin “Todos”)
-  const categories = categoriesData.map((category) => ({
+  // Transform categories to include icons
+  const categories = categoriesData.map(category => ({
     id: category.slug,
     name: category.name,
-    icon: categoryIcons[category.slug] || "fas fa-tag",
+    icon: categoryIcons[category.slug] || "fas fa-tag"
   }));
 
   // Fetch real products from API
@@ -224,7 +229,7 @@ export default function Catalog() {
           (cat) =>
             cat.id === product.category ||
             cat.slug === product.category ||
-            cat.name.toLowerCase() === product.category.toLowerCase(),
+            cat.name.toLowerCase() === product.category.toLowerCase()
         );
         return productCategoryData && productCategoryData.slug === selectedCategory;
       })();
@@ -241,10 +246,78 @@ export default function Catalog() {
     setIsLoading(isProductsLoading || isCategoriesLoading);
   }, [isProductsLoading, isCategoriesLoading]);
 
-  // Tracking de productos vistos
+  // Auto-scroll ultra suave de categorías
+  useEffect(() => {
+    let animationId: number;
+    let lastTime = 0;
+    const scrollSpeed = 30; // px/s
+
+    const animate = (currentTime: number) => {
+      if (!categoryScrollRef.current || !isAutoScrolling) return;
+
+      const container = categoryScrollRef.current;
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
+      const scrollAmount = (scrollSpeed * deltaTime) / 1000;
+      const originalWidth = container.scrollWidth / 2;
+
+      container.scrollLeft = (container.scrollLeft + scrollAmount) % originalWidth;
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    if (isAutoScrolling) {
+      lastTime = performance.now();
+      animationId = requestAnimationFrame(animate);
+    }
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+        wheelResumeTimeoutRef.current = null;
+      }
+    };
+  }, [isAutoScrolling]);
+
+  const pauseAutoScroll = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      setIsAutoScrolling(false);
+      if (wheelResumeTimeoutRef.current) {
+        clearTimeout(wheelResumeTimeoutRef.current);
+        wheelResumeTimeoutRef.current = null;
+      }
+    }
+  };
+
+  const resumeAutoScroll = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
+      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 300);
+    }
+  };
+
+  const pauseAutoScrollOnWheel = () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!prefersReducedMotion) {
+      setIsAutoScrolling(false);
+      if (wheelResumeTimeoutRef.current) clearTimeout(wheelResumeTimeoutRef.current);
+      wheelResumeTimeoutRef.current = setTimeout(() => setIsAutoScrolling(true), 600);
+    }
+  };
+
+  useEffect(() => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) setIsAutoScrolling(false);
+  }, []);
+
+  // Tracking de productos vistos (para modal de registro)
   useEffect(() => {
     const handleProductView = () => {
-      setProductsViewed((prev) => {
+      setProductsViewed(prev => {
         const newCount = prev + 1;
         if (newCount === 4 && !showRegisterModal) {
           setTimeout(() => setShowRegisterModal(true), 2000);
@@ -254,13 +327,13 @@ export default function Catalog() {
     };
 
     const productCards = document.querySelectorAll('[data-testid^="card-product-"]');
-    productCards.forEach((card) => {
-      card.addEventListener("click", handleProductView);
+    productCards.forEach(card => {
+      card.addEventListener('click', handleProductView);
     });
 
     return () => {
-      productCards.forEach((card) => {
-        card.removeEventListener("click", handleProductView);
+      productCards.forEach(card => {
+        card.removeEventListener('click', handleProductView);
       });
     };
   }, [allProducts, showRegisterModal]);
@@ -293,36 +366,44 @@ export default function Catalog() {
               <HeroSlider />
             </Suspense>
 
-            {/* ================= Overlay: Controles centrados + Categorías abajo ================= */}
+            {/* ===== FT: HERO OVERLAY START (Buscar/All/Ofertas centrado + Categorías abajo) ===== */}
             <div className="absolute inset-0 z-20">
 
-              {/* === CONTROLES CENTRADOS (Buscar / All / Ofertas) === */}
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none w-full max-w-[640px] px-3">
+              {/* === CONTROLES (más abajo en móvil) === */}
+              <div
+                className="
+                  absolute left-1/2 top-[62%] sm:top-[60%] md:top-1/2
+                  -translate-x-1/2 md:-translate-y-1/2
+                  pointer-events-none w-full max-w-[640px] px-3
+                "
+              >
                 <div className="flex justify-center">
-                  <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto shadow-lg">
+                  <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto shadow-md">
                     <button
                       onClick={() => setIsSearchOpen(!isSearchOpen)}
                       className={`px-3 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        isSearchOpen ? "bg-primary text-white shadow-md scale-105" : "bg-white/15 text-white/80 hover:bg-white/25 hover:text-white"
+                        isSearchOpen 
+                          ? 'bg-primary text-white shadow-md scale-105' 
+                          : 'bg-white/15 text-white/80 hover:bg-white/25 hover:text-white'
                       }`}
-                      title={isSearchOpen ? "Cerrar búsqueda" : "Buscar productos"}
-                      aria-label={isSearchOpen ? "Cerrar búsqueda" : "Abrir búsqueda"}
+                      title={isSearchOpen ? 'Cerrar búsqueda' : 'Buscar productos'}
+                      aria-label={isSearchOpen ? 'Cerrar búsqueda' : 'Abrir búsqueda'}
                       aria-expanded={isSearchOpen}
                       data-testid="search-toggle-button"
                     >
-                      <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? "fa-times" : "fa-search"}`}></i>
+                      <i className={`fas text-xs transition-transform duration-200 ${isSearchOpen ? 'fa-times' : 'fa-search'}`}></i>
                     </button>
 
                     <button
-                      onClick={() => { setSelectedCategory("all"); setShowOnlyOffers(false); }}
+                      onClick={() => { setSelectedCategory('all'); setShowOnlyOffers(false); }}
                       className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        !showOnlyOffers && selectedCategory === "all"
-                          ? "bg-white text-blue-600 shadow-md scale-105"
-                          : "bg-white/15 text-white/80 hover:bg-white/25 hover:text-white"
+                        !showOnlyOffers && selectedCategory === 'all'
+                          ? 'bg-white text-blue-600 shadow-md scale-105' 
+                          : 'bg-white/15 text-white/80 hover:bg-white/25 hover:text-white'
                       }`}
                       data-testid="button-filter-all"
                       title="Todos los productos"
-                      aria-pressed={!showOnlyOffers && selectedCategory === "all"}
+                      aria-pressed={!showOnlyOffers && selectedCategory === 'all'}
                       aria-label="Mostrar todos los productos"
                     >
                       <i className="fas fa-th-large text-xs"></i>
@@ -332,9 +413,9 @@ export default function Catalog() {
                     <button
                       onClick={() => setShowOnlyOffers(true)}
                       className={`px-4 py-2 rounded-md font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
-                        showOnlyOffers
-                          ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105"
-                          : "bg-white/15 text-red-200 hover:bg-red-500/25 hover:text-red-100"
+                        showOnlyOffers 
+                          ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-md scale-105' 
+                          : 'bg-white/15 text-red-200 hover:bg-red-500/25 hover:text-red-100'
                       }`}
                       data-testid="button-filter-offers"
                       title="Solo ofertas"
@@ -347,7 +428,7 @@ export default function Catalog() {
                   </div>
                 </div>
 
-                {/* Barra de búsqueda centrada (opcional) */}
+                {/* Barra de búsqueda (debajo del grupo y centrada) */}
                 {isSearchOpen && (
                   <div className="pointer-events-none mt-3 flex justify-center">
                     <div className="bg-black/25 backdrop-blur-md rounded-lg px-3 py-3 border border-white/15 pointer-events-auto w-full max-w-[520px] shadow">
@@ -355,9 +436,9 @@ export default function Catalog() {
                         <div className="absolute left-3 top-1/2 -translate-y-1/2">
                           <i className="fas fa-search text-white/70 text-sm"></i>
                         </div>
-                        <input
-                          type="search"
-                          placeholder="Buscar productos..."
+                        <input 
+                          type="search" 
+                          placeholder="Buscar productos..." 
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="w-full h-10 pl-9 pr-3 bg-white/10 border border-white/20 rounded-md text-sm text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-200"
@@ -370,22 +451,45 @@ export default function Catalog() {
                 )}
               </div>
 
-              {/* === CATEGORÍAS ABAJO (edge-to-edge en móvil) === */}
-              <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 w-full md:bottom-4">
+              {/* === CATEGORÍAS (bien abajo y edge-to-edge en móvil) === */}
+              <div className="pointer-events-none absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 w-full">
                 {/* Gradientes laterales */}
                 <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/20 to-transparent z-10 pointer-events-none"></div>
                 <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/20 to-transparent z-10 pointer-events-none"></div>
 
-                <div className="pointer-events-auto w-screen md:w-[min(100%,1280px)] mx-auto px-2">
-                  <Suspense fallback={null}>
-                    <CategoryFilters
-                      categories={categories}
-                      selectedCategory={selectedCategory}
-                      onCategoryChange={(id) => setSelectedCategory(id)}
-                      searchTerm={searchTerm}
-                      onSearchChange={setSearchTerm}
-                    />
-                  </Suspense>
+                <div 
+                  ref={categoryScrollRef}
+                  className="pointer-events-auto flex gap-2 overflow-x-auto pb-2 pt-1 px-3 scrollbar-hide touch-pan-x snap-x md:snap-none w-screen md:w-[min(100%,1280px)] mx-auto"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}
+                  onMouseEnter={pauseAutoScroll}
+                  onMouseLeave={resumeAutoScroll}
+                  onTouchStart={pauseAutoScroll}
+                  onTouchEnd={resumeAutoScroll}
+                  onWheel={pauseAutoScrollOnWheel}
+                  onPointerEnter={pauseAutoScroll}
+                  onPointerLeave={resumeAutoScroll}
+                >
+                  {[...categories, ...categories].map((category, index) => {
+                    const isDuplicate = index >= categories.length;
+                    return (
+                      <button
+                        key={`${category.id}-${index}`}
+                        onClick={() => setSelectedCategory(category.id)}
+                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all duration-300 flex-shrink-0 shadow-md backdrop-blur-md border snap-start ${
+                          selectedCategory === category.id
+                            ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg border-white/20'
+                            : 'bg-white/90 text-gray-800 hover:bg-white hover:shadow-lg border-white/40'
+                        }`}
+                        style={{ minWidth: 'fit-content' }}
+                        data-testid={`filter-${category.id}-${index}`}
+                        tabIndex={isDuplicate ? -1 : 0}
+                        aria-hidden={isDuplicate}
+                        role={isDuplicate ? 'presentation' : 'button'}
+                      >
+                        <span className="relative z-10">{category.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Indicador de deslizamiento */}
@@ -398,7 +502,7 @@ export default function Catalog() {
                 </div>
               </div>
             </div>
-            {/* ================= /Overlay ================= */}
+            {/* ===== FT: HERO OVERLAY END ===== */}
           </div>
 
           <main className="w-full px-4 md:px-8 lg:px-12 xl:px-16 py-6 pb-20 md:pb-6 space-y-6">
@@ -407,9 +511,9 @@ export default function Catalog() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 lg:gap-8">
                   {allProducts.map((product) => (
                     <Suspense key={product.id} fallback={null}>
-                      <ProductCard
-                        key={product.id}
-                        product={product}
+                      <ProductCard 
+                        key={product.id} 
+                        product={product} 
                         layout="grid"
                         isHomePage={true}
                         data-testid={`card-product-${product.id}`}
@@ -428,11 +532,11 @@ export default function Catalog() {
                     <p className="text-gray-600 text-sm leading-relaxed">
                       Estos son todos nuestros productos disponibles. Si no encontraste lo que buscas, contáctanos por WhatsApp.
                     </p>
-                    <button
+                    <button 
                       onClick={() => {
                         const message = `Quiero más información sobre productos específicos.`;
                         const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
-                        window.open(whatsappUrl, "_blank");
+                        window.open(whatsappUrl, '_blank');
                       }}
                       className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto shadow-md"
                     >
@@ -446,11 +550,11 @@ export default function Catalog() {
           </main>
 
           {/* Floating WhatsApp Button */}
-          <button
+          <button 
             onClick={() => {
               const message = `Quiero más información`;
               const whatsappUrl = `https://wa.me/18295344286?text=${encodeURIComponent(message)}`;
-              window.open(whatsappUrl, "_blank");
+              window.open(whatsappUrl, '_blank');
             }}
             className="fixed bottom-16 right-6 z-50 w-14 h-14 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center animate-pulse-ring"
             data-testid="floating-whatsapp-button"
@@ -459,8 +563,8 @@ export default function Catalog() {
             <i className="fab fa-whatsapp text-2xl"></i>
           </button>
 
-          {/* Expandable Footer */}
-          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${isFooterExpanded ? "h-96" : "h-14"}`}>
+          {/* Footer expandible (sin cambios funcionales) */}
+          <footer className={`fixed bottom-0 left-0 w-full bg-card border-t border-border z-40 transition-all duration-500 ${isFooterExpanded ? 'h-96' : 'h-14'}`}>
             {isFooterExpanded && (
               <div className="p-4 h-full overflow-y-auto">
                 {showRegistrationForm && (
@@ -468,7 +572,7 @@ export default function Catalog() {
                     <div className="bg-white rounded-xl p-6 max-w-md w-full">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-800">¡Únete a FULLTECH!</h3>
-                        <button
+                        <button 
                           onClick={() => setShowRegistrationForm(false)}
                           className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
                         >
@@ -482,8 +586,12 @@ export default function Catalog() {
                         </div>
 
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-800 mb-2">Registro Rápido y Seguro</h4>
-                          <p className="text-sm text-gray-600 mb-4">Con tu cuenta de Google obtienes automáticamente:</p>
+                          <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                            Registro Rápido y Seguro
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Con tu cuenta de Google obtienes automáticamente:
+                          </p>
 
                           <div className="text-left space-y-2 mb-6">
                             <div className="flex items-center gap-2">
@@ -506,15 +614,18 @@ export default function Catalog() {
                         </div>
 
                         <div className="space-y-3">
-                          <button
-                            onClick={() => { setShowRegistrationForm(false); window.location.href = "/login"; }}
+                          <button 
+                            onClick={() => {
+                              setShowRegistrationForm(false);
+                              window.location.href = '/login';
+                            }}
                             className="w-full bg-gradient-to-r from-green-500 to-blue-500 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-blue-600 transition-colors flex items-center justify-center gap-2"
                           >
                             <i className="fab fa-google"></i>
                             Continuar con Google
                           </button>
 
-                          <button
+                          <button 
                             onClick={() => setShowRegistrationForm(false)}
                             className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                           >
@@ -522,7 +633,9 @@ export default function Catalog() {
                           </button>
                         </div>
 
-                        <p className="text-xs text-gray-500">Registro 100% seguro • No spam • Política de privacidad respetada</p>
+                        <p className="text-xs text-gray-500">
+                          Registro 100% seguro • No spam • Política de privacidad respetada
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -531,14 +644,19 @@ export default function Catalog() {
                 <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-4 mb-4 border border-yellow-200">
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
-                      <img
+                      <img 
                         src="https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=200"
                         alt="Rifa FULLTECH"
-                        className={`rounded-lg cursor-pointer transition-all duration-300 ${isRaffleImageExpanded ? "fixed inset-4 z-[100] w-auto h-auto object-contain" : "w-20 h-16 object-cover"}`}
+                        className={`rounded-lg cursor-pointer transition-all duration-300 ${isRaffleImageExpanded ? 'fixed inset-4 z-[100] w-auto h-auto object-contain' : 'w-20 h-16 object-cover'}`}
                         onClick={() => setIsRaffleImageExpanded(!isRaffleImageExpanded)}
                         data-testid="raffle-image"
                       />
-                      {isRaffleImageExpanded && <div className="fixed inset-0 bg-black/80 z-[99]" onClick={() => setIsRaffleImageExpanded(false)} />}
+                      {isRaffleImageExpanded && (
+                        <div 
+                          className="fixed inset-0 bg-black/80 z-[99]"
+                          onClick={() => setIsRaffleImageExpanded(false)}
+                        />
+                      )}
                     </div>
 
                     <div className="flex-1">
@@ -550,14 +668,17 @@ export default function Catalog() {
                         Crea tu cuenta, comparte tu enlace de referencia y gana 5% de descuento por cada amigo que compre. Además, participas automáticamente en rifas mensuales.
                       </p>
                       <div className="flex gap-2">
-                        <button
+                        <button 
                           onClick={() => setShowRegistrationForm(true)}
                           className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-green-600 hover:to-blue-600 transition-colors flex items-center gap-2"
                         >
                           <i className="fab fa-google"></i>
                           Registrarme Ahora
                         </button>
-                        <button onClick={() => (window.location.href = "/login")} className="bg-white/50 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/70 transition-colors">
+                        <button 
+                          onClick={() => window.location.href = '/login'}
+                          className="bg-white/50 text-orange-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/70 transition-colors"
+                        >
                           Ya tengo cuenta
                         </button>
                       </div>
@@ -565,7 +686,7 @@ export default function Catalog() {
                   </div>
                 </div>
 
-                {/* Store Location & Social Media Section */}
+                {/* Store Location & Social */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white/50 rounded-lg p-4">
                     <h4 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
@@ -573,7 +694,7 @@ export default function Catalog() {
                       Nuestra Tienda
                     </h4>
                     <p className="text-xs text-gray-600 mb-3">Visítanos en nuestra ubicación física</p>
-                    <a
+                    <a 
                       href="https://maps.app.goo.gl/SN1tkW5RHHJ4ikRw6"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -599,22 +720,22 @@ export default function Catalog() {
                   </div>
                 </div>
 
-                {/* Social Media Section */}
+                {/* Social Media */}
                 <div className="text-center mt-4">
                   <p className="text-xs text-muted-foreground mb-2">Síguenos en redes sociales</p>
                   <div className="flex justify-center gap-4">
-                    <a
-                      href="https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh"
-                      target="_blank"
+                    <a 
+                      href="https://www.instagram.com/fulltech_srl?igsh=Z2V5NWY2MDJzNmdh" 
+                      target="_blank" 
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                       data-testid="footer-instagram-expanded"
                     >
                       <i className="fab fa-instagram text-white"></i>
                     </a>
-                    <a
-                      href="https://web.facebook.com/fulltechs"
-                      target="_blank"
+                    <a 
+                      href="https://web.facebook.com/fulltechs" 
+                      target="_blank" 
                       rel="noopener noreferrer"
                       className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                       data-testid="footer-facebook-expanded"
@@ -627,11 +748,15 @@ export default function Catalog() {
             )}
 
             {!isFooterExpanded && (
-              <div className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setIsFooterExpanded(true)} data-testid="footer-toggle">
+              <div 
+                className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => setIsFooterExpanded(true)}
+                data-testid="footer-toggle"
+              >
                 <div className="flex items-center gap-3">
-                  <a
-                    href="https://instagram.com/fulltech"
-                    target="_blank"
+                  <a 
+                    href="https://instagram.com/fulltech" 
+                    target="_blank" 
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     data-testid="footer-instagram"
@@ -640,9 +765,9 @@ export default function Catalog() {
                   >
                     <i className="fab fa-instagram text-white text-sm"></i>
                   </a>
-                  <a
-                    href="https://facebook.com/fulltech"
-                    target="_blank"
+                  <a 
+                    href="https://facebook.com/fulltech" 
+                    target="_blank" 
                     rel="noopener noreferrer"
                     className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
                     data-testid="footer-facebook"
@@ -658,7 +783,7 @@ export default function Catalog() {
                     <i className="fas fa-gift text-white text-xs"></i>
                   </div>
                   <span className="text-xs font-medium text-foreground">Rifa Participa</span>
-                  <i className={`fas text-xs text-muted-foreground transition-transform ${isFooterExpanded ? "fa-chevron-down" : "fa-chevron-up"}`}></i>
+                  <i className={`fas text-xs text-muted-foreground transition-transform ${isFooterExpanded ? 'fa-chevron-down' : 'fa-chevron-up'}`}></i>
                 </div>
 
                 <div className="text-right">
@@ -670,7 +795,7 @@ export default function Catalog() {
 
             {isFooterExpanded && (
               <div className="absolute top-2 right-2">
-                <button
+                <button 
                   onClick={() => setIsFooterExpanded(false)}
                   className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg"
                   data-testid="footer-collapse"
@@ -707,10 +832,16 @@ export default function Catalog() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <button onClick={() => (window.location.href = "/phone-auth")} className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg">
+                    <button 
+                      onClick={() => window.location.href = '/phone-auth'}
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-bold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+                    >
                       ¡Registrarme Ahora!
                     </button>
-                    <button onClick={() => setShowRegisterModal(false)} className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors">
+                    <button 
+                      onClick={() => setShowRegisterModal(false)}
+                      className="w-full text-gray-500 py-2 text-sm hover:text-gray-700 transition-colors"
+                    >
                       Continuar viendo productos
                     </button>
                   </div>
