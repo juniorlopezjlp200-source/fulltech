@@ -4,6 +4,9 @@ import { createServer, type Server } from "http";
 /* ====== ADICIÓN ====== */
 import express from "express";
 /* ===================== */
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
 import { storage } from "./storage";
 import {
   insertRaffleParticipantSchema,
@@ -1713,6 +1716,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: product.description || "Tecnología y herramientas en FULLTECH",
         url: `${origin}${req.originalUrl}`,
         image: toAbsoluteUrl(img, origin),
+        siteName: "FULLTECH",
+      };
+
+      const projectRoot = getProjectRootForRouter();
+      const indexPath = path.resolve(projectRoot, "dist", "public", "index.html");
+      if (!fs.existsSync(indexPath)) return next();
+
+      const html = fs.readFileSync(indexPath, "utf8");
+      const withOg = injectOgIntoIndex(html, meta);
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.send(withOg);
+    } catch (err) {
+      console.error("[OG share] error:", err);
+      return next();
+    }
+  });
+
+    /* ================ [OG SHARE / LINK PREVIEW PARA PRODUCTOS] ================
+     Este bloque sirve /product/:slugOrId con meta tags OG/Twitter dinámicos
+     para que al compartir el enlace aparezca la imagen principal + título + desc.
+     ------------------------------------------------------------------------- */
+
+  // Helpers locales
+  function getProjectRootForRouter() {
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      return path.resolve(__dirname, "..");
+    } catch {
+      return process.cwd();
+    }
+  }
+
+  // 👉 Preferimos URL pública del bucket (S3/MinIO) porque los bots de OG la
+  // leen mejor que un proxy /uploads. Si no hay config, caemos a origin + /uploads.
+  function toAbsoluteUrl(maybePath: string, origin: string): string {
+    if (!maybePath) return `${origin}/public-images/placeholder.png`;
+    if (/^https?:\/\//i.test(maybePath)) return maybePath;
+
+    const key = String(maybePath).replace(/^\/+/, ""); // limpia leading slash
+    const s3Endpoint = (process.env.S3_ENDPOINT || "").replace(/\/$/, "");
+    const bucket = process.env.S3_BUCKET_NAME || "";
+
+    // ¿Es un key subido al bucket?
+    if (key.startsWith("uploads/") && s3Endpoint && bucket) {
+      // https://<endpoint>/<bucket>/<key>
+      return `${s3Endpoint}/${bucket}/${key}`;
+    }
+
+    // ¿Está en /public?
+    if (key.startsWith("public/")) {
+      return `${origin}/public-images/${key.replace(/^public\//, "")}`;
+    }
+
+    // Fallback: servir desde el propio sitio
+    return `${origin}/${key}`;
+  }
+
+  function injectOgIntoIndex(html: string, meta: {
+    title: string;
+    description: string;
+    url: string;
+    image: string;
+    siteName?: string;
+  }) {
+    // Dimensiones recomendadas para previews grandes
+    const OG_WIDTH = 1200;
+    const OG_HEIGHT = 630;
+
+    const headMeta = `
+    <!-- ==== Dynamic OG/Twitter (server-injected) ==== -->
+    <meta property="og:type" content="product" />
+    <meta property="og:title" content="${meta.title}" />
+    <meta property="og:description" content="${meta.description}" />
+    <meta property="og:url" content="${meta.url}" />
+    <meta property="og:image" content="${meta.image}" />
+    <meta property="og:image:secure_url" content="${meta.image}" />
+    <meta property="og:image:width" content="${OG_WIDTH}" />
+    <meta property="og:image:height" content="${OG_HEIGHT}" />
+    <meta property="og:site_name" content="${meta.siteName || "FULLTECH"}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${meta.title}" />
+    <meta name="twitter:description" content="${meta.description}" />
+    <meta name="twitter:image" content="${meta.image}" />
+  `.trim();
+    return html.replace("</head>", `${headMeta}\n</head>`);
+  }
+
+  async function findProductByIdOrSlug(idOrSlug: string) {
+    try {
+      const byId = await storage.getProduct(idOrSlug);
+      if (byId) return byId;
+    } catch {}
+    try {
+      const all = await storage.getAllProducts();
+      const bySlug = all.find((p: any) => p.slug === idOrSlug);
+      if (bySlug) return bySlug;
+    } catch {}
+    return null;
+  }
+
+  // Ruta HTML con OG/Twitter para detalle de producto
+  app.get("/product/:slugOrId", async (req, res, next) => {
+    try {
+      // Solo inyectamos OG si el bot pide HTML
+      if (!req.headers.accept || !req.headers.accept.includes("text/html")) {
+        return next();
+      }
+
+      const { slugOrId } = req.params;
+      const product = await findProductByIdOrSlug(slugOrId);
+      if (!product) return next();
+
+      const origin = `${req.protocol}://${req.get("host")}`;
+      const firstImg =
+        Array.isArray((product as any).images) && (product as any).images.length
+          ? String((product as any).images[0])
+          : "public/placeholder.png";
+
+      const meta = {
+        title: `${product.name} – FULLTECH`,
+        description: product.description || "Tecnología y herramientas en FULLTECH",
+        url: `${origin}${req.originalUrl}`,
+        image: toAbsoluteUrl(firstImg, origin), // 👈 ahora a bucket público (https)
         siteName: "FULLTECH",
       };
 
