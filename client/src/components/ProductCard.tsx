@@ -12,58 +12,124 @@ interface ProductCardProps {
 export function ProductCard({ product, layout, isHomePage = false }: ProductCardProps) {
   const [, setLocation] = useLocation();
 
+  /* =======================
+     HELPERS: share + URL
+  ========================*/
+  const slugify = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)+/g, "");
+
+  // Construye la URL pública del producto. Ajusta el prefijo si tu ruta es distinta.
+  const buildProductUrl = () => {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "https://fulltechrd.com";
+
+    const maybeSlug = (product as any).slug as string | undefined;
+    const finalSlug =
+      (maybeSlug && maybeSlug.trim()) || `${slugify(product.name)}-${product.id}`;
+
+    // Si tu detalle es /product/:id, cámbialo por `/product/${product.id}`
+    // Aquí intentamos slug y caemos a id si hace falta.
+    const path = maybeSlug ? `/product/${finalSlug}` : `/product/${product.id}`;
+
+    return `${origin}${path}`;
+  };
+
+  const handleShareProduct = async () => {
+    const url = buildProductUrl();
+    const title = `${product.name} - FULLTECH`;
+    const text = `¡Mira este producto! ${product.name} - ${formatPrice(product.price)}`;
+
+    // 1) Web Share API (móvil y navegadores compatibles)
+    try {
+      // @ts-expect-error: canShare no está en lib.dom.d.ts en versiones antiguas
+      if (navigator.share) {
+        // @ts-expect-error
+        const canShare = navigator.canShare ? navigator.canShare({ title, text, url }) : true;
+        if (canShare) {
+          // @ts-expect-error
+          await navigator.share({ title, text, url });
+          return;
+        }
+      }
+    } catch {
+      // Si falla, continuamos a fallback
+    }
+
+    // 2) Copiar al portapapeles (desktop y fallback general)
+    try {
+      await navigator.clipboard.writeText(`${title}\n${url}`);
+      alert("🔗 Enlace copiado. ¡Listo para compartir!");
+      return;
+    } catch {
+      // continuar a 3er fallback
+    }
+
+    // 3) Abrir WhatsApp con mensaje prellenado
+    const wa = `https://wa.me/?text=${encodeURIComponent(`${title}\n${url}`)}`;
+    window.open(wa, "_blank", "noopener,noreferrer");
+  };
+
+  /* ===================================== */
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <i 
-        key={i} 
-        className={`${i < rating ? 'fas' : 'far'} fa-star text-xs text-yellow-400`}
+      <i
+        key={i}
+        className={`${i < rating ? "fas" : "far"} fa-star text-xs text-yellow-400`}
       />
     ));
   };
 
   const getFallbackIcon = () => {
     switch (product.category) {
-      case 'smartphones': return 'fas fa-mobile-alt';
-      case 'laptops': return 'fas fa-laptop';
-      case 'audio': return 'fas fa-headphones';
-      case 'gaming': return 'fas fa-gamepad';
-      case 'tablets': return 'fas fa-tablet-alt';
-      case 'wearables': return 'fas fa-clock';
-      default: return 'fas fa-box';
+      case "smartphones":
+        return "fas fa-mobile-alt";
+      case "laptops":
+        return "fas fa-laptop";
+      case "audio":
+        return "fas fa-headphones";
+      case "gaming":
+        return "fas fa-gamepad";
+      case "tablets":
+        return "fas fa-tablet-alt";
+      case "wearables":
+        return "fas fa-clock";
+      default:
+        return "fas fa-box";
     }
   };
 
   const handleWhatsAppOrder = () => {
-    const message = `Quiero más información sobre el producto: ${product.name} - ${formatPrice(product.price)}`;
+    const message = `Quiero más información sobre el producto: ${product.name} - ${formatPrice(
+      product.price,
+    )}`;
     const whatsappUrl = `https://wa.me/18295319442?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
-  const handleShareProduct = () => {
-    const shareData = {
-      title: `${product.name} - FULLTECH`,
-      text: `¡Mira este producto! ${product.name} - ${formatPrice(product.price)}`,
-      url: window.location.href
-    };
-
-    if (navigator.share) {
-      navigator.share(shareData);
-    } else {
-      // Fallback para navegadores que no soporten Web Share API
-      const message = `¡Mira este producto! ${product.name} - ${formatPrice(product.price)} \n${window.location.href}`;
-      const whatsappUrl = `https://wa.me/18295319442?text=${encodeURIComponent(message)}`;
-      window.open(whatsappUrl, '_blank');
-    }
+    window.open(whatsappUrl, "_blank");
   };
 
   const handleViewProduct = () => {
-    setLocation(`/product/${product.id}`);
+    // Navega al mismo path que compartimos (slug si existe; si no, id)
+    const maybeSlug = (product as any).slug as string | undefined;
+    const path = maybeSlug
+      ? `/product/${(maybeSlug && maybeSlug.trim()) || slugify(product.name)}`
+      : `/product/${product.id}`;
+    setLocation(path);
   };
 
   if (layout === "grid") {
     return (
-      <div className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden" onClick={handleViewProduct} data-product-id={product.id}>
+      <div
+        className="product-card relative bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden"
+        onClick={handleViewProduct}
+        data-product-id={product.id}
+      >
         <ImageCarousel
           images={product.images}
           videos={product.videos || []}
@@ -87,19 +153,19 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
 
         {/* Action buttons */}
         <div className="absolute top-2 right-2 flex gap-1">
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
-              // Funcionalidad de favoritos
-              const heart = e.currentTarget.querySelector('i');
-              if (heart?.classList.contains('far')) {
-                heart.classList.remove('far');
-                heart.classList.add('fas');
-                heart.style.color = '#ef4444'; // red-500
-              } else if (heart?.classList.contains('fas')) {
-                heart.classList.remove('fas');
-                heart.classList.add('far');
-                heart.style.color = '';
+              // toggle favoritos visual
+              const heart = e.currentTarget.querySelector("i");
+              if (heart?.classList.contains("far")) {
+                heart.classList.remove("far");
+                heart.classList.add("fas");
+                heart.style.color = "#ef4444";
+              } else if (heart?.classList.contains("fas")) {
+                heart.classList.remove("fas");
+                heart.classList.add("far");
+                heart.style.color = "";
               }
             }}
             className="w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors"
@@ -111,29 +177,35 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
         </div>
 
         <div className="p-3 sm:p-4 lg:p-5">
-          <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-card-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">{product.name}</h3>
-          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
-          
+          <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-card-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
+            {product.description}
+          </p>
+
           {/* ⭐ Rating y Likes juntos */}
           <div className="flex items-center gap-3 mb-3">
             <div className="flex items-center gap-1">
-              <div className="flex">
-                {renderStars(product.rating || 5)}
-              </div>
+              <div className="flex">{renderStars(product.rating || 5)}</div>
               <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
             </div>
             {/* ❤️ Likes del producto */}
             {product.likes && product.likes > 0 && (
               <div className="flex items-center gap-1">
                 <i className="fas fa-heart text-red-500 text-xs"></i>
-                <span className="text-xs font-medium text-red-600">{product.likes.toLocaleString()}</span>
+                <span className="text-xs font-medium text-red-600">
+                  {product.likes.toLocaleString()}
+                </span>
               </div>
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
+            <span className="text-lg sm:text-xl lg:text-2xl font-bold text-primary">
+              {isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}
+            </span>
             <div className="flex items-center gap-1 sm:gap-2">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleWhatsAppOrder();
@@ -145,7 +217,7 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
                 <i className="fab fa-whatsapp text-xs lg:text-sm"></i>
                 <span className="hidden sm:inline">Pedir</span>
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShareProduct();
@@ -164,7 +236,10 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
   }
 
   return (
-    <div className="product-item bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-pointer group" onClick={handleViewProduct}>
+    <div
+      className="product-item bg-card border border-border rounded-xl shadow-sm hover:shadow-lg hover:scale-[1.01] transition-all duration-300 overflow-hidden cursor-pointer group"
+      onClick={handleViewProduct}
+    >
       <div className="flex gap-4 p-4 sm:p-5">
         <ImageCarousel
           images={product.images}
@@ -179,12 +254,14 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
         />
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-base sm:text-lg lg:text-xl text-card-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">{product.name}</h3>
-          <p className="text-sm lg:text-base text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
+          <h3 className="font-semibold text-base sm:text-lg lg:text-xl text-card-foreground mb-2 line-clamp-1 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-sm lg:text-base text-muted-foreground mb-3 line-clamp-2">
+            {product.description}
+          </p>
           <div className="flex items-center gap-2 mb-2">
-            <div className="flex">
-              {renderStars(product.rating || 5)}
-            </div>
+            <div className="flex">{renderStars(product.rating || 5)}</div>
             <span className="text-xs text-muted-foreground">({product.reviewCount})</span>
             {/* ❤️ Likes del producto */}
             {product.likes && product.likes > 0 && (
@@ -195,9 +272,11 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">{isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}</span>
+            <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">
+              {isHomePage ? formatPriceHome(product.price) : formatPrice(product.price)}
+            </span>
             <div className="flex items-center gap-2 lg:gap-3">
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleShareProduct();
@@ -208,7 +287,7 @@ export function ProductCard({ product, layout, isHomePage = false }: ProductCard
               >
                 <i className="fas fa-share-alt text-sm"></i>
               </button>
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleWhatsAppOrder();
