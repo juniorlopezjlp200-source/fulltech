@@ -27,6 +27,12 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuid } from "uuid";
 /* ================================================== */
 
+/* ====== ADICIÓN: imports para inyectar OG/Twitter ====== */
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+/* ======================================================= */
+
 // ---------------- Session types ----------------
 declare module "express-session" {
   interface SessionData {
@@ -1164,7 +1170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/site-configs/:key", requireAdmin, async (req, res) => {
     try {
       const { key } = req.params;
-      const config = await storage.updateSiteConfig(key, req.body);
+    const config = await storage.updateSiteConfig(key, req.body);
     if (!config) return res.status(404).json({ error: "Config not found" });
       res.json(config);
     } catch (error) {
@@ -1619,6 +1625,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  /* ================ [OG SHARE / LINK PREVIEW PARA PRODUCTOS] ================
+     Este bloque sirve /product/:slugOrId con meta tags OG/Twitter dinámicos
+     para que al compartir el enlace aparezca la imagen principal + título + desc.
+     ------------------------------------------------------------------------- */
+
+  // Helpers locales
+  function getProjectRootForRouter() {
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = path.dirname(__filename);
+      return path.resolve(__dirname, "..");
+    } catch {
+      return process.cwd();
+    }
+  }
+
+  function toAbsoluteUrl(maybePath: string, origin: string): string {
+    if (!maybePath) return `${origin}/public-objects/placeholder.png`;
+    if (/^https?:\/\//i.test(maybePath)) return maybePath;
+    const clean = String(maybePath).replace(/^\/+/, "");
+    if (clean.startsWith("uploads/")) {
+      return `${origin}/uploads/${clean.replace(/^uploads\//, "")}`;
+    }
+    if (clean.startsWith("public/")) {
+      return `${origin}/public-images/${clean.replace(/^public\//, "")}`;
+    }
+    return `${origin}/${clean}`;
+  }
+
+  function injectOgIntoIndex(html: string, meta: {
+    title: string;
+    description: string;
+    url: string;
+    image: string;
+    siteName?: string;
+  }) {
+    const headMeta = `
+    <!-- ==== Dynamic OG/Twitter (server-injected) ==== -->
+    <meta property="og:type" content="product" />
+    <meta property="og:title" content="${meta.title}" />
+    <meta property="og:description" content="${meta.description}" />
+    <meta property="og:url" content="${meta.url}" />
+    <meta property="og:image" content="${meta.image}" />
+    <meta property="og:site_name" content="${meta.siteName || "FULLTECH"}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${meta.title}" />
+    <meta name="twitter:description" content="${meta.description}" />
+    <meta name="twitter:image" content="${meta.image}" />
+  `.trim();
+    return html.replace("</head>", `${headMeta}\n</head>`);
+  }
+
+  async function findProductByIdOrSlug(idOrSlug: string) {
+    try {
+      const byId = await storage.getProduct(idOrSlug);
+      if (byId) return byId;
+    } catch {}
+    try {
+      const all = await storage.getAllProducts();
+      const bySlug = all.find((p: any) => p.slug === idOrSlug);
+      if (bySlug) return bySlug;
+    } catch {}
+    return null;
+  }
+
+  // Ruta HTML con OG/Twitter para detalle de producto
+  app.get("/product/:slugOrId", async (req, res, next) => {
+    try {
+      if (!req.headers.accept || !req.headers.accept.includes("text/html")) {
+        return next();
+      }
+
+      const { slugOrId } = req.params;
+      const product = await findProductByIdOrSlug(slugOrId);
+      if (!product) return next();
+
+      const origin = `${req.protocol}://${req.get("host")}`;
+      const img =
+        Array.isArray((product as any).images) && (product as any).images.length
+          ? String((product as any).images[0])
+          : "public/placeholder.png";
+
+      const meta = {
+        title: `${product.name} – FULLTECH`,
+        description: product.description || "Tecnología y herramientas en FULLTECH",
+        url: `${origin}${req.originalUrl}`,
+        image: toAbsoluteUrl(img, origin),
+        siteName: "FULLTECH",
+      };
+
+      const projectRoot = getProjectRootForRouter();
+      const indexPath = path.resolve(projectRoot, "dist", "public", "index.html");
+      if (!fs.existsSync(indexPath)) return next();
+
+      const html = fs.readFileSync(indexPath, "utf8");
+      const withOg = injectOgIntoIndex(html, meta);
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.send(withOg);
+    } catch (err) {
+      console.error("[OG share] error:", err);
+      return next();
+    }
+  });
+
+  /* ============== [/OG SHARE / LINK PREVIEW PARA PRODUCTOS] =============== */
 
   // ---------- Launch HTTP server ----------
   const httpServer = createServer(app);
