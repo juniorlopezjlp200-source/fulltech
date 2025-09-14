@@ -3,7 +3,7 @@ import express, {
   type Response,
   type NextFunction,
 } from "express";
-import { registerRoutes } from "./router"; // ✅ antes: "./routes"
+import { registerRoutes } from "./routes"; // ✅ corregido: usar "./routes"
 import { setupVite, log } from "./vite";
 import path from "path";
 import { fileURLToPath } from "url";
