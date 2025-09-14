@@ -46,7 +46,6 @@
     <meta property="og:locale" content="es_LA" />
     <meta property="og:title" content="FULLTECH — Tecnología y herramientas | Soluciones profesionales" />
     <meta property="og:description" content="Explora nuestro catálogo de tecnología y servicios de instalación profesional." />
-    <!-- Usa tu logo actual como fallback. Si luego tienes una portada 1200x630, cámbialo por esa URL absoluta -->
     <meta property="og:image" content="https://fulltechcrd.com/icon-512x512.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
@@ -75,6 +74,38 @@
     <!-- DNS Prefetch -->
     <link rel="dns-prefetch" href="//images.unsplash.com" />
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+
+    <!-- ===== Feature Flags (Front-only) ===== -->
+    <script>
+      // Apaga todo lo de referidos en la UI y en scripts del front
+      window.__FLAGS = { REFERRALS_ENABLED: false };
+
+      // Clase en <html> para ocultar bloques por CSS
+      document.documentElement.classList.add('referrals-off');
+
+      // Limpia cookie ?ref previa para no enlazar a nadie mientras está apagado
+      document.cookie = "ref=; Max-Age=0; Path=/; SameSite=Lax";
+    </script>
+
+    <!-- Oculta todos los elementos marcados para referidos -->
+    <style>
+      .referrals-off [data-feature="referrals"] { display: none !important; }
+      .referrals-off .has-referrals-gap { padding-bottom: 0 !important; margin-bottom: 0 !important; }
+    </style>
+
+    <!-- Si algún día reactivas, este script capturará ?ref= solo cuando la bandera esté ON -->
+    <script>
+      (function () {
+        try {
+          if (!window.__FLAGS || !window.__FLAGS.REFERRALS_ENABLED) return; // desactivado
+          var url = new URL(window.location.href);
+          var ref = url.searchParams.get("ref");
+          if (ref) {
+            document.cookie = "ref=" + encodeURIComponent(ref) + "; Max-Age=" + (60*60*24*90) + "; Path=/; SameSite=Lax";
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
