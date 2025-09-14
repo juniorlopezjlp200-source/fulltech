@@ -3,29 +3,29 @@ import React from "react";
 interface Category {
   id: string;
   name: string;
-  icon: string; // opcional: por si luego quieres mostrar iconos
+  icon: string; // opcional
 }
 
 interface CategoryFiltersProps {
   categories: Category[];
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  // se mantienen para compatibilidad con tu código, pero NO se usan aquí
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
 
 /**
- * Barra centrada (Buscar / All / Ofertas) + carrusel horizontal de categorías.
- * - Scroll nativo en móvil y flechas en desktop (md+)
+ * Carrusel horizontal de categorías (SOLO el carrusel).
+ * - Mobile: full-bleed (ocupa TODA la pantalla a lo ancho), scroll con el dedo
+ * - Desktop: flechas laterales (md+)
  * - Degradés laterales para indicar overflow
- * - Ocupa el ancho completo del contenedor
+ * - Mantiene la API de props original
  */
 export function CategoryFilters({
   categories,
   selectedCategory,
   onCategoryChange,
-  searchTerm,
-  onSearchChange,
 }: CategoryFiltersProps) {
   const listRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -33,66 +33,19 @@ export function CategoryFilters({
     listRef.current?.scrollBy({ left: px, behavior: "smooth" });
   };
 
-  const isAll = selectedCategory === "all";
-  const isOffers = selectedCategory === "__offers__";
-
   return (
-    <div className="absolute inset-x-0 bottom-6 z-40 px-4 flex flex-col gap-4 md:relative md:bottom-0 md:mx-6 md:my-4 lg:mx-8 lg:my-6">
-      {/* 🔍 Buscar / All / Ofertas (centrado) */}
-      <div className="flex justify-center">
-        <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-black/45 backdrop-blur-md shadow-lg border border-white/10">
-          {/* Buscar */}
-          <div className="relative">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-white/70 text-xs" />
-            <input
-              type="search"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar…"
-              className="h-9 w-36 sm:w-48 md:w-56 pl-8 pr-3 rounded-full text-sm text-white placeholder-white/70 bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-white/30"
-            />
-          </div>
-
-          {/* All */}
-          <button
-            onClick={() => onCategoryChange("all")}
-            className={[
-              "px-3 py-1.5 text-sm md:text-base font-medium rounded-full shadow transition",
-              isAll
-                ? "bg-white text-blue-600 hover:scale-105"
-                : "bg-white/15 text-white/80 hover:bg-white/25",
-            ].join(" ")}
-            data-testid="filter-all"
-            aria-pressed={isAll}
-            aria-label="Mostrar todos"
-          >
-            All
-          </button>
-
-          {/* Ofertas */}
-          <button
-            onClick={() => onCategoryChange("__offers__")}
-            className={[
-              "px-3 py-1.5 text-sm md:text-base font-medium rounded-full shadow transition",
-              isOffers
-                ? "bg-gradient-to-r from-red-500 to-red-600 text-white hover:scale-105"
-                : "bg-white/15 text-red-200 hover:bg-red-500/20",
-            ].join(" ")}
-            data-testid="filter-offers"
-            aria-pressed={isOffers}
-            aria-label="Solo ofertas"
-          >
-            <span className="inline-flex items-center gap-1">
-              <i className="fas fa-fire text-xs" />
-              Ofertas
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* 📂 Carrusel de categorías ocupando todo el ancho */}
+    <div
+      className={[
+        // full-bleed en móvil, centrado respecto a la ventana
+        "absolute left-1/2 -translate-x-1/2 bottom-4 z-40 w-screen",
+        // en md+ usamos el ancho del contenedor normal
+        "md:relative md:left-0 md:translate-x-0 md:bottom-0 md:w-full",
+        // padding vertical suave
+        "px-0 md:px-6 lg:px-8",
+      ].join(" ")}
+    >
       <div className="relative w-full">
-        {/* Degradés laterales (muestran que hay más contenido) */}
+        {/* Degradés laterales (solo cosmético) */}
         <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/15 to-transparent md:from-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/15 to-transparent md:from-transparent" />
 
@@ -100,7 +53,7 @@ export function CategoryFilters({
         <button
           type="button"
           aria-label="Anterior"
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-background/80 p-1 shadow"
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-background/85 p-1 shadow"
           onClick={() => scrollBy(-320)}
         >
           <i className="fas fa-chevron-left text-gray-700" />
@@ -109,23 +62,23 @@ export function CategoryFilters({
         <button
           type="button"
           aria-label="Siguiente"
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-background/80 p-1 shadow"
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full bg-background/85 p-1 shadow"
           onClick={() => scrollBy(320)}
         >
           <i className="fas fa-chevron-right text-gray-700" />
         </button>
 
-        {/* Lista scrollable */}
+        {/* Lista scrollable de categorías */}
         <div
           ref={listRef}
-          className="w-full overflow-x-auto scrollbar-hide px-8"
+          className="w-screen md:w-full overflow-x-auto scrollbar-hide px-4 md:px-8"
           style={{
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
             msOverflowStyle: "none",
           }}
           onWheel={(e) => {
-            // Rueda vertical -> scroll horizontal en desktop
+            // En desktop: rueda vertical -> scroll horizontal
             if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
               listRef.current!.scrollLeft += e.deltaY;
             }
@@ -133,8 +86,7 @@ export function CategoryFilters({
           role="tablist"
           aria-label="Categorías"
         >
-          {/* w-max asegura que el contenido pueda desbordar;
-              en md+ hacemos wrap para centrar y rellenar */}
+          {/* w-max permite que el contenido se desborde en móvil; en md+ centramos */}
           <div className="flex gap-2 md:gap-3 lg:gap-4 w-max md:w-full md:flex-wrap md:justify-center">
             {categories.map((category) => {
               const active = selectedCategory === category.id;
@@ -155,8 +107,6 @@ export function CategoryFilters({
                   role="tab"
                   aria-selected={active}
                 >
-                  {/* Para iconos, descomenta: */}
-                  {/* <i className={`${category.icon} mr-1.5`} /> */}
                   {category.name}
                 </button>
               );
