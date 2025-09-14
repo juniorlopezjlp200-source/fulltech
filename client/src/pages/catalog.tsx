@@ -297,7 +297,7 @@ export default function Catalog() {
             </Suspense>
 
             {/* Overlay de controles (sin título) */}
-            <div className="absolute inset-0 flex flex-col justify-center items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none">
+           <div className="absolute inset-0 flex flex-col justify-end items-center text-white text-center p-5 z-10 bg-black/10 pointer-events-none pb-16 sm:pb-20 lg:pb-24">
               {/* Botón de búsqueda y filtros All/Ofertas */}
               <div className="flex gap-2 bg-black/25 backdrop-blur-md rounded-lg px-2 py-2 border border-white/15 pointer-events-auto z-30 relative mt-4">
                 <button
