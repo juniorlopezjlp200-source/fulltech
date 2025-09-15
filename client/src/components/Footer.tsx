@@ -6,6 +6,10 @@ export function Footer() {
   const [isExpanded, setIsExpanded] = useState(false);
   useConfigLoader();
 
+  // Tu enlace de ubicación (lo convertimos a embed de Google Maps)
+  const rawShareUrl = 'https://share.google/x9dc1sw5UDFJg41KB';
+  const mapsEmbedSrc = `https://www.google.com/maps?q=${encodeURIComponent(rawShareUrl)}&output=embed`;
+
   return (
     <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4">
@@ -18,16 +22,21 @@ export function Footer() {
                   <i className="fas fa-microchip text-primary text-sm"></i>
                 </Link>
                 <span className="text-muted-foreground">|</span>
+
+                {/* Antes decía “Rifa” -> ahora Ubicación */}
                 <div className="flex items-center gap-1">
-                  <i className="fas fa-gift text-yellow-600 text-sm shadow-sm"></i>
-                  <span className="text-muted-foreground">Rifa</span>
+                  <i className="fas fa-map-marker-alt text-primary text-sm shadow-sm"></i>
+                  <span className="text-muted-foreground">Ubicación</span>
                 </div>
+
                 <span className="text-muted-foreground">|</span>
                 <div className="flex items-center gap-3">
-                  <span className="text-muted-foreground text-xs font-medium animate-pulse">Síguenos</span>
+                  <span className="text-muted-foreground text-xs font-medium animate-pulse">
+                    Síguenos
+                  </span>
                   {getConfigValue('social_facebook') && (
-                    <a 
-                      href={getConfigValue('social_facebook')} 
+                    <a
+                      href={getConfigValue('social_facebook')}
                       className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all shadow-md hover:shadow-lg"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -36,8 +45,8 @@ export function Footer() {
                     </a>
                   )}
                   {getConfigValue('social_instagram') && (
-                    <a 
-                      href={getConfigValue('social_instagram')} 
+                    <a
+                      href={getConfigValue('social_instagram')}
                       className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-md hover:shadow-lg"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -46,8 +55,8 @@ export function Footer() {
                     </a>
                   )}
                   {getConfigValue('social_tiktok') && (
-                    <a 
-                      href={getConfigValue('social_tiktok')} 
+                    <a
+                      href={getConfigValue('social_tiktok')}
                       className="w-5 h-5 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-all shadow-md hover:shadow-lg"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -57,13 +66,16 @@ export function Footer() {
                   )}
                 </div>
               </div>
+
               <div className="flex items-center gap-1">
                 <span className="flex items-center gap-1">
                   <i className="fas fa-shield-alt text-green-600 text-sm shadow-sm"></i>
                   <i className="fas fa-truck text-blue-600 text-sm shadow-sm"></i>
                 </span>
                 <button onClick={() => setIsExpanded(!isExpanded)} className="ml-1">
-                  <i className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground`}></i>
+                  <i
+                    className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground`}
+                  ></i>
                 </button>
               </div>
             </div>
@@ -80,6 +92,7 @@ export function Footer() {
                   </span>
                 </Link>
               </div>
+
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -96,27 +109,37 @@ export function Footer() {
                   </span>
                 </div>
                 <button onClick={() => setIsExpanded(!isExpanded)}>
-                  <i className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground transition-transform`}></i>
+                  <i
+                    className={`fas fa-chevron-${isExpanded ? 'down' : 'up'} text-muted-foreground transition-transform`}
+                  ></i>
                 </button>
               </div>
             </div>
 
+            {/* Segunda línea: reemplazo de “Rifa” por “Ubicación” */}
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-4">
-                {/* Rifas */}
                 <div className="flex items-center gap-2">
-                  <i className="fas fa-gift text-yellow-600"></i>
-                  <span className="text-muted-foreground">Rifa Mensual</span>
-                  <span className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-0.5 rounded text-xs font-medium">
-                    iPhone 15 Pro
-                  </span>
+                  <i className="fas fa-map-marker-alt text-primary"></i>
+                  <span className="text-muted-foreground">Nuestra Ubicación</span>
+                  <a
+                    href={rawShareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15"
+                  >
+                    Ver en Google Maps
+                  </a>
                 </div>
+
                 {/* Redes sociales */}
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground text-xs font-medium animate-pulse">Síguenos</span>
+                  <span className="text-muted-foreground text-xs font-medium animate-pulse">
+                    Síguenos
+                  </span>
                   {getConfigValue('social_facebook') && (
-                    <a 
-                      href={getConfigValue('social_facebook')} 
+                    <a
+                      href={getConfigValue('social_facebook')}
                       className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-110"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -125,8 +148,8 @@ export function Footer() {
                     </a>
                   )}
                   {getConfigValue('social_instagram') && (
-                    <a 
-                      href={getConfigValue('social_instagram')} 
+                    <a
+                      href={getConfigValue('social_instagram')}
                       className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg hover:shadow-xl"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -135,8 +158,8 @@ export function Footer() {
                     </a>
                   )}
                   {getConfigValue('social_tiktok') && (
-                    <a 
-                      href={getConfigValue('social_tiktok')} 
+                    <a
+                      href={getConfigValue('social_tiktok')}
                       className="w-6 h-6 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl hover:scale-110"
                       target="_blank"
                       rel="noopener noreferrer"
@@ -146,6 +169,7 @@ export function Footer() {
                   )}
                 </div>
               </div>
+
               <div className="text-muted-foreground">
                 © {new Date().getFullYear()} {getConfigValue('site_name', 'FULLTECH')}. Todos los derechos reservados.
               </div>
@@ -158,20 +182,36 @@ export function Footer() {
       {isExpanded && (
         <div className="border-t border-border bg-card max-h-96 overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-8">
+            {/* 🔁 ANTES: “Programa de Referidos” -> AHORA: Tarjeta de Ubicación */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all mb-8">
+              <h3 className="text-xl font-bold text-center text-foreground mb-6 flex items-center justify-center gap-2">
+                <i className="fas fa-map-marker-alt text-primary text-xl"></i>
+                Nuestra Ubicación
+              </h3>
 
-            {/* 1) PROGRAMA DE REFERIDOS — envuelto para poder ocultarlo */}
-            <div
-              data-feature="referrals"
-              className="has-referrals-gap bg-gradient-to-br from-yellow-50 to-orange-100 dark:from-yellow-950 dark:to-orange-900 rounded-xl p-6 border border-yellow-200 dark:border-yellow-800 shadow-lg hover:shadow-xl transition-all mb-8"
-            >
+              <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
+                <iframe
+                  src={mapsEmbedSrc}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg"
+                ></iframe>
+              </div>
+
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-4 flex items-center justify-center gap-2">
-                  <i className="fas fa-gift text-3xl animate-bounce"></i>
-                  Programa de Referidos FULLTECH
-                </h3>
-                <p className="text-yellow-700 dark:text-yellow-300 text-lg mb-6">
-                  ¡Gana 5% de descuento por cada amigo que refiere + participa en rifas mensuales!
-                </p>
+                <a
+                  href={rawShareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/20 text-primary hover:bg-primary/10"
+                >
+                  <i className="fas fa-external-link-alt"></i>
+                  Abrir en Google Maps
+                </a>
               </div>
             </div>
 
@@ -180,8 +220,8 @@ export function Footer() {
               <h3 className="text-xl font-bold text-center text-foreground mb-6">Síguenos en Redes Sociales</h3>
               <div className="flex justify-center items-center gap-6">
                 {getConfigValue('social_facebook') && (
-                  <a 
-                    href={getConfigValue('social_facebook')} 
+                  <a
+                    href={getConfigValue('social_facebook')}
                     className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 hover:scale-110 transition-all shadow-lg"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -190,8 +230,8 @@ export function Footer() {
                   </a>
                 )}
                 {getConfigValue('social_instagram') && (
-                  <a 
-                    href={getConfigValue('social_instagram')} 
+                  <a
+                    href={getConfigValue('social_instagram')}
                     className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -200,8 +240,8 @@ export function Footer() {
                   </a>
                 )}
                 {getConfigValue('social_tiktok') && (
-                  <a 
-                    href={getConfigValue('social_tiktok')} 
+                  <a
+                    href={getConfigValue('social_tiktok')}
                     className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center hover:bg-gray-800 hover:scale-110 transition-all shadow-lg"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -231,7 +271,7 @@ export function Footer() {
                   <li><Link href="/reembolsos" className="text-muted-foreground hover:text-primary transition-colors block text-center">Reembolsos</Link></li>
                   <li><Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors block text-center">Soporte Técnico</Link></li>
                   <li>
-                    <a 
+                    <a
                       href={`https://wa.me/${getConfigValue('contact_whatsapp', '15551234567')}?text=Hola%20${getConfigValue('site_name', 'FULLTECH')},%20necesito%20ayuda`}
                       className="text-muted-foreground hover:text-primary transition-colors block text-center"
                       target="_blank"
@@ -268,7 +308,10 @@ export function Footer() {
                   {getConfigValue('contact_email') && (
                     <div className="flex items-center justify-center gap-2">
                       <i className="fas fa-envelope text-primary"></i>
-                      <a href={`mailto:${getConfigValue('contact_email')}`} className="hover:text-primary transition-colors">
+                      <a
+                        href={`mailto:${getConfigValue('contact_email')}`}
+                        className="hover:text-primary transition-colors"
+                      >
                         {getConfigValue('contact_email')}
                       </a>
                     </div>
@@ -289,117 +332,14 @@ export function Footer() {
               </div>
             </div>
 
-            {/* 5) Mapa */}
-            <div className="border-t border-border mt-8 pt-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-border shadow-lg hover:shadow-xl transition-all mb-8">
-                <h3 className="text-xl font-bold text-center text-foreground mb-6 flex items-center justify-center gap-2">
-                  <i className="fas fa-map-marker-alt text-primary text-xl"></i>
-                  Nuestra Ubicación
-                </h3>
-                <div className="aspect-video w-full rounded-lg overflow-hidden mb-4">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3987.525!2d-74.075!3d4.609!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMzYnMzIuNCJOIDc0wrAwNCczMC4wIlc!5e0!3m2!1ses!2sco!4v1640000000000!5m2!1ses!2sco"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={true}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="rounded-lg"
-                  ></iframe>
-                </div>
-                <div className="text-center">
-                  <p className="text-muted-foreground mb-2">
-                    {getConfigValue('footer_address', 'Bogotá, Colombia')}
-                  </p>
-                  <div className="flex justify-center items-center gap-4">
-                    <span className="text-muted-foreground text-sm">Síguenos en redes sociales:</span>
-                    {getConfigValue('social_instagram') && (
-                      <a href={getConfigValue('social_instagram')} className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg" target="_blank" rel="noopener noreferrer">
-                        <i className="fab fa-instagram text-sm"></i>
-                      </a>
-                    )}
-                    {getConfigValue('social_facebook') && (
-                      <a href={getConfigValue('social_facebook')} className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:scale-110 transition-all shadow-lg" target="_blank" rel="noopener noreferrer">
-                        <i className="fab fa-facebook-f text-sm"></i>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 6) Directorio */}
-            <div className="border-t border-border pt-8">
-              <h3 className="text-xl font-bold text-center text-foreground mb-8">Directorio Completo</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                {/* Catálogo */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <i className="fas fa-mobile-alt text-primary"></i>
-                    Catálogo
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li><Link href="/" className="text-muted-foreground hover:text-primary transition-colors">Inicio</Link></li>
-                    <li><Link href="/productos" className="text-muted-foreground hover:text-primary transition-colors">Todos los Productos</Link></li>
-                    <li><Link href="/ofertas" className="text-muted-foreground hover:text-primary transition-colors">Ofertas Especiales</Link></li>
-                    <li><Link href="/nuevos" className="text-muted-foreground hover:text-primary transition-colors">Nuevos Productos</Link></li>
-                    <li><Link href="/marcas" className="text-muted-foreground hover:text-primary transition-colors">Marcas</Link></li>
-                  </ul>
-                </div>
-
-                {/* Servicios */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <i className="fas fa-headset text-primary"></i>
-                    Servicios
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li><Link href="/garantia" className="text-muted-foreground hover:text-primary transition-colors">Garantía</Link></li>
-                    <li><Link href="/reembolsos" className="text-muted-foreground hover:text-primary transition-colors">Reembolsos</Link></li>
-                    <li><Link href="/envios" className="text-muted-foreground hover:text-primary transition-colors">Envíos</Link></li>
-                    <li><Link href="/soporte" className="text-muted-foreground hover:text-primary transition-colors">Soporte Técnico</Link></li>
-                    <li><Link href="/instalacion" className="text-muted-foreground hover:text-primary transition-colors">Instalación</Link></li>
-                  </ul>
-                </div>
-
-                {/* Empresa */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <i className="fas fa-building text-primary"></i>
-                    Empresa
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li><Link href="/sobre-nosotros" className="text-muted-foreground hover:text-primary transition-colors">Sobre Nosotros</Link></li>
-                    <li><Link href="/historia" className="text-muted-foreground hover:text-primary transition-colors">Nuestra Historia</Link></li>
-                    <li><Link href="/equipo" className="text-muted-foreground hover:text-primary transition-colors">Nuestro Equipo</Link></li>
-                    <li><Link href="/carreras" className="text-muted-foreground hover:text-primary transition-colors">Trabaja con Nosotros</Link></li>
-                    <li><Link href="/noticias" className="text-muted-foreground hover:text-primary transition-colors">Noticias</Link></li>
-                  </ul>
-                </div>
-
-                {/* Legal */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-border">
-                  <h4 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <i className="fas fa-gavel text-primary"></i>
-                    Legal
-                  </h4>
-                  <ul className="space-y-1 text-sm">
-                    <li><Link href="/privacidad" className="text-muted-foreground hover:text-primary transition-colors">Privacidad</Link></li>
-                    <li><Link href="/terminos" className="text-muted-foreground hover:text-primary transition-colors">Términos</Link></li>
-                    <li><Link href="/cookies" className="text-muted-foreground hover:text-primary transition-colors">Cookies</Link></li>
-                    <li><Link href="/contacto" className="text-muted-foreground hover:text-primary transition-colors">Contacto</Link></li>
-                    <li><Link href="/ayuda" className="text-muted-foreground hover:text-primary transition-colors">Ayuda</Link></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             {/* Bottom */}
             <div className="border-t border-border mt-8 pt-6">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="text-sm text-muted-foreground">
-                  {getConfigValue('footer_copyright', `© ${new Date().getFullYear()} FULLTECH. Todos los derechos reservados.`)}
+                  {getConfigValue(
+                    'footer_copyright',
+                    `© ${new Date().getFullYear()} FULLTECH. Todos los derechos reservados.`
+                  )}
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -417,7 +357,6 @@ export function Footer() {
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       )}
