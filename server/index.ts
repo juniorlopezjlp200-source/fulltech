@@ -9,7 +9,6 @@ import { setupVite, log } from "./vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import cors from "cors"; // ✅ (NUEVO) CORS para front y OAuth
 
 /* ----------------------- Paths robustos para contenedores ----------------------- */
 function getProjectRoot(): string {
@@ -59,20 +58,6 @@ app.set("trust proxy", 1);
 // ✅ Parsers consistentes con router.ts
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-// ✅ (NUEVO) CORS a partir de ALLOWED_ORIGINS (necesario para cookies de OAuth)
-const ORIGINS = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
-if (ORIGINS.length > 0) {
-  app.use(
-    cors({
-      origin: ORIGINS,
-      credentials: true, // <-- permite cookies/sesiones entre front y API
-    }),
-  );
-}
 
 /* --------------------------- Logger simple de API --------------------------- */
 const isProductionEnv = process.env.NODE_ENV === "production";
