@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { TopBar } from "@/components/TopBar";
+import { Redirect } from "wouter";
 
 interface Referral {
   id: string;
@@ -24,6 +25,15 @@ interface Referral {
 }
 
 export function MiReferir() {
+  // 🚫 bandera global: viene de index.html
+  const enabled =
+    typeof window !== "undefined" &&
+    (window as any).__FLAGS &&
+    (window as any).__FLAGS.REFERRALS_ENABLED === true;
+
+  // si los referidos están apagados, no mostramos nada
+  if (!enabled) return <Redirect to="/mi/tablero" />;
+
   const { customer, isLoading: customerLoading } = useCustomer();
   const { navigateInstantly } = useInstantNavigation();
   const { toast } = useToast();
@@ -31,10 +41,10 @@ export function MiReferir() {
   const [copied, setCopied] = useState(false);
   const [shareText, setShareText] = useState("");
 
-  // 📊 Obtener referidos del usuario
+  // 📊 Obtener referidos del usuario (solo si enabled y hay customer)
   const { data: referrals = [] } = useQuery<Referral[]>({
     queryKey: ["/api/customer/referrals"],
-    enabled: !!customer,
+    enabled: !!customer && enabled,
   });
 
   // 📈 Calcular estadísticas de referidos
@@ -42,11 +52,10 @@ export function MiReferir() {
     total: referrals.length,
     qualified: referrals.filter(r => r.status === 'qualified').length,
     pending: referrals.filter(r => r.status === 'pending').length,
-    earnings: customer?.discountEarned || 0, // 5% real del valor de las compras
+    earnings: customer?.discountEarned || 0,
   };
 
   const referralUrl = customer ? `${window.location.origin}/?ref=${customer.referralCode}` : '';
-  
   const defaultShareText = customer ? `¡Descubre los mejores productos tech en FULLTECH! 🚀\n\nUsa mi código ${customer.referralCode} y obtén descuentos especiales.\n\n${referralUrl}` : '';
 
   const copyToClipboard = async (text: string) => {
@@ -55,8 +64,7 @@ export function MiReferir() {
       setCopied(true);
       toast({ title: "¡Copiado!", description: "El enlace ha sido copiado al portapapeles." });
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback para navegadores que no soportan clipboard API
+    } catch {
       const textArea = document.createElement('textarea');
       textArea.value = text;
       document.body.appendChild(textArea);
@@ -81,7 +89,6 @@ export function MiReferir() {
   };
 
   const shareViaInstagram = () => {
-    // Instagram no permite compartir enlaces directamente, copiamos el texto
     copyToClipboard(shareText || defaultShareText);
     toast({ 
       title: "Texto copiado", 
@@ -259,17 +266,14 @@ export function MiReferir() {
                     <i className="fab fa-whatsapp mr-2"></i>
                     WhatsApp
                   </Button>
-                  
                   <Button onClick={shareViaFacebook} className="bg-blue-600 hover:bg-blue-700">
                     <i className="fab fa-facebook mr-2"></i>
                     Facebook
                   </Button>
-                  
                   <Button onClick={shareViaInstagram} className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
                     <i className="fab fa-instagram mr-2"></i>
                     Instagram
                   </Button>
-                  
                   <Button onClick={shareViaEmail} variant="outline">
                     <i className="fas fa-envelope mr-2"></i>
                     Email
@@ -295,7 +299,6 @@ export function MiReferir() {
                       <p className="text-sm text-slate-600">Envía tu código o enlace a tus amigos</p>
                     </div>
                   </div>
-                  
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
                     <div>
@@ -303,7 +306,6 @@ export function MiReferir() {
                       <p className="text-sm text-slate-600">Usando tu código de referencia</p>
                     </div>
                   </div>
-                  
                   <div className="flex items-start gap-3">
                     <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
                     <div>
