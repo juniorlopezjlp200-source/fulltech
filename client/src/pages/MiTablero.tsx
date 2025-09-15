@@ -6,20 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TopBar } from "@/components/TopBar";
 
-interface Referral {
-  id: string;
-  referrerCode: string;
-  referredId: string;
-  status: 'pending' | 'qualified' | 'expired';
-  qualifiedAt?: string;
-  rewardGiven: boolean;
-  createdAt: string;
-  referredCustomer?: {
-    name: string;
-    createdAt: string;
-  };
-}
-
 interface Purchase {
   id: string;
   customerId: string;
@@ -28,7 +14,7 @@ interface Purchase {
   unitPrice: number;
   totalPrice: number;
   discountApplied: number;
-  status: 'completed' | 'pending' | 'cancelled';
+  status: "completed" | "pending" | "cancelled";
   createdAt: string;
   product?: {
     name: string;
@@ -39,27 +25,22 @@ interface Purchase {
 export function MiTablero() {
   const { customer, isLoading: customerLoading } = useCustomer();
   const { navigateInstantly } = useInstantNavigation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("overview"); // (reservado por si luego agregas tabs)
 
-  // 📊 Obtener datos del cliente
-  const { data: referrals = [] } = useQuery<Referral[]>({
-    queryKey: ["/api/customer/referrals"],
-    enabled: !!customer,
-  });
-
-  const { data: purchases = [] } = useQuery<Purchase[]>({
+  // 📊 Obtener compras del cliente
+  const { data: purchases = [], isLoading: purchasesLoading } = useQuery<Purchase[]>({
     queryKey: ["/api/customer/purchases"],
     enabled: !!customer,
   });
 
-  // 📈 Calcular estadísticas
-  const earningsStats = {
-    totalEarnings: customer?.discountEarned || 0, // 5% real del valor de las compras
-    qualifiedReferrals: referrals.filter(r => r.status === 'qualified').length,
-    pendingReferrals: referrals.filter(r => r.status === 'pending').length,
-    totalReferrals: referrals.length,
+  // 📈 Estadísticas SOLO de compras (sin referidos)
+  const purchaseStats = {
     totalPurchases: purchases.length,
-    completedPurchases: purchases.filter(p => p.status === 'completed').length,
+    completedPurchases: purchases.filter((p) => p.status === "completed").length,
+    pendingPurchases: purchases.filter((p) => p.status === "pending").length,
+    totalSpent: purchases
+      .filter((p) => p.status === "completed")
+      .reduce((acc, p) => acc + (p.totalPrice - (p.discountApplied || 0)), 0),
   };
 
   if (customerLoading) {
@@ -84,7 +65,7 @@ export function MiTablero() {
           <div className="max-w-md mx-auto text-center">
             <h1 className="text-2xl font-bold text-slate-900 mb-4">Acceso Requerido</h1>
             <p className="text-slate-600 mb-6">Necesitas iniciar sesión para ver tu tablero.</p>
-            <Button onClick={() => navigateInstantly('/login')} className="w-full">
+            <Button onClick={() => navigateInstantly("/login")} className="w-full">
               Iniciar Sesión
             </Button>
           </div>
@@ -96,7 +77,7 @@ export function MiTablero() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <TopBar />
-      
+
       <div className="pt-20 p-4 space-y-6">
         {/* Header con Saludo */}
         <div className="max-w-6xl mx-auto">
@@ -104,93 +85,77 @@ export function MiTablero() {
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
               ¡Hola, {customer.name.split(" ")[0]}! 👋
             </h1>
-            <p className="text-blue-100">
-              Bienvenido a tu tablero personal de FULLTECH
-            </p>
+            <p className="text-blue-100">Bienvenido a tu tablero personal de FULLTECH</p>
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards (solo compras y cuenta) */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">Ganancias Totales</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                RD${earningsStats.totalEarnings.toLocaleString()}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {earningsStats.qualifiedReferrals} referidos calificados
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">Referidos Activos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {earningsStats.totalReferrals}
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                {earningsStats.pendingReferrals} pendientes
-              </p>
-            </CardContent>
-          </Card>
-
           <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-slate-600">Compras Realizadas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">
-                {earningsStats.totalPurchases}
+                {purchaseStats.totalPurchases}
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                {earningsStats.completedPurchases} completadas
+                {purchaseStats.completedPurchases} completadas
               </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-slate-600">Código de Referencia</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-600">Pendientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold text-orange-600 bg-orange-50 px-3 py-2 rounded-lg border border-orange-200">
-                {customer.referralCode}
+              <div className="text-2xl font-bold text-blue-600">
+                {purchaseStats.pendingPurchases}
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Compártelo y gana
+              <p className="text-xs text-slate-500 mt-1">En proceso</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600">Gasto Total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                RD${purchaseStats.totalSpent.toLocaleString()}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Compras completadas</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-slate-600">Miembro desde</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-lg font-semibold text-slate-700">
+                {new Date(customer.createdAt).toLocaleDateString("es-DO", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </div>
+              <p className="text-xs text-slate-500 mt-1">Última visita:{" "}
+                {customer.lastVisit
+                  ? new Date(customer.lastVisit).toLocaleDateString("es-DO")
+                  : "Hoy"}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Action Cards */}
+        {/* Action Cards (sin “referir amigos”) */}
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigateInstantly('/mi/referir')}>
-            <CardHeader>
-              <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center mb-3">
-                <i className="fas fa-share-alt text-white text-xl"></i>
-              </div>
-              <CardTitle className="text-lg">Referir Amigos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-600 text-sm">
-                Comparte tu código y gana el 5% del valor de cada compra de tus referidos.
-              </p>
-              <Button variant="outline" className="w-full mt-4">
-                Empezar a Referir
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigateInstantly('/mi/perfil')}>
+          <Card
+            className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigateInstantly("/mi/perfil")}
+          >
             <CardHeader>
               <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-xl flex items-center justify-center mb-3">
                 <i className="fas fa-user-edit text-white text-xl"></i>
@@ -198,17 +163,15 @@ export function MiTablero() {
               <CardTitle className="text-lg">Mi Perfil</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-600 text-sm">
-                Actualiza tu información personal y foto de perfil.
-              </p>
-              <Button variant="outline" className="w-full mt-4">
-                Editar Perfil
-              </Button>
+              <p className="text-slate-600 text-sm">Actualiza tu información personal y foto de perfil.</p>
+              <Button variant="outline" className="w-full mt-4">Editar Perfil</Button>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigateInstantly('/mi/soporte')}>
+          <Card
+            className="bg-white/80 backdrop-blur-sm border-blue-200 hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => navigateInstantly("/mi/soporte")}
+          >
             <CardHeader>
               <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mb-3">
                 <i className="fas fa-headset text-white text-xl"></i>
@@ -216,17 +179,15 @@ export function MiTablero() {
               <CardTitle className="text-lg">Soporte</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-600 text-sm">
-                ¿Necesitas ayuda? Nuestro equipo está aquí para ti.
-              </p>
-              <Button variant="outline" className="w-full mt-4">
-                Contactar Soporte
-              </Button>
+              <p className="text-slate-600 text-sm">¿Necesitas ayuda? Nuestro equipo está aquí para ti.</p>
+              <Button variant="outline" className="w-full mt-4">Contactar Soporte</Button>
             </CardContent>
           </Card>
+
+          {/* Puedes añadir otra acción útil aquí (historial, direcciones, etc.) */}
         </div>
 
-        {/* Recent Activity */}
+        {/* Actividad Reciente: basada en compras */}
         <div className="max-w-6xl mx-auto">
           <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
             <CardHeader>
@@ -236,36 +197,62 @@ export function MiTablero() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {referrals.length > 0 ? (
+              {purchasesLoading ? (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                  <p className="text-slate-500">Cargando actividad…</p>
+                </div>
+              ) : purchases.length > 0 ? (
                 <div className="space-y-3">
-                  {referrals.slice(0, 5).map((referral) => (
-                    <div key={referral.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${
-                          referral.status === 'qualified' ? 'bg-green-500' :
-                          referral.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
-                        }`}></div>
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {referral.referredCustomer?.name || 'Usuario referido'}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {referral.status === 'qualified' ? 'Referido calificado - Ganaste 5% de su compra' :
-                             referral.status === 'pending' ? 'Referido pendiente' : 'Referido expirado'}
-                          </p>
+                  {purchases
+                    .slice(0, 5)
+                    .sort(
+                      (a, b) =>
+                        new Date(b.createdAt).getTime() -
+                        new Date(a.createdAt).getTime()
+                    )
+                    .map((purchase) => (
+                      <div
+                        key={purchase.id}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-3 h-3 rounded-full ${
+                              purchase.status === "completed"
+                                ? "bg-green-500"
+                                : purchase.status === "pending"
+                                ? "bg-yellow-500"
+                                : "bg-gray-400"
+                            }`}
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">
+                              {purchase.product?.name || "Compra realizada"}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {purchase.status === "completed"
+                                ? "Compra completada"
+                                : purchase.status === "pending"
+                                ? "Compra pendiente"
+                                : "Compra cancelada"}{" "}
+                              — RD${purchase.totalPrice.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {new Date(purchase.createdAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <div className="text-xs text-slate-400">
-                        {new Date(referral.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <i className="fas fa-inbox text-4xl text-slate-300 mb-4"></i>
                   <p className="text-slate-500">No hay actividad reciente</p>
-                  <p className="text-sm text-slate-400">¡Empieza a referir amigos para ver tu actividad aquí!</p>
+                  <p className="text-sm text-slate-400">
+                    Aún no registras compras.
+                  </p>
                 </div>
               )}
             </CardContent>
