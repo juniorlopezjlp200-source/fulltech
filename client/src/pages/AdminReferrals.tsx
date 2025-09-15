@@ -3,43 +3,57 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { Redirect } from "wouter";
 
 export default function AdminReferrals() {
+  // 🔒 flag global (definido en index.html)
+  const enabled =
+    typeof window !== "undefined" &&
+    (window as any).__FLAGS &&
+    (window as any).__FLAGS.REFERRALS_ENABLED === true;
+
+  // si está apagado: no renderizamos nada de esta página
+  if (!enabled) return <Redirect to="/" />;
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: referrals = [], isLoading } = useQuery({
     queryKey: ["/api/admin/referrals"],
     retry: false,
+    enabled, // ⛔ no hace fetch si la bandera está off
   });
 
   const filteredReferrals = referrals.filter((referral: any) => {
     const searchLower = searchTerm.toLowerCase();
-    return referral.referrerName?.toLowerCase().includes(searchLower) ||
-           referral.referredName?.toLowerCase().includes(searchLower) ||
-           referral.referrerCode?.toLowerCase().includes(searchLower);
+    return (
+      referral.referrerName?.toLowerCase().includes(searchLower) ||
+      referral.referredName?.toLowerCase().includes(searchLower) ||
+      referral.referrerCode?.toLowerCase().includes(searchLower)
+    );
   });
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return "N/A";
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleDateString("es-ES", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const formatMoney = (amount: number) => {
-    return `RD$${amount.toLocaleString('es-DO')}`;
-  };
+  const formatMoney = (amount: number) => `RD$${amount.toLocaleString("es-DO")}`;
 
-  const totalCommissions = referrals.reduce((sum: number, ref: any) => sum + (ref.commissionAmount || 0), 0);
-  const activeReferrals = referrals.filter((ref: any) => ref.status === 'active').length;
+  const totalCommissions = referrals.reduce(
+    (sum: number, ref: any) => sum + (ref.commissionAmount || 0),
+    0
+  );
+  const activeReferrals = referrals.filter((ref: any) => ref.status === "active").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-feature="referrals">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl lg:text-2xl font-bold text-gray-900">Sistema de Referidos</h2>
@@ -90,7 +104,9 @@ export default function AdminReferrals() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Comisiones</p>
-              <p className="text-2xl font-semibold text-gray-900">{formatMoney(totalCommissions)}</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {formatMoney(totalCommissions)}
+              </p>
             </div>
           </div>
         </div>
@@ -114,7 +130,7 @@ export default function AdminReferrals() {
         <div className="p-4 lg:p-6 border-b">
           <h3 className="text-lg font-semibold text-gray-900">Lista de Referidos</h3>
         </div>
-        
+
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
@@ -125,12 +141,24 @@ export default function AdminReferrals() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referidor</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referido</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comisión</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Referidor
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Referido
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Comisión
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Estado
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Fecha
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -142,13 +170,15 @@ export default function AdminReferrals() {
                           <i className="fas fa-user text-white text-xs"></i>
                         </div>
                         <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900">{referral.referrerName || 'N/A'}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {referral.referrerName || "N/A"}
+                          </div>
                           <div className="text-sm text-gray-500">{referral.referrerCode}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{referral.referredName || 'N/A'}</div>
+                      <div className="text-sm text-gray-900">{referral.referredName || "N/A"}</div>
                       <div className="text-sm text-gray-500">{referral.referredPhone}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
@@ -160,14 +190,20 @@ export default function AdminReferrals() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <Badge variant={
-                        referral.status === 'active' ? 'default' :
-                        referral.status === 'paid' ? 'default' :
-                        'secondary'
-                      }>
-                        {referral.status === 'active' ? 'Pendiente' :
-                         referral.status === 'paid' ? 'Pagada' :
-                         'Procesando'}
+                      <Badge
+                        variant={
+                          referral.status === "active"
+                            ? "default"
+                            : referral.status === "paid"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {referral.status === "active"
+                          ? "Pendiente"
+                          : referral.status === "paid"
+                          ? "Pagada"
+                          : "Procesando"}
                       </Badge>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -179,7 +215,7 @@ export default function AdminReferrals() {
                           <i className="fas fa-eye mr-1"></i>
                           Ver
                         </Button>
-                        {referral.status === 'active' && (
+                        {referral.status === "active" && (
                           <Button size="sm" variant="default">
                             <i className="fas fa-check mr-1"></i>
                             Pagar
