@@ -263,10 +263,7 @@ export function MiPerfil() {
                 {customer.name}
               </h3>
               <p className="text-slate-600 text-sm mb-2">{customer.email}</p>
-              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
-                {customer.referralCode}
-              </div>
-              
+
               {isEditing && (
                 <div className="mt-4 space-y-3">
                   <ObjectUploader
@@ -435,13 +432,7 @@ export function MiPerfil() {
                     <Input value={customer.email || 'No especificado'} disabled className="bg-slate-50" />
                   </div>
                   
-                  <div>
-                    <Label>Código de Referencia</Label>
-                    <Input value={customer.referralCode} disabled className="bg-slate-50" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Campo de código de referencia: eliminado */}
                   <div>
                     <Label>Miembro desde</Label>
                     <Input 
